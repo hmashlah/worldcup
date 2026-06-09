@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { supabase, ADMIN_EMAIL } from '@/lib/supabase';
+import { useMyProfile } from '@/hooks/useProfiles';
 
 interface User {
   id: string;
@@ -11,6 +12,10 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAdmin: boolean;
+  /** Profile loaded; user is approved by admin. Admin is always approved. */
+  isApproved: boolean;
+  /** Profile fetch is still in flight (we don't yet know approval status). */
+  approvalLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName?: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -51,6 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Load own profile to check approval. Polls every 30s so an
+  // admin-approved user picks up access without a refresh.
+  const profileQ = useMyProfile(user?.id ?? null);
+
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
@@ -71,9 +80,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const isAdmin = !!ADMIN_EMAIL && !!user && user.email.toLowerCase() === ADMIN_EMAIL;
+  const isApproved = isAdmin || !!profileQ.data?.approved;
+  const approvalLoading = !!user && profileQ.isLoading;
 
   return (
-    <AuthContext.Provider value={{ user, loading, isAdmin, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{
+      user, loading, isAdmin, isApproved, approvalLoading,
+      signIn, signUp, signOut,
+    }}>
       {children}
     </AuthContext.Provider>
   );

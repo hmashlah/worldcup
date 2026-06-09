@@ -34,6 +34,11 @@ export function useLeaderboard(): {
   const entries = useMemo<LeaderboardEntry[]>(() => {
     if (!dataQ.data || !predsQ.data || !resultsQ.data || !profilesQ.data) return [];
 
+    // Only include approved users on the leaderboard.
+    const approvedIds = new Set(
+      Object.values(profilesQ.data).filter(p => p.approved).map(p => p.user_id),
+    );
+
     const byUser: Record<string, LeaderboardEntry> = {};
     const ensure = (id: string): LeaderboardEntry => {
       if (!byUser[id]) {
@@ -51,6 +56,7 @@ export function useLeaderboard(): {
     };
 
     for (const p of predsQ.data as PredictionRow[]) {
+      if (!approvedIds.has(p.user_id)) continue;
       const result = resultsQ.data[p.match_id];
       if (!result) continue;
       const isKO = isMatchKO(dataQ.data, p.match_id);
@@ -77,8 +83,8 @@ export function useLeaderboard(): {
       }
     }
 
-    // Also include profiles with zero points (so brand-new users show up).
-    for (const profileId of Object.keys(profilesQ.data)) ensure(profileId);
+    // Include approved profiles even if they have zero points.
+    for (const id of approvedIds) ensure(id);
 
     return Object.values(byUser).sort(
       (a, b) =>
