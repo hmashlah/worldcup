@@ -101,6 +101,7 @@ body {
   font-size: 15px;
   line-height: 1.45;
   min-height: 100vh;
+  overflow-x: hidden; /* funky neo-brutalist shadows can push past viewport on mobile */
   /* Smooth color transition when toggling themes */
   transition: background-color .25s ease, color .25s ease;
 }
