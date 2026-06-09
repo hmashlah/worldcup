@@ -25,7 +25,7 @@ export function useMyPredictions() {
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('predictions')
+        .from('wc26_predictions')
         .select('*')
         .eq('user_id', user!.id);
       if (error) throw error;
@@ -41,7 +41,7 @@ export function useAllPredictions() {
   return useQuery({
     queryKey: ['predictions', 'all'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('predictions').select('*');
+      const { data, error } = await supabase.from('wc26_predictions').select('*');
       if (error) throw error;
       return (data ?? []) as PredictionRow[];
     },
@@ -62,7 +62,7 @@ export function useUpsertPrediction() {
         advancer: draft.advancer ?? null,
       };
       const { error } = await supabase
-        .from('predictions')
+        .from('wc26_predictions')
         .upsert(row, { onConflict: 'user_id,match_id' });
       if (error) throw error;
     },
