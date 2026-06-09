@@ -19,11 +19,11 @@ export function LeaderboardCard() {
       <div className="leaderboard-head">
         <span>#</span>
         <span>Player</span>
-        <span title="Exact-score predictions">🎯 exact</span>
-        <span title="Right outcome (W/D/L)">✓ outcome</span>
-        <span title="Right knockout advancer">→ advancer</span>
-        <span>predictions</span>
-        <span>total</span>
+        <span title="Exact-score predictions">Exact</span>
+        <span title="Right outcome (W/D/L)">Outcome</span>
+        <span title="Right knockout advancer">Adv.</span>
+        <span title="Total predictions submitted that have an actual">Picks</span>
+        <span>Total</span>
       </div>
       {entries.map((e, i) => (
         <div
