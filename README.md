@@ -1,4 +1,28 @@
 
+## ♡ Our World Cup 2026 wallchart
+
+This fork includes a tiny static website in [`site/`](./site) — a cute wallchart-style tracker
+to fill in scores together as the tournament unfolds. Group standings update live, the bracket
+cascades automatically (winners of Round of 32 flow into Round of 16, etc.), and the final
+crowns a champion. All picks are saved in your browser via `localStorage`.
+
+**Run locally**
+```sh
+cd site && python3 -m http.server 8000
+# open http://localhost:8000
+```
+
+**Deploy to Cloudflare Pages**
+1. Cloudflare → Pages → Create application → Connect to Git → pick this repo
+2. Build command: *(leave blank)* · Build output directory: `site`
+3. Deploy → you get a `*.pages.dev` URL in ~30 seconds.
+
+**Refresh data after upstream updates**
+```sh
+python3 site/build-data.py   # rebuilds site/data.json from 2026/worldcup.json
+```
+
+
 ## World Cup 2026 Frequently Asked Questions (FAQ) & Answers
 
 Q: [Will it update live match data?](https://github.com/openfootball/help/issues/57)
