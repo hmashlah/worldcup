@@ -5,6 +5,7 @@ import { useMyPredictions, useUpsertPrediction } from '@/hooks/usePredictions';
 import { useResults, useUpsertResult } from '@/hooks/useResults';
 import { isLocked, parseKickoff } from '@/lib/time';
 import { scorePrediction } from '@/lib/scoring';
+import { useUI } from '@/lib/ui-store';
 
 interface Props {
   matchId: string;
@@ -41,6 +42,10 @@ export function MatchCard(p: Props) {
     isKO = false, roundLabel,
   } = p;
   const { user, isAdmin } = useAuth();
+  const adminMode = useUI(s => s.adminMode);
+  // The admin can toggle out of admin mode to see the site as a regular user
+  // (no actual-result inputs, no admin tab). Effective admin = both true.
+  const adminActive = isAdmin && adminMode;
   const myPredsQ = useMyPredictions();
   const resultsQ = useResults();
   const upsertPred = useUpsertPrediction();
@@ -78,13 +83,13 @@ export function MatchCard(p: Props) {
   }, [user, locked, a, b, adv, myPred, matchId, upsertPred]);
 
   const saveResult = useCallback((overrides?: { advancer?: string }) => {
-    if (!isAdmin) return;
+    if (!adminActive) return;
     const x = parseInt(actA, 10), y = parseInt(actB, 10);
     if (Number.isNaN(x) || Number.isNaN(y)) return;
     const finalAdv = overrides?.advancer ?? actAdv;
     if (result && result.team1_score === x && result.team2_score === y && (result.advancer ?? '') === finalAdv) return;
     upsertRes.mutate({ match_id: matchId, team1_score: x, team2_score: y, advancer: finalAdv || null });
-  }, [isAdmin, actA, actB, actAdv, result, matchId, upsertRes]);
+  }, [adminActive, actA, actB, actAdv, result, matchId, upsertRes]);
 
   const earned = scorePrediction(
     myPred ? { team1: myPred.team1_score, team2: myPred.team2_score } : null,
@@ -158,8 +163,8 @@ export function MatchCard(p: Props) {
         </div>
       )}
 
-      {/* ACTUAL row — admin gets inputs, others see read-only result */}
-      {isAdmin ? (
+      {/* ACTUAL row — admin gets inputs (when admin mode is on), others see read-only result */}
+      {adminActive ? (
         <div className="mc-actual mc-actual-admin">
           <span className="mc-actual-label">actual</span>
           <div className="mc-scores">

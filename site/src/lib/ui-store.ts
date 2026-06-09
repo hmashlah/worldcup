@@ -4,11 +4,17 @@ export type TabKey = 'today' | 'groups' | 'bracket' | 'leaderboard' | 'admin';
 export type ThemeKey = 'minimal' | 'funky';
 
 const THEME_STORAGE_KEY = 'wc26-theme';
+const ADMIN_MODE_STORAGE_KEY = 'wc26-admin-mode';
 
 function readInitialTheme(): ThemeKey {
   if (typeof window === 'undefined') return 'minimal';
   const v = localStorage.getItem(THEME_STORAGE_KEY);
   return v === 'funky' ? 'funky' : 'minimal';
+}
+
+function readInitialAdminMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(ADMIN_MODE_STORAGE_KEY) === '1';
 }
 
 function applyThemeToDom(theme: ThemeKey) {
@@ -24,6 +30,11 @@ interface UIState {
   theme: ThemeKey;
   toggleTheme: () => void;
   setTheme: (t: ThemeKey) => void;
+  /** Admin viewing the site as themselves (results inputs, admin tab) vs.
+   *  as a regular user (predictions only). Persisted in localStorage. */
+  adminMode: boolean;
+  toggleAdminMode: () => void;
+  setAdminMode: (on: boolean) => void;
 }
 
 export const useUI = create<UIState>(set => ({
@@ -42,6 +53,16 @@ export const useUI = create<UIState>(set => ({
     localStorage.setItem(THEME_STORAGE_KEY, t);
     applyThemeToDom(t);
     set({ theme: t });
+  },
+  adminMode: readInitialAdminMode(),
+  toggleAdminMode: () => set(s => {
+    const next = !s.adminMode;
+    localStorage.setItem(ADMIN_MODE_STORAGE_KEY, next ? '1' : '0');
+    return { adminMode: next };
+  }),
+  setAdminMode: on => {
+    localStorage.setItem(ADMIN_MODE_STORAGE_KEY, on ? '1' : '0');
+    set({ adminMode: on });
   },
 }));
 

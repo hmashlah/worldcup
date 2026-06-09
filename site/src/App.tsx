@@ -19,9 +19,10 @@ export default function App() {
 }
 
 function Shell() {
-  const { tab, authOpen, setAuthOpen } = useUI();
+  const { tab, authOpen, setAuthOpen, adminMode } = useUI();
   const dataQ = useTournamentData();
   const { user, isAdmin, isApproved, approvalLoading } = useAuth();
+  const adminActive = isAdmin && adminMode;
 
   // Signed-in but not yet approved by admin → show holding screen.
   const showPending = !!user && !approvalLoading && !isApproved;
@@ -44,7 +45,7 @@ function Shell() {
                 {tab === 'groups' && <GroupsTab />}
                 {tab === 'bracket' && <BracketTab />}
                 {tab === 'leaderboard' && <LeaderboardTab />}
-                {tab === 'admin' && isAdmin && <AdminTab />}
+                {tab === 'admin' && adminActive && <AdminTab />}
               </>
             )}
           </>
