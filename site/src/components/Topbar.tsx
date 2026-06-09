@@ -47,21 +47,6 @@ export function Topbar() {
       <div className="topbar-brand">
         <h1 className="topbar-title">World Cup</h1>
         <span className="topbar-year">2026</span>
-        {isAdmin && (
-          <button
-            type="button"
-            className={'admin-pill admin-pill-toggle' + (adminMode ? ' is-on' : ' is-off')}
-            onClick={toggleAdminMode}
-            title={adminMode
-              ? 'Admin mode ON · tap to view as a regular user'
-              : 'Admin mode OFF · tap to enable admin tools'}
-            aria-pressed={adminMode}
-            aria-label={adminMode ? 'Admin mode on' : 'Admin mode off'}
-          >
-            <span className="admin-pill-dot" aria-hidden />
-            admin
-          </button>
-        )}
       </div>
 
       <nav className="topbar-tabs">
@@ -89,6 +74,21 @@ export function Topbar() {
               </button>
             )}
             <span className="topbar-hello">{user.displayName ?? user.email.split('@')[0]}</span>
+            {isAdmin && (
+              <button
+                type="button"
+                className={'admin-pill admin-pill-toggle' + (adminMode ? ' is-on' : ' is-off')}
+                onClick={toggleAdminMode}
+                title={adminMode
+                  ? 'Admin mode ON · tap to view as a regular user'
+                  : 'Admin mode OFF · tap to enable admin tools'}
+                aria-pressed={adminMode}
+                aria-label={adminMode ? 'Admin mode on' : 'Admin mode off'}
+              >
+                <span className="admin-pill-dot" aria-hidden />
+                admin
+              </button>
+            )}
             <button className="btn btn-ghost" onClick={handleSignOut} disabled={signingOut}>
               {signingOut ? '...' : 'Sign out'}
             </button>
