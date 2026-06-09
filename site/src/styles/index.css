@@ -730,7 +730,7 @@ footer {
   grid-template-columns: 36px 1fr 56px 76px 56px 56px 64px;
   align-items: center;
   gap: 12px;
-  padding: 10px 4px;
+  padding: 10px 8px;
 }
 .leaderboard-head {
   border-bottom: 1px solid var(--line);
@@ -754,8 +754,8 @@ footer {
 .leaderboard-row.is-me {
   background: var(--accent-soft);
   border-radius: var(--r-sm);
-  padding-left: 8px;
-  padding-right: 8px;
+  /* Same padding as other rows — only the background changes,
+     so columns stay aligned across rows. */
 }
 .lb-rank { font-weight: 800; color: var(--ink-soft); font-size: 13px; }
 .lb-name { font-weight: 700; }
@@ -1077,13 +1077,15 @@ footer {
 
 
 /* ── Admin: actual-result row appearing under prediction inputs ──
-   The label sits above the scores so the score inputs stay centered
-   on the card (matching the prediction inputs above them). */
+   Mirror the prediction row's 4-column grid so the score inputs sit
+   in the same horizontal position. Label goes left, Clear goes right;
+   each occupies a "team" column and is muted so it doesn't compete
+   with the scores. */
 .mc-actual-admin {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto;
   align-items: center;
-  gap: 4px;
+  gap: 12px;
   margin-top: 10px;
   padding-top: 8px;
   border-top: 1px dashed var(--line);
@@ -1094,6 +1096,23 @@ footer {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 800;
+  /* sit in the team1 column (1fr) — matches prediction layout */
+  justify-self: start;
+}
+.mc-actual-admin .mc-scores {
+  /* second column = matches the prediction scores' column */
+  justify-self: center;
+}
+.mc-actual-admin .mc-actual-clear {
+  /* third column (the team2 1fr slot) — keep button right-aligned */
+  justify-self: end;
+}
+.mc-actual-admin .mc-advancer-admin {
+  /* advancer row spans the whole grid */
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  padding-top: 0;
+  border-top: 0;
 }
 .mc-input-actual {
   border-color: var(--accent-soft);
