@@ -84,7 +84,7 @@ export function AuthModal({ onClose }: Props) {
 
         <div className="auth-actions">
           <button
-            className="primary-btn"
+            className="btn btn-primary"
             onClick={submit}
             disabled={busy || !email || !password || (mode === 'signup' && !displayName)}
           >
@@ -92,7 +92,7 @@ export function AuthModal({ onClose }: Props) {
               ? '...'
               : mode === 'signin' ? 'Sign in' : 'Create account'}
           </button>
-          <button className="ghost-btn" onClick={onClose}>Cancel</button>
+          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
         </div>
 
         <button
