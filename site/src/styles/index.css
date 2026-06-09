@@ -860,20 +860,33 @@ footer {
 /* ── Mobile ──────────────────────────────────────────────────────── */
 
 @media (max-width: 720px) {
-  /* Switch to grid on mobile so brand/controls/tabs land on their own
-     rows deterministically. flex-wrap + order is unreliable across
-     browsers (Safari especially) when child widths are dynamic. */
+  /* On phones, force a true 3-row stack so nothing overlaps:
+       row 1: brand (title + year)
+       row 2: controls (greeting · admin · sign out · theme)
+       row 3: tabs (full-width, scrollable)
+     Single-column grid avoids the flex-wrap surprises Safari hits
+     when the brand cluster is wider than the available column. */
   .topbar {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr;
     grid-template-areas:
-      "brand controls"
-      "tabs  tabs";
+      "brand"
+      "controls"
+      "tabs";
     padding: 10px 12px;
-    gap: 8px 10px;
+    gap: 8px;
   }
-  .topbar-brand    { grid-area: brand; min-width: 0; }
-  .topbar-controls { grid-area: controls; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+  .topbar-brand {
+    grid-area: brand;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+  .topbar-controls {
+    grid-area: controls;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
   .topbar-tabs {
     grid-area: tabs;
     width: 100%;
@@ -882,7 +895,7 @@ footer {
     gap: 2px;
     padding-bottom: 2px;
     scrollbar-width: none;
-    flex: none; /* override desktop's flex: 1 */
+    flex: none;
   }
   .topbar-tabs::-webkit-scrollbar { display: none; }
   .topbar-tabs .tab {
