@@ -1,0 +1,26 @@
+# Local env
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+.cache/
+.parcel-cache/
+
+# Deps
+node_modules/
+
+# TS / Vite
+.tsbuildinfo
+*.tsbuildinfo
+.vite/
+
+# Editor
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*

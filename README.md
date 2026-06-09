@@ -1,26 +1,55 @@
 
-## ♡ Our World Cup 2026 wallchart
+## ♡ Our World Cup 2026 prediction league
 
-This fork includes a tiny static website in [`site/`](./site) — a cute wallchart-style tracker
-to fill in scores together as the tournament unfolds. Group standings update live, the bracket
-cascades automatically (winners of Round of 32 flow into Round of 16, etc.), and the final
-crowns a champion. All picks are saved in your browser via `localStorage`.
+This fork includes a small web app in [`site-v2/`](./site-v2) — a cute,
+romantic prediction-league tracker for me and a few friends. Sign in,
+predict every match score, and the leaderboard ranks everyone by accuracy
+once results come in. Built with **Vite + React + TypeScript +
+Supabase** (auth + database).
 
-**Run locally**
+Scoring (classic):
+- 🎯 **3 pts** for an exact score
+- ✓ **1 pt** for the right outcome (W / D / L)
+- → **+1 pt** in knockouts for picking the right advancer
+
+Predictions lock at each match's kickoff time.
+
+### Local dev
 ```sh
-cd site && python3 -m http.server 8000
-# open http://localhost:8000
+cd site-v2
+cp .env.example .env.local            # fill VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_ADMIN_EMAIL
+npm install
+npm run dev                            # http://localhost:8000
 ```
 
-**Deploy to Cloudflare Pages**
-1. Cloudflare → Pages → Create application → Connect to Git → pick this repo
-2. Build command: *(leave blank)* · Build output directory: `site`
-3. Deploy → you get a `*.pages.dev` URL in ~30 seconds.
+### Supabase setup
+1. Create a project at supabase.com.
+2. SQL editor → paste [`site-v2/database/schema.sql`](./site-v2/database/schema.sql),
+   replace `REPLACE_WITH_YOUR_EMAIL@example.com` with your admin email,
+   run it.
+3. Auth → Providers → Email — leave signup enabled (open league) or
+   disable it later if you want a closed league.
+4. Copy `Project URL` and `anon public` key into `site-v2/.env.local`.
 
-**Refresh data after upstream updates**
+### Deploy to Cloudflare Pages
+1. Cloudflare → Pages → Create application → Connect to Git → pick this repo.
+2. Build command: `npm install && npm run build`
+3. Build output directory: `site-v2/dist`
+4. Root directory: `site-v2`
+5. Environment variables: add `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
+   `VITE_ADMIN_EMAIL`.
+6. Deploy.
+
+### Refresh tournament data after upstream updates
 ```sh
-python3 site/build-data.py   # rebuilds site/data.json from 2026/worldcup.json
+python3 site/build-data.py
+# rebuilds site-v2/public/data.json from 2026/worldcup.json
 ```
+
+### Legacy static wallchart
+The original vanilla-JS, localStorage-only wallchart still lives in
+[`site/`](./site). It works offline and needs no Supabase. Keep or
+delete after Cloudflare is repointed to `site-v2/`.
 
 
 ## World Cup 2026 Frequently Asked Questions (FAQ) & Answers
