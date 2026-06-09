@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Regenerate site-v2/public/data.json from the 2026/ source files.
+"""Regenerate site/public/data.json from the 2026/ source files.
 
 Run this whenever 2026/worldcup.json or 2026/worldcup.groups.json changes
 (e.g. after pulling fresh data from openfootball/worldcup.json upstream).
 
     python3 site/build-data.py
 
-Writes site-v2/public/data.json in place. (Also writes site/data.json for
-the legacy static page; keep until Cloudflare is repointed.)
+Writes site/public/data.json in place. Vite serves files in `public/`
+verbatim from the site root, so the React app fetches it as `/data.json`.
 """
 import json
 import pathlib
@@ -16,8 +16,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SRC_MATCHES = ROOT / "2026" / "worldcup.json"
 SRC_GROUPS = ROOT / "2026" / "worldcup.groups.json"
-OUT_V2 = ROOT / "site-v2" / "public" / "data.json"
-OUT_LEGACY = ROOT / "site" / "data.json"
+OUT = ROOT / "site" / "public" / "data.json"
 
 # ISO 3166-1 alpha-2 codes (with a few flag-icons specials for sub-nations).
 FLAG_MAP = {
@@ -90,14 +89,10 @@ def main() -> int:
         "ko_matches": ko_out,
         "flag_map": FLAG_MAP,
     }
-    payload = json.dumps(out, ensure_ascii=False, indent=2)
-    written = []
-    for target in (OUT_V2, OUT_LEGACY):
-        if target.parent.exists():
-            target.write_text(payload)
-            written.append(target.relative_to(ROOT))
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(json.dumps(out, ensure_ascii=False, indent=2))
     print(
-        f"wrote {', '.join(str(p) for p in written)} · "
+        f"wrote {OUT.relative_to(ROOT)} · "
         f"{sum(len(v) for v in group_out.values())} group + {len(ko_out)} KO matches"
     )
     return 0
