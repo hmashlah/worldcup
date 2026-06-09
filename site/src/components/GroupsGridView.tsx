@@ -21,7 +21,10 @@ function GroupCardCompact({ group, isThirdQualified }: CardProps) {
   const matches = dataQ.data?.group_matches[group.name] ?? [];
 
   return (
-    <div className={`gc ${expanded ? 'gc-expanded' : ''}`}>
+    <div
+      className={`gc ${expanded ? 'gc-expanded' : ''}`}
+      data-group={group.name.split(' ').pop() /* "A" .. "L" */}
+    >
       <button
         type="button"
         className="gc-header"

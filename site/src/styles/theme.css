@@ -1,6 +1,7 @@
-/* ── Editorial monochrome theme ─────────────────────────────────── */
+/* ── Editorial monochrome theme (default = "minimal") ─────────── */
 
-:root {
+:root,
+:root[data-theme='minimal'] {
   --bg:        #faf8f5;          /* warm off-white page */
   --surface:   #ffffff;          /* card */
   --ink:       #2a2530;          /* near-black with a hint of warmth */
@@ -21,7 +22,75 @@
 
   --serif: "Fraunces", Georgia, serif;
   --sans:  "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --display: var(--sans); /* minimal: same as sans; funky overrides this */
+  --score-font: var(--sans); /* minimal: same as sans; funky overrides */
+
+  /* Round accents — minimal: all use the same rose accent */
+  --rnd-r32:   var(--accent);
+  --rnd-r16:   var(--accent);
+  --rnd-qf:    var(--accent);
+  --rnd-sf:    var(--accent);
+  --rnd-final: var(--accent);
+
+  /* Group accents — minimal: monochrome (no per-group color stripe) */
+  --grp-A: var(--line); --grp-B: var(--line); --grp-C: var(--line);
+  --grp-D: var(--line); --grp-E: var(--line); --grp-F: var(--line);
+  --grp-G: var(--line); --grp-H: var(--line); --grp-I: var(--line);
+  --grp-J: var(--line); --grp-K: var(--line); --grp-L: var(--line);
+
+  /* Trophy in minimal stays rose */
+  --trophy: var(--accent);
 }
+
+
+/* ── Funky arcade theme ──────────────────────────────────────────
+   Same canvas, charcoal text, but distinct round/group accents and
+   a punchier feel. Activated via `<html data-theme="funky">`. */
+
+:root[data-theme='funky'] {
+  --bg:        #fef9f0;
+  --surface:   #ffffff;
+  --ink:       #181226;
+  --ink-soft:  #5d5570;
+  --ink-faint: #9990a8;
+  --line:      #ece7f0;
+  --line-soft: #f4f0f7;
+  --accent:    #ec4899;          /* hot pink */
+  --accent-soft: #fce7f3;
+  --good:      #16a34a;
+  --warn:      #f59e0b;
+
+  --shadow-card: 0 2px 4px rgba(24, 18, 38, 0.05), 0 1px 6px rgba(24, 18, 38, 0.04);
+
+  /* Funky display font — used only for headings in funky mode */
+  --display: "Space Grotesk", "Nunito", system-ui, sans-serif;
+  /* Scoreboard font — used for score numbers in funky mode */
+  --score-font: "Big Shoulders Display", "Space Grotesk", "Nunito", sans-serif;
+
+  /* Round accents — jersey-leaning bold colors */
+  --rnd-r32:   #1e40af;          /* royal blue (Italy/France) */
+  --rnd-r16:   #0f766e;          /* forest teal */
+  --rnd-qf:    #7c2d12;          /* claret (Aston Villa / Burnley) */
+  --rnd-sf:    #c2410c;          /* burnt orange (Netherlands) */
+  --rnd-final: #b45309;          /* gold (trophy amber) */
+
+  /* Group accents — jersey/national-team-leaning palette */
+  --grp-A: #b91c1c;    /* deep red       */
+  --grp-B: #c2410c;    /* burnt orange   */
+  --grp-C: #b45309;    /* mustard / amber*/
+  --grp-D: #65a30d;    /* lime / kit green*/
+  --grp-E: #15803d;    /* forest green   */
+  --grp-F: #0f766e;    /* deep teal      */
+  --grp-G: #0369a1;    /* sky / Argentina*/
+  --grp-H: #1e40af;    /* royal blue     */
+  --grp-I: #4338ca;    /* indigo         */
+  --grp-J: #7c2d12;    /* claret         */
+  --grp-K: #be185d;    /* magenta-rose   */
+  --grp-L: #831843;    /* maroon         */
+
+  --trophy: #fbbf24;
+}
+
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
@@ -32,6 +101,8 @@ body {
   font-size: 15px;
   line-height: 1.45;
   min-height: 100vh;
+  /* Smooth color transition when toggling themes */
+  transition: background-color .25s ease, color .25s ease;
 }
 
 a { color: var(--accent); text-decoration: none; }

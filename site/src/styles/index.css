@@ -661,10 +661,10 @@ footer {
 }
 .leaderboard-head, .leaderboard-row {
   display: grid;
-  grid-template-columns: 36px 1fr 60px 60px 70px 70px 60px;
+  grid-template-columns: 36px 1fr 56px 76px 56px 56px 64px;
   align-items: center;
-  gap: 8px;
-  padding: 8px 4px;
+  gap: 12px;
+  padding: 10px 4px;
 }
 .leaderboard-head {
   border-bottom: 1px solid var(--line);
@@ -673,6 +673,12 @@ footer {
   letter-spacing: 0.08em;
   color: var(--ink-faint);
   font-weight: 800;
+}
+/* Right-align all numeric columns + their headers. The first 2 (rank, name)
+   stay left-aligned. Total is also right-aligned. */
+.leaderboard-head > :nth-child(n+3),
+.leaderboard-row > :nth-child(n+3) {
+  text-align: right;
 }
 .leaderboard-row {
   border-bottom: 1px solid var(--line-soft);
@@ -691,7 +697,7 @@ footer {
   text-align: right;
   font-weight: 800;
   font-size: 18px;
-  color: var(--accent);
+  color: var(--ink);
   letter-spacing: -0.01em;
 }
 .leaderboard-key {
@@ -1028,4 +1034,969 @@ footer {
   .kb-trophy { padding: 22px 18px 18px; }
   .kb-trophy-name { font-size: 26px; }
   .kb-nav-tab { padding: 6px 10px; }
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   Theme toggle button (visible in both modes)
+   ───────────────────────────────────────────────────────────────── */
+
+.theme-toggle {
+  border-radius: 999px;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform .2s ease, box-shadow .2s ease;
+  padding: 0;
+}
+.theme-toggle:hover {
+  transform: rotate(15deg) scale(1.05);
+}
+.theme-toggle svg { display: block; }
+
+/* In MINIMAL mode the button previews FUNKY — colorful gradient.
+   In FUNKY mode the button previews MINIMAL — black and white.
+   Each tells you what tapping it gets you. */
+:root[data-theme='minimal'] .theme-toggle,
+:root:not([data-theme]) .theme-toggle {
+  background: linear-gradient(120deg, #ec4899 0%, #a855f7 50%, #3b82f6 100%);
+  border: 0;
+  color: white;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35);
+}
+:root[data-theme='minimal'] .theme-toggle:hover {
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.5);
+}
+:root[data-theme='funky'] .theme-toggle {
+  background: var(--surface);
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+:root[data-theme='funky'] .theme-toggle:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   FUNKY THEME — gamey arcade overrides
+   ───────────────────────────────────────────────────────────────── */
+
+[data-theme='funky'] body {
+  /* BOLD funky background — vivid gradient with diagonal stripes
+     overlay. Reads as a stadium banner / kit bar. */
+  background:
+    /* Diagonal jersey stripes */
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.08) 0,
+      rgba(255, 255, 255, 0.08) 60px,
+      rgba(255, 255, 255, 0)    60px,
+      rgba(255, 255, 255, 0)    120px
+    ),
+    /* Tournament-bold gradient — pink → purple → blue */
+    linear-gradient(135deg,
+      #ec4899 0%,
+      #a855f7 35%,
+      #6366f1 70%,
+      #0ea5e9 100%
+    );
+  background-attachment: fixed;
+  color: var(--ink);
+}
+
+/* Cards lift off the gradient — solid white, strong shadow, slight tilt */
+[data-theme='funky'] .mc,
+[data-theme='funky'] .gc,
+[data-theme='funky'] .leaderboard,
+[data-theme='funky'] .day-strip,
+[data-theme='funky'] .kb-nav,
+[data-theme='funky'] .kb-trophy,
+[data-theme='funky'] .auth-card,
+[data-theme='funky'] .section-intro {
+  background: var(--surface);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  box-shadow:
+    4px 4px 0 0 var(--ink),
+    0 8px 24px rgba(24, 18, 38, 0.18);
+}
+
+/* Topbar: glassy white with gradient underline */
+[data-theme='funky'] .topbar {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(10px);
+  border-bottom: 3px solid transparent;
+  border-image: linear-gradient(90deg, #ec4899, #a855f7, #6366f1, #0ea5e9) 1;
+  box-shadow: 0 4px 16px rgba(24, 18, 38, 0.12);
+}
+
+/* Funky headings use the display font */
+[data-theme='funky'] .topbar-title,
+[data-theme='funky'] .section-intro h2,
+[data-theme='funky'] .day-relative,
+[data-theme='funky'] .gc-title,
+[data-theme='funky'] .kb-trophy-name,
+[data-theme='funky'] .kb-nav-label,
+[data-theme='funky'] .auth-card h2,
+[data-theme='funky'] .kb-third-heading {
+  font-family: var(--display);
+}
+
+/* Topbar — bolder, with a gradient brand bar */
+[data-theme='funky'] .topbar {
+  border-bottom: 0;
+  box-shadow: 0 2px 0 0 var(--accent), 0 4px 0 0 var(--rnd-r32);
+}
+[data-theme='funky'] .topbar-title {
+  font-family: var(--sans);
+  font-style: normal;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  background: linear-gradient(120deg, var(--accent) 0%, var(--rnd-qf) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+[data-theme='funky'] .topbar-year {
+  background: var(--ink);
+  color: white;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+[data-theme='funky'] .admin-pill {
+  background: linear-gradient(120deg, var(--accent) 0%, var(--rnd-final) 100%);
+  color: white;
+  box-shadow: 0 2px 6px rgba(236, 72, 153, 0.3);
+}
+
+/* Tabs — filled chips with active-color */
+[data-theme='funky'] .tab {
+  font-weight: 800;
+}
+[data-theme='funky'] .tab.active {
+  background: var(--ink);
+  color: white;
+  box-shadow: 0 2px 6px rgba(24, 18, 38, 0.18);
+}
+
+/* Pending pill — bouncy gradient */
+[data-theme='funky'] .pending-pill {
+  background: linear-gradient(120deg, var(--rnd-final) 0%, var(--accent) 100%);
+  color: white;
+  box-shadow: 0 4px 10px rgba(236, 72, 153, 0.25);
+  animation: funky-bounce 1.6s ease-in-out infinite;
+}
+@keyframes funky-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
+}
+
+/* Section heading — gradient text */
+[data-theme='funky'] .section-intro h2 {
+  background: linear-gradient(120deg, var(--ink) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: 26px;
+}
+
+/* Day strip — fun pill style */
+[data-theme='funky'] .day-pill.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: white;
+}
+[data-theme='funky'] .day-pill.active::after {
+  background: var(--rnd-final);
+  height: 3px;
+  bottom: -4px;
+}
+[data-theme='funky'] .day-pill.active .day-pill-count {
+  color: var(--rnd-final);
+}
+[data-theme='funky'] .day-relative {
+  font-size: 30px;
+  background: linear-gradient(120deg, var(--ink) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Match cards — colored top stripe by group OR round */
+[data-theme='funky'] .mc {
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+[data-theme='funky'] .mc::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--accent);
+  pointer-events: none;
+}
+[data-theme='funky'] .gc[data-group="A"] .mc::before { background: var(--grp-A); }
+[data-theme='funky'] .gc[data-group="B"] .mc::before { background: var(--grp-B); }
+[data-theme='funky'] .gc[data-group="C"] .mc::before { background: var(--grp-C); }
+[data-theme='funky'] .gc[data-group="D"] .mc::before { background: var(--grp-D); }
+[data-theme='funky'] .gc[data-group="E"] .mc::before { background: var(--grp-E); }
+[data-theme='funky'] .gc[data-group="F"] .mc::before { background: var(--grp-F); }
+[data-theme='funky'] .gc[data-group="G"] .mc::before { background: var(--grp-G); }
+[data-theme='funky'] .gc[data-group="H"] .mc::before { background: var(--grp-H); }
+[data-theme='funky'] .gc[data-group="I"] .mc::before { background: var(--grp-I); }
+[data-theme='funky'] .gc[data-group="J"] .mc::before { background: var(--grp-J); }
+[data-theme='funky'] .gc[data-group="K"] .mc::before { background: var(--grp-K); }
+[data-theme='funky'] .gc[data-group="L"] .mc::before { background: var(--grp-L); }
+[data-theme='funky'] .kb-card[data-round="r32"] .mc::before { background: var(--rnd-r32); }
+[data-theme='funky'] .kb-card[data-round="r16"] .mc::before { background: var(--rnd-r16); }
+[data-theme='funky'] .kb-card[data-round="qf"]  .mc::before { background: var(--rnd-qf); }
+[data-theme='funky'] .kb-card[data-round="sf"]  .mc::before { background: var(--rnd-sf); }
+[data-theme='funky'] .kb-card[data-round="final"] .mc::before { background: var(--rnd-final); height: 4px; }
+
+/* Score chips — colorful and pulse on first show */
+[data-theme='funky'] .mc-points {
+  border-radius: 8px;
+  font-size: 12px;
+  padding: 3px 9px;
+  animation: funky-pop .35s ease-out;
+}
+@keyframes funky-pop {
+  0%   { transform: scale(0.7); opacity: 0; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+[data-theme='funky'] .mc-points.pts-3 {
+  background: linear-gradient(120deg, var(--accent) 0%, var(--rnd-qf) 100%);
+}
+[data-theme='funky'] .mc-points.pts-4 {
+  background: linear-gradient(120deg, var(--rnd-final) 0%, var(--accent) 100%);
+}
+
+/* Group cards — colored top stripe and bolder title */
+[data-theme='funky'] .gc {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+}
+[data-theme='funky'] .gc::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: var(--line);
+  pointer-events: none;
+}
+[data-theme='funky'] .gc[data-group="A"]::before { background: var(--grp-A); }
+[data-theme='funky'] .gc[data-group="B"]::before { background: var(--grp-B); }
+[data-theme='funky'] .gc[data-group="C"]::before { background: var(--grp-C); }
+[data-theme='funky'] .gc[data-group="D"]::before { background: var(--grp-D); }
+[data-theme='funky'] .gc[data-group="E"]::before { background: var(--grp-E); }
+[data-theme='funky'] .gc[data-group="F"]::before { background: var(--grp-F); }
+[data-theme='funky'] .gc[data-group="G"]::before { background: var(--grp-G); }
+[data-theme='funky'] .gc[data-group="H"]::before { background: var(--grp-H); }
+[data-theme='funky'] .gc[data-group="I"]::before { background: var(--grp-I); }
+[data-theme='funky'] .gc[data-group="J"]::before { background: var(--grp-J); }
+[data-theme='funky'] .gc[data-group="K"]::before { background: var(--grp-K); }
+[data-theme='funky'] .gc[data-group="L"]::before { background: var(--grp-L); }
+[data-theme='funky'] .gc-title {
+  font-size: 17px;
+  font-weight: 800;
+}
+[data-theme='funky'] .gc-toggle { font-size: 11px; }
+
+/* Inside group, child mc::before reflects the group color (already
+   handled above by .gc[data-group="X"] .mc::before). For bracket cards,
+   round overrides. */
+
+/* Bracket round nav — punchier */
+[data-theme='funky'] .kb-nav {
+  background: var(--surface);
+  border-color: var(--line);
+  border-radius: 12px;
+}
+[data-theme='funky'] .kb-nav-tab.active {
+  background: var(--ink);
+  color: white;
+}
+[data-theme='funky'] .kb-nav-tab.active .kb-nav-count { color: var(--rnd-final); }
+[data-theme='funky'] .kb-nav-tab[data-r="r32"].active   { background: var(--rnd-r32); }
+[data-theme='funky'] .kb-nav-tab[data-r="r16"].active   { background: var(--rnd-r16); }
+[data-theme='funky'] .kb-nav-tab[data-r="qf"].active    { background: var(--rnd-qf); }
+[data-theme='funky'] .kb-nav-tab[data-r="sf"].active    { background: var(--rnd-sf); }
+[data-theme='funky'] .kb-nav-tab[data-r="final"].active { background: var(--rnd-final); color: var(--ink); }
+
+[data-theme='funky'] .kb-card-final .mc {
+  border-color: var(--rnd-final);
+  border-width: 2px;
+  box-shadow: 0 6px 20px rgba(251, 191, 36, 0.20);
+}
+
+/* Trophy banner — gold gradient when set */
+[data-theme='funky'] .kb-trophy {
+  border-radius: 16px;
+  border-width: 2px;
+}
+[data-theme='funky'] .kb-trophy.is-set {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-color: var(--rnd-final);
+  box-shadow: 0 12px 28px rgba(251, 191, 36, 0.25);
+}
+[data-theme='funky'] .kb-trophy-name {
+  background: linear-gradient(120deg, var(--accent) 0%, var(--rnd-qf) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+[data-theme='funky'] .kb-trophy.is-set .kb-trophy-name {
+  background: linear-gradient(120deg, #b45309 0%, #92400e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+[data-theme='funky'] .kb-trophy.is-set .kb-trophy-icon {
+  animation: funky-spin 4s ease-in-out infinite;
+}
+@keyframes funky-spin {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(8deg); }
+}
+
+/* Leaderboard total — gradient */
+[data-theme='funky'] .lb-total {
+  background: linear-gradient(120deg, var(--accent) 0%, var(--rnd-qf) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+[data-theme='funky'] .leaderboard-row.is-me {
+  background: linear-gradient(90deg, rgba(236, 72, 153, 0.08) 0%, transparent 100%);
+}
+
+/* Auth modal — accent border */
+[data-theme='funky'] .auth-card {
+  border-radius: 18px;
+  border-top: 4px solid var(--accent);
+}
+[data-theme='funky'] .auth-card h2 {
+  background: linear-gradient(120deg, var(--ink) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: 22px;
+}
+
+/* Buttons — rounder + slight shadow */
+[data-theme='funky'] .btn-primary {
+  background: linear-gradient(120deg, var(--ink) 0%, #2e2540 100%);
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(24, 18, 38, 0.2);
+}
+[data-theme='funky'] .btn-primary:hover {
+  background: linear-gradient(120deg, var(--accent) 0%, var(--rnd-qf) 100%);
+  transform: translateY(-1px);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   FOOTBALL TOUCHES — funky-only refinements
+   ───────────────────────────────────────────────────────────────── */
+
+/* Scoreboard font for score numbers and points chips */
+[data-theme='funky'] .mc-input,
+[data-theme='funky'] .mc-actual-score,
+[data-theme='funky'] .lb-total {
+  font-family: var(--score-font);
+  font-feature-settings: "tnum" on;
+}
+[data-theme='funky'] .mc-input {
+  font-size: 17px;
+  letter-spacing: 0.02em;
+}
+[data-theme='funky'] .mc-actual-score {
+  font-size: 22px;
+  letter-spacing: 0.02em;
+}
+[data-theme='funky'] .lb-total {
+  font-size: 22px;
+  letter-spacing: 0.01em;
+}
+[data-theme='funky'] .mc-points {
+  font-family: var(--score-font);
+  letter-spacing: 0.04em;
+}
+
+/* Kickoff time gets a tiny ⚽ in funky */
+[data-theme='funky'] .mc-meta-time::before {
+  content: "⚽ ";
+  font-size: 11px;
+  margin-right: 1px;
+  opacity: 0.7;
+}
+
+/* Score dash gets a slightly thicker, more "scoreboard" feel */
+[data-theme='funky'] .mc-dash {
+  font-family: var(--score-font);
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  margin: 0 4px;
+}
+
+/* Page becomes a pitch — give content cards a touch more depth so they
+   sit on the field rather than blend into it. */
+[data-theme='funky'] .mc {
+  box-shadow: var(--shadow-card);
+}
+[data-theme='funky'] .gc {
+  box-shadow: var(--shadow-card);
+}
+[data-theme='funky'] .leaderboard {
+  box-shadow: var(--shadow-card);
+}
+
+/* Trophy banner — gold gradient with scoreboard-font name */
+[data-theme='funky'] .kb-trophy.is-set .kb-trophy-name {
+  font-family: var(--display);
+  /* Already gradient via earlier rule */
+}
+
+/* Score input border in funky — slightly bolder, more scoreboard */
+[data-theme='funky'] .mc-input {
+  border-width: 1.5px;
+  border-color: var(--ink-faint);
+}
+[data-theme='funky'] .mc-input:focus {
+  border-color: var(--ink);
+  background: #fffbe8; /* warm scoreboard amber on focus */
+}
+
+/* Day-strip pills feel slightly more like match tickets */
+[data-theme='funky'] .day-pill {
+  border-color: var(--line);
+}
+[data-theme='funky'] .day-pill .day-pill-num {
+  font-family: var(--score-font);
+  font-size: 22px;
+}
+
+/* Round nav numbers also use the scoreboard font (they're match counts) */
+[data-theme='funky'] .kb-nav-count {
+  font-family: var(--score-font);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   FUNKY MAX — the actually-funky pass
+   ───────────────────────────────────────────────────────────────── */
+
+/* HUGE bold gradient title */
+[data-theme='funky'] .topbar-title {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  background: linear-gradient(120deg, #ec4899 0%, #a855f7 50%, #0ea5e9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-transform: uppercase;
+}
+[data-theme='funky'] .topbar-year {
+  font-family: var(--score-font);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+/* Tabs become bold rounded pills with active gradient */
+[data-theme='funky'] .topbar-tabs .tab {
+  font-family: var(--display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 12px;
+  border-radius: 999px;
+  padding: 6px 14px;
+  border: 2px solid transparent;
+  transition: all .15s ease;
+}
+[data-theme='funky'] .topbar-tabs .tab:hover {
+  border-color: var(--ink);
+  transform: translateY(-1px);
+}
+[data-theme='funky'] .topbar-tabs .tab.active {
+  background: linear-gradient(120deg, #ec4899 0%, #a855f7 100%);
+  color: white;
+  border-color: var(--ink);
+  box-shadow: 2px 2px 0 0 var(--ink);
+}
+
+/* Section titles: oversized, italicized, gradient, slightly tilted */
+[data-theme='funky'] .section-intro h2 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 28px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  background: linear-gradient(120deg, var(--ink) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline-block;
+  transform: rotate(-1deg);
+}
+
+/* Day strip pills become chunky with bold borders */
+[data-theme='funky'] .day-pill {
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 0 var(--ink);
+  transition: all .12s ease;
+}
+[data-theme='funky'] .day-pill:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 0 var(--ink);
+}
+[data-theme='funky'] .day-pill.is-active {
+  background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
+  color: white;
+  border-color: var(--ink);
+}
+[data-theme='funky'] .day-pill.is-active .day-pill-num,
+[data-theme='funky'] .day-pill.is-active .day-pill-dow {
+  color: white;
+}
+
+/* Group cards — colored top stripe via existing data-group var */
+[data-theme='funky'] .gc {
+  position: relative;
+  overflow: hidden;
+}
+[data-theme='funky'] .gc::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 6px;
+  background: var(--gc-color, var(--accent));
+}
+[data-theme='funky'] .gc-title {
+  font-family: var(--display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 18px;
+}
+
+/* Match cards — colored left edge per round, hover lift */
+[data-theme='funky'] .mc {
+  position: relative;
+  overflow: hidden;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+[data-theme='funky'] .mc::before {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: 5px;
+  background: var(--accent);
+}
+[data-theme='funky'] .mc:hover {
+  transform: translate(-2px, -2px);
+  box-shadow:
+    6px 6px 0 0 var(--ink),
+    0 12px 28px rgba(24, 18, 38, 0.20);
+}
+
+/* Score inputs become big bold scoreboard cells */
+[data-theme='funky'] .mc-input {
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  font-size: 22px;
+  font-weight: 800;
+  width: 44px;
+  height: 44px;
+  background: #fef3c7;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.08);
+}
+[data-theme='funky'] .mc-input:focus {
+  background: #fde68a;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.35);
+}
+
+/* Points chip — punchy gradient pill */
+[data-theme='funky'] .mc-points {
+  font-family: var(--score-font);
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 2px solid var(--ink);
+  box-shadow: 1px 1px 0 0 var(--ink);
+}
+[data-theme='funky'] .mc-points.pts-3 {
+  background: linear-gradient(120deg, #fbbf24 0%, #f59e0b 100%);
+  color: var(--ink);
+}
+[data-theme='funky'] .mc-points.pts-1 {
+  background: linear-gradient(120deg, #a7f3d0 0%, #6ee7b7 100%);
+  color: var(--ink);
+}
+[data-theme='funky'] .mc-points.pts-0 {
+  background: var(--surface);
+  color: var(--ink-soft);
+}
+
+/* Leaderboard — top 3 get gradient row backgrounds */
+[data-theme='funky'] .leaderboard-head {
+  background: linear-gradient(120deg, var(--ink) 0%, #2e2540 100%);
+  color: white;
+  font-family: var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+[data-theme='funky'] .leaderboard-row {
+  border-radius: 10px;
+  transition: transform .12s ease;
+}
+[data-theme='funky'] .leaderboard-row:hover {
+  transform: translateX(2px);
+}
+[data-theme='funky'] .leaderboard-row:nth-child(2) {
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.20) 0%, transparent 60%);
+  border-left: 4px solid #fbbf24;
+}
+[data-theme='funky'] .leaderboard-row:nth-child(3) {
+  background: linear-gradient(90deg, rgba(156, 163, 175, 0.18) 0%, transparent 60%);
+  border-left: 4px solid #9ca3af;
+}
+[data-theme='funky'] .leaderboard-row:nth-child(4) {
+  background: linear-gradient(90deg, rgba(180, 83, 9, 0.15) 0%, transparent 60%);
+  border-left: 4px solid #b45309;
+}
+[data-theme='funky'] .lb-rank {
+  font-size: 22px;
+  font-family: var(--score-font);
+  font-weight: 800;
+}
+
+/* Sign-in / primary buttons — chunky neo-brutalist */
+[data-theme='funky'] .btn-primary {
+  font-family: var(--display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: linear-gradient(120deg, #ec4899 0%, #a855f7 100%);
+  color: white;
+  box-shadow: 3px 3px 0 0 var(--ink);
+  transition: all .12s ease;
+}
+[data-theme='funky'] .btn-primary:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 0 var(--ink);
+  background: linear-gradient(120deg, #db2777 0%, #9333ea 100%);
+}
+[data-theme='funky'] .btn-primary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 0 var(--ink);
+}
+
+/* Pending pill — pulses */
+[data-theme='funky'] .pending-pill {
+  background: linear-gradient(120deg, #ec4899 0%, #f59e0b 100%);
+  color: white;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  font-family: var(--display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 2px 2px 0 0 var(--ink);
+  animation: funky-pulse 1.6s ease-in-out infinite;
+}
+@keyframes funky-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.04); }
+}
+
+/* Knockout bracket round-nav — chunky gradient pill rows */
+[data-theme='funky'] .kb-nav-tab {
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  font-family: var(--display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 12px;
+  transition: all .12s ease;
+}
+[data-theme='funky'] .kb-nav-tab:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 0 var(--ink);
+}
+[data-theme='funky'] .kb-nav-tab.active {
+  box-shadow: 2px 2px 0 0 var(--ink);
+}
+
+/* Theme toggle in funky mode is the obvious "go back to minimal" pill */
+[data-theme='funky'] .theme-toggle {
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 0 var(--ink);
+}
+
+/* Body text headers (group letter, kb stage labels) get the display font */
+[data-theme='funky'] h1,
+[data-theme='funky'] h2,
+[data-theme='funky'] h3,
+[data-theme='funky'] h4 {
+  font-family: var(--display);
+  letter-spacing: 0.01em;
+}
+
+/* Auth modal title gets the same gradient treatment */
+[data-theme='funky'] .auth-card h2 {
+  font-family: var(--display);
+  font-size: 28px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   FUNKY READABILITY — headers/text that sit directly on the
+   gradient body need solid white text + shadow, or a backing pill,
+   so they stay legible against pink→purple→blue.
+   ───────────────────────────────────────────────────────────────── */
+
+/* Day header (e.g. "Today" / "Tomorrow" + "Thursday 11 June · 2 matches") */
+[data-theme='funky'] .day-header {
+  background: rgba(255, 255, 255, 0.96);
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 0 var(--ink);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+}
+[data-theme='funky'] .day-relative {
+  color: var(--ink);
+  background: linear-gradient(120deg, #ec4899 0%, #a855f7 50%, #0ea5e9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+}
+[data-theme='funky'] .day-absolute {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Section intros (Groups / Knockouts / Leaderboard / Admin headers) */
+[data-theme='funky'] .section-intro {
+  background: rgba(255, 255, 255, 0.96);
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 0 var(--ink);
+  padding: 16px 20px;
+  margin-bottom: 18px;
+}
+[data-theme='funky'] .section-intro p {
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+/* Anything else that floats on the gradient (empty states, key footer) */
+[data-theme='funky'] .leaderboard-empty,
+[data-theme='funky'] .leaderboard-key {
+  background: rgba(255, 255, 255, 0.96);
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 3px 3px 0 0 var(--ink);
+  color: var(--ink);
+  padding: 12px 16px;
+  font-weight: 500;
+}
+
+/* Topbar greeting + admin pill — readable on the white topbar already,
+   but bump weight so they stand out next to the gradient title */
+[data-theme='funky'] .topbar-hello {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* Footer "Made with ♡ for our 2026 summer" — stays legible on gradient */
+[data-theme='funky'] footer p {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.96);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: 2px 2px 0 0 var(--ink);
+  color: var(--ink);
+  font-weight: 600;
+  padding: 8px 18px;
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Admin approval — pending screen (user) + admin list
+   ───────────────────────────────────────────────────────────────── */
+
+.pending-approval {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 48px 16px;
+}
+.pending-card {
+  max-width: 480px;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 32px;
+  text-align: center;
+  box-shadow: var(--shadow-card);
+}
+.pending-icon {
+  font-family: var(--serif);
+  font-size: 36px;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 12px;
+}
+.pending-card h2 {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 26px;
+  margin: 0 0 12px;
+  color: var(--ink);
+}
+.pending-card p {
+  color: var(--ink-soft);
+  margin: 0 0 12px;
+  line-height: 1.55;
+}
+.pending-meta {
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+.pending-card .btn {
+  margin-top: 16px;
+}
+
+.admin-pending {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 16px 18px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-card);
+}
+.admin-pending-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.admin-pending-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.admin-pending-count {
+  background: var(--accent);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  min-width: 20px;
+  text-align: center;
+}
+.admin-pending-empty {
+  color: var(--ink-faint);
+  font-size: 13px;
+  padding: 8px 0;
+}
+.admin-pending-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.admin-pending-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg);
+}
+.admin-pending-name {
+  flex: 1 1 auto;
+  font-weight: 600;
+  color: var(--ink);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.admin-pending-when {
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+.admin-pending-tag {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--good);
+  font-weight: 700;
+}
+.admin-pending-toggle {
+  margin-top: 12px;
+  font-size: 12px;
+}
+.admin-pending-list-approved {
+  margin-top: 10px;
+  opacity: 0.85;
+}
+.admin-pending-row-approved {
+  background: transparent;
+}
+
+/* Funky overrides — keep neo-brutalist consistency */
+[data-theme='funky'] .pending-card,
+[data-theme='funky'] .admin-pending {
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 0 var(--ink);
+}
+[data-theme='funky'] .admin-pending-row {
+  border: 2px solid var(--ink);
+  background: var(--surface);
+  box-shadow: 2px 2px 0 0 var(--ink);
+}
+[data-theme='funky'] .pending-card h2 {
+  font-family: var(--display);
+  text-transform: uppercase;
+  font-style: normal;
+  background: linear-gradient(120deg, #ec4899 0%, #a855f7 50%, #0ea5e9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }

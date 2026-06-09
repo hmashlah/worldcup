@@ -77,6 +77,7 @@ export function Bracket() {
             <button
               key={d.key}
               className={`kb-nav-tab ${activeRound === d.key ? 'active' : ''}`}
+              data-r={d.key}
               onClick={() => setActiveRound(d.key)}
             >
               <span className="kb-nav-label">{d.label}</span>
@@ -139,8 +140,17 @@ function KoCardWrapper({
 }) {
   const t1 = resolveSlot(data, scores, advancers, match.team1);
   const t2 = resolveSlot(data, scores, advancers, match.team2);
+  // Pick a stable round token for theming (data-round → CSS picks --rnd-*)
+  const roundKey =
+    match.round === 'Round of 32' ? 'r32'
+    : match.round === 'Round of 16' ? 'r16'
+    : match.round === 'Quarter-final' ? 'qf'
+    : match.round === 'Semi-final' ? 'sf'
+    : match.round === 'Final' ? 'final'
+    : match.round === 'Match for third place' ? 'sf'
+    : 'r32';
   return (
-    <div className={`kb-card ${isFinal ? 'kb-card-final' : ''}`}>
+    <div className={`kb-card ${isFinal ? 'kb-card-final' : ''}`} data-round={roundKey}>
       {match.num !== null && <div className="kb-card-num">M{match.num}</div>}
       <MatchCard
         matchId={match.id}

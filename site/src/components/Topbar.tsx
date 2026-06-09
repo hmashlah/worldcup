@@ -6,7 +6,7 @@ import { matchesByDay, defaultDay, countUnsubmitted } from '@/lib/days';
 import { useUI, type TabKey } from '@/lib/ui-store';
 
 const TABS: Array<{ key: TabKey; label: string }> = [
-  { key: 'today',       label: 'Today' },
+  { key: 'today',       label: 'Matches' },
   { key: 'groups',      label: 'Groups' },
   { key: 'bracket',     label: 'Bracket' },
   { key: 'leaderboard', label: 'Leaderboard' },
@@ -14,7 +14,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
 
 export function Topbar() {
   const { user, isAdmin, signOut } = useAuth();
-  const { tab, setTab, setAuthOpen } = useUI();
+  const { tab, setTab, setAuthOpen, theme, toggleTheme } = useUI();
   const dataQ = useTournamentData();
   const predsQ = useMyPredictions();
   const [signingOut, setSigningOut] = useState(false);
@@ -63,7 +63,7 @@ export function Topbar() {
               <button
                 className="pending-pill"
                 onClick={() => setTab('today')}
-                title="Jump to Today"
+                title="Jump to today's matches"
               >
                 {pendingToday} to pick
               </button>
@@ -78,6 +78,24 @@ export function Topbar() {
             Sign in
           </button>
         )}
+        <button
+          className="theme-toggle"
+          onClick={toggleTheme}
+          title={theme === 'minimal' ? 'Switch to funky mode' : 'Switch to minimal mode'}
+          aria-label="Toggle theme"
+        >
+          {theme === 'minimal' ? (
+            // Sparkle icon for "tap to go funky"
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M8 1.5v3M8 11.5v3M1.5 8h3M11.5 8h3M3.4 3.4l2.1 2.1M10.5 10.5l2.1 2.1M3.4 12.6l2.1-2.1M10.5 5.5l2.1-2.1" />
+            </svg>
+          ) : (
+            // Half-moon for "tap to go minimal"
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+              <path d="M10.6 12.5a5.5 5.5 0 0 1-5.1-7.7 5.5 5.5 0 1 0 7.4 7.4 5.5 5.5 0 0 1-2.3.3z" />
+            </svg>
+          )}
+        </button>
       </div>
     </header>
   );
