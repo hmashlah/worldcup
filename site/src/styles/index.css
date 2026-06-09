@@ -1103,6 +1103,30 @@ footer {
   border-color: var(--accent);
   background: var(--surface);
 }
+.mc-actual-clear {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: color .12s, border-color .12s;
+}
+.mc-actual-clear:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.mc-actual-clear:disabled { opacity: .5; cursor: not-allowed; }
+[data-theme='funky'] .mc-actual-clear {
+  border: 2px solid var(--ink);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 1px 1px 0 0 var(--ink);
+}
 .mc-advancer-admin {
   margin-top: 4px;
   padding-top: 0;
@@ -2265,4 +2289,26 @@ footer {
   [data-theme='funky'] .section-intro h2 { font-size: 22px; }
   [data-theme='funky'] .day-relative { font-size: 22px; }
   [data-theme='funky'] .footer p { padding: 6px 14px; font-size: 11px; }
+}
+
+/* Admin diagnostic — small status block at the bottom of the pending
+   users panel so the admin can see profile/prediction/result counts. */
+.admin-diag {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.admin-diag-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.admin-diag-row strong {
+  color: var(--ink);
+  font-weight: 700;
 }

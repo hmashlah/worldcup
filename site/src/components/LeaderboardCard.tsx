@@ -4,13 +4,19 @@ import { useAuth } from '@/contexts/AuthContext';
 const ROSETTES = ['🥇', '🥈', '🥉'];
 
 export function LeaderboardCard() {
-  const { user } = useAuth();
+  const { user, isApproved, isAdmin } = useAuth();
   const { loading, entries } = useLeaderboard();
 
   if (loading) return <div className="leaderboard-empty">loading…</div>;
   if (!entries.length) return (
     <div className="leaderboard-empty">
-      No predictions yet — be the first ♡
+      {user && !isApproved && (
+        <p style={{ marginTop: 0 }}>
+          Your profile isn't approved yet, so you don't appear on the leaderboard.
+          {isAdmin && ' (As admin you can approve yourself in the Admin tab.)'}
+        </p>
+      )}
+      {(!user || isApproved) && <p style={{ marginTop: 0 }}>No predictions yet — be the first ♡</p>}
     </div>
   );
 

@@ -51,3 +51,20 @@ export function useUpsertResult() {
     },
   });
 }
+
+/** Admin: remove an actual result (e.g. typed it wrong, want to clear it). */
+export function useDeleteResult() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (matchId: string) => {
+      const { error } = await supabase
+        .from('wc26_match_results')
+        .delete()
+        .eq('match_id', matchId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['match_results'] });
+    },
+  });
+}

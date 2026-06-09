@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Flag } from '@/components/Flag';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMyPredictions, useUpsertPrediction } from '@/hooks/usePredictions';
-import { useResults, useUpsertResult } from '@/hooks/useResults';
+import { useResults, useUpsertResult, useDeleteResult } from '@/hooks/useResults';
 import { isLocked, parseKickoff } from '@/lib/time';
 import { scorePrediction } from '@/lib/scoring';
 import { useUI } from '@/lib/ui-store';
@@ -50,6 +50,7 @@ export function MatchCard(p: Props) {
   const resultsQ = useResults();
   const upsertPred = useUpsertPrediction();
   const upsertRes = useUpsertResult();
+  const deleteRes = useDeleteResult();
 
   const locked = isLocked(date, time);
   const myPred = myPredsQ.data?.[matchId];
@@ -90,6 +91,12 @@ export function MatchCard(p: Props) {
     if (result && result.team1_score === x && result.team2_score === y && (result.advancer ?? '') === finalAdv) return;
     upsertRes.mutate({ match_id: matchId, team1_score: x, team2_score: y, advancer: finalAdv || null });
   }, [adminActive, actA, actB, actAdv, result, matchId, upsertRes]);
+
+  const clearResult = useCallback(() => {
+    if (!adminActive || !result) return;
+    setActA(''); setActB(''); setActAdv('');
+    deleteRes.mutate(matchId);
+  }, [adminActive, result, matchId, deleteRes]);
 
   const earned = scorePrediction(
     myPred ? { team1: myPred.team1_score, team2: myPred.team2_score } : null,
@@ -184,6 +191,18 @@ export function MatchCard(p: Props) {
               aria-label={`actual ${labelRight}`}
             />
           </div>
+          {result && (
+            <button
+              type="button"
+              className="mc-actual-clear"
+              onClick={clearResult}
+              disabled={deleteRes.isPending}
+              title="Remove this actual result"
+              aria-label="Clear actual result"
+            >
+              clear
+            </button>
+          )}
           {isKO && team1IsResolved && team2IsResolved && (
             <div className="mc-advancer mc-advancer-admin">
               <span className="mc-advancer-label">advanced</span>
