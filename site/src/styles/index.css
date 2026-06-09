@@ -1031,19 +1031,24 @@ footer {
 }
 
 
-/* ── Admin: actual-result row appearing under prediction inputs ── */
+/* ── Admin: actual-result row appearing under prediction inputs ──
+   The label sits above the scores so the score inputs stay centered
+   on the card (matching the prediction inputs above them). */
 .mc-actual-admin {
-  display: grid;
-  grid-template-columns: auto auto;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  justify-content: center;
+  gap: 4px;
   margin-top: 10px;
   padding-top: 8px;
   border-top: 1px dashed var(--line);
 }
 .mc-actual-admin .mc-actual-label {
   color: var(--accent);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 800;
 }
 .mc-input-actual {
   border-color: var(--accent-soft);
@@ -1054,7 +1059,6 @@ footer {
   background: var(--surface);
 }
 .mc-advancer-admin {
-  grid-column: 1 / -1;
   margin-top: 4px;
   padding-top: 0;
   border-top: 0;
