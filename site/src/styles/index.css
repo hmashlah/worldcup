@@ -101,6 +101,38 @@ html {
   font-weight: 800;
 }
 
+/* Admin mode toggle (replaces the static pill when isAdmin) */
+.admin-pill-toggle {
+  cursor: pointer;
+  border: 1px solid var(--ink);
+  font-family: var(--sans);
+  padding: 2px 8px;
+  transition: background .12s, color .12s, transform .08s;
+}
+.admin-pill-toggle:hover { transform: translateY(-0.5px); }
+.admin-pill-toggle.is-on {
+  background: var(--ink);
+  color: var(--surface);
+}
+.admin-pill-toggle.is-off {
+  background: transparent;
+  color: var(--ink-soft);
+  border-color: var(--line);
+}
+.admin-pill-toggle.is-off:hover { color: var(--ink); border-color: var(--ink-soft); }
+
+[data-theme='funky'] .admin-pill-toggle.is-on {
+  background: linear-gradient(120deg, #ec4899 0%, #a855f7 100%);
+  border-color: var(--ink);
+  color: white;
+  box-shadow: 1px 1px 0 0 var(--ink);
+}
+[data-theme='funky'] .admin-pill-toggle.is-off {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: var(--ink);
+  color: var(--ink-soft);
+}
+
 .btn {
   font-family: var(--sans);
   font-weight: 700;

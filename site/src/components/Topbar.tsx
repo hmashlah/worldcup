@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useMyPredictions } from '@/hooks/usePredictions';
@@ -14,7 +14,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
 
 export function Topbar() {
   const { user, isAdmin, signOut } = useAuth();
-  const { tab, setTab, setAuthOpen, theme, toggleTheme } = useUI();
+  const { tab, setTab, setAuthOpen, theme, toggleTheme, adminMode, toggleAdminMode } = useUI();
   const dataQ = useTournamentData();
   const predsQ = useMyPredictions();
   const [signingOut, setSigningOut] = useState(false);
@@ -34,14 +34,32 @@ export function Topbar() {
     return countUnsubmitted(day.matches, predsQ.data ?? {});
   }, [user, dataQ.data, predsQ.data]);
 
-  const tabs = isAdmin ? [...TABS, { key: 'admin' as TabKey, label: 'Admin' }] : TABS;
+  const adminActive = isAdmin && adminMode;
+  // If admin turns admin mode off while sitting on the Admin tab, bounce them.
+  useEffect(() => {
+    if (tab === 'admin' && !adminActive) setTab('today');
+  }, [tab, adminActive, setTab]);
+
+  const tabs = adminActive ? [...TABS, { key: 'admin' as TabKey, label: 'Admin' }] : TABS;
 
   return (
     <header className="topbar">
       <div className="topbar-brand">
         <h1 className="topbar-title">World Cup</h1>
         <span className="topbar-year">2026</span>
-        {isAdmin && <span className="admin-pill">admin</span>}
+        {isAdmin && (
+          <button
+            type="button"
+            className={'admin-pill admin-pill-toggle' + (adminMode ? ' is-on' : ' is-off')}
+            onClick={toggleAdminMode}
+            title={adminMode
+              ? 'Admin mode ON · click to view as a regular user'
+              : 'Admin mode OFF · click to enable admin tools'}
+            aria-pressed={adminMode}
+          >
+            admin{adminMode ? '' : ' off'}
+          </button>
+        )}
       </div>
 
       <nav className="topbar-tabs">
