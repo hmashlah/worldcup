@@ -1,9 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
 export interface ProfileRow {
   user_id: string;
   display_name: string;
+  approved: boolean;
+  created_at?: string;
 }
 
 /** All profiles, indexed by user_id. Used for leaderboard names. */
@@ -11,11 +13,49 @@ export function useProfiles() {
   return useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('wc26_profiles').select('*');
+      const { data, error } = await supabase
+        .from('wc26_profiles')
+        .select('user_id, display_name, approved, created_at');
       if (error) throw error;
       const map: Record<string, ProfileRow> = {};
       for (const p of (data ?? []) as ProfileRow[]) map[p.user_id] = p;
       return map;
+    },
+  });
+}
+
+/** Admin: flip the approved flag on a profile. */
+export function useSetApproval() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId, approved }: { userId: string; approved: boolean }) => {
+      const { error } = await supabase
+        .from('wc26_profiles')
+        .update({ approved })
+        .eq('user_id', userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profiles'] });
+      qc.invalidateQueries({ queryKey: ['my-profile'] });
+    },
+  });
+}
+
+/** Current user's own profile — used to gate the app on `approved`. */
+export function useMyProfile(userId: string | null) {
+  return useQuery({
+    queryKey: ['my-profile', userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data, error } = await supabase
+        .from('wc26_profiles')
+        .select('user_id, display_name, approved, created_at')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as ProfileRow | null) ?? null;
     },
   });
 }

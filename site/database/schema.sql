@@ -9,9 +9,14 @@
 CREATE TABLE IF NOT EXISTS wc26_profiles (
   user_id      UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   display_name TEXT NOT NULL,
+  approved     BOOLEAN NOT NULL DEFAULT FALSE,
   created_at   TIMESTAMPTZ DEFAULT NOW(),
   updated_at   TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- If the table already existed without `approved`, add the column.
+ALTER TABLE wc26_profiles
+  ADD COLUMN IF NOT EXISTS approved BOOLEAN NOT NULL DEFAULT FALSE;
 
 ALTER TABLE wc26_profiles ENABLE ROW LEVEL SECURITY;
 
@@ -19,11 +24,30 @@ DROP POLICY IF EXISTS "wc26 anyone authenticated reads profiles" ON wc26_profile
 CREATE POLICY "wc26 anyone authenticated reads profiles"
   ON wc26_profiles FOR SELECT TO authenticated USING (true);
 
+-- Owners can read/insert their row + update display_name, but NOT the
+-- `approved` flag. The trigger seeds approved=false (or true for admin).
+-- Only the admin policy below can flip `approved`.
 DROP POLICY IF EXISTS "wc26 user manages own profile" ON wc26_profiles;
-CREATE POLICY "wc26 user manages own profile"
-  ON wc26_profiles FOR ALL TO authenticated
-  USING (auth.uid() = user_id)
+DROP POLICY IF EXISTS "wc26 user inserts own profile" ON wc26_profiles;
+DROP POLICY IF EXISTS "wc26 user updates own non-approval fields" ON wc26_profiles;
+DROP POLICY IF EXISTS "wc26 user deletes own profile" ON wc26_profiles;
+
+CREATE POLICY "wc26 user inserts own profile"
+  ON wc26_profiles FOR INSERT TO authenticated
   WITH CHECK (auth.uid() = user_id);
+
+-- User may update their own row but not the approved flag.
+CREATE POLICY "wc26 user updates own non-approval fields"
+  ON wc26_profiles FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (
+    auth.uid() = user_id
+    AND approved = (SELECT p.approved FROM wc26_profiles p WHERE p.user_id = auth.uid())
+  );
+
+CREATE POLICY "wc26 user deletes own profile"
+  ON wc26_profiles FOR DELETE TO authenticated
+  USING (auth.uid() = user_id);
 
 
 -- ── 2) wc26_is_admin() ────────────────────────────────────────────────
@@ -31,6 +55,22 @@ CREATE POLICY "wc26 user manages own profile"
 CREATE OR REPLACE FUNCTION wc26_is_admin()
 RETURNS BOOLEAN AS $$
   SELECT lower(coalesce(auth.jwt() ->> 'email', '')) = lower('hmashlah@gmail.com');
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- Admin can update any profile (used to approve / revoke users).
+DROP POLICY IF EXISTS "wc26 admin updates any profile" ON wc26_profiles;
+CREATE POLICY "wc26 admin updates any profile"
+  ON wc26_profiles FOR UPDATE TO authenticated
+  USING (wc26_is_admin())
+  WITH CHECK (wc26_is_admin());
+
+-- Helper: is the current authenticated user approved?
+CREATE OR REPLACE FUNCTION wc26_is_approved()
+RETURNS BOOLEAN AS $$
+  SELECT COALESCE(
+    (SELECT approved FROM wc26_profiles WHERE user_id = auth.uid()),
+    FALSE
+  );
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 
@@ -78,11 +118,24 @@ DROP POLICY IF EXISTS "wc26 everyone authenticated reads predictions" ON wc26_pr
 CREATE POLICY "wc26 everyone authenticated reads predictions"
   ON wc26_predictions FOR SELECT TO authenticated USING (true);
 
+-- Only approved users (or admin) may write their own predictions.
 DROP POLICY IF EXISTS "wc26 user manages own predictions" ON wc26_predictions;
-CREATE POLICY "wc26 user manages own predictions"
-  ON wc26_predictions FOR ALL TO authenticated
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "wc26 approved user inserts own predictions" ON wc26_predictions;
+DROP POLICY IF EXISTS "wc26 approved user updates own predictions" ON wc26_predictions;
+DROP POLICY IF EXISTS "wc26 approved user deletes own predictions" ON wc26_predictions;
+
+CREATE POLICY "wc26 approved user inserts own predictions"
+  ON wc26_predictions FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id AND (wc26_is_approved() OR wc26_is_admin()));
+
+CREATE POLICY "wc26 approved user updates own predictions"
+  ON wc26_predictions FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id AND (wc26_is_approved() OR wc26_is_admin()))
+  WITH CHECK (auth.uid() = user_id AND (wc26_is_approved() OR wc26_is_admin()));
+
+CREATE POLICY "wc26 approved user deletes own predictions"
+  ON wc26_predictions FOR DELETE TO authenticated
+  USING (auth.uid() = user_id AND (wc26_is_approved() OR wc26_is_admin()));
 
 
 -- ── 5) shared wc26_touch_updated_at trigger ───────────────────────────
@@ -126,10 +179,12 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 BEGIN
-  INSERT INTO public.wc26_profiles (user_id, display_name)
+  INSERT INTO public.wc26_profiles (user_id, display_name, approved)
   VALUES (
     NEW.id,
-    COALESCE(NEW.raw_user_meta_data ->> 'display_name', split_part(NEW.email, '@', 1))
+    COALESCE(NEW.raw_user_meta_data ->> 'display_name', split_part(NEW.email, '@', 1)),
+    -- Admin email is auto-approved; everyone else must be approved by admin.
+    lower(coalesce(NEW.email, '')) = lower('hmashlah@gmail.com')
   )
   ON CONFLICT (user_id) DO NOTHING;
   RETURN NEW;
@@ -148,3 +203,14 @@ DROP TRIGGER IF EXISTS on_auth_user_created_wc26 ON auth.users;
 CREATE TRIGGER on_auth_user_created_wc26
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION wc26_handle_new_user();
+
+
+-- ── 7) Backfill: ensure admin email is always approved ────────────────
+-- Idempotent. Safe to re-run. Approves any profile whose user_id matches
+-- the configured admin email in auth.users.
+UPDATE wc26_profiles p
+   SET approved = TRUE
+  FROM auth.users u
+ WHERE p.user_id = u.id
+   AND lower(u.email) = lower('hmashlah@gmail.com')
+   AND p.approved = FALSE;
