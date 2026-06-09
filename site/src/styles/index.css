@@ -860,36 +860,29 @@ footer {
 /* ── Mobile ──────────────────────────────────────────────────────── */
 
 @media (max-width: 720px) {
+  /* Switch to grid on mobile so brand/controls/tabs land on their own
+     rows deterministically. flex-wrap + order is unreliable across
+     browsers (Safari especially) when child widths are dynamic. */
   .topbar {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "brand controls"
+      "tabs  tabs";
     padding: 10px 12px;
-    gap: 10px;
-    row-gap: 8px;
+    gap: 8px 10px;
   }
-  /* Stack the topbar in 3 clean rows on mobile:
-     1) brand (title + year + admin pill)
-     2) controls (greeting · sign out · theme toggle)
-     3) tabs (scrollable horizontal strip) */
-  .topbar-brand {
-    order: 1;
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-  .topbar-controls {
-    order: 2;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 6px;
-  }
-  .topbar-title { font-size: 18px; }
-  .topbar-year  { font-size: 11px; }
+  .topbar-brand    { grid-area: brand; min-width: 0; }
+  .topbar-controls { grid-area: controls; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
   .topbar-tabs {
-    order: 3;
+    grid-area: tabs;
     width: 100%;
     justify-content: flex-start;
     overflow-x: auto;
     gap: 2px;
     padding-bottom: 2px;
     scrollbar-width: none;
+    flex: none; /* override desktop's flex: 1 */
   }
   .topbar-tabs::-webkit-scrollbar { display: none; }
   .topbar-tabs .tab {
@@ -897,6 +890,8 @@ footer {
     padding: 7px 10px;
     font-size: 12px;
   }
+  .topbar-title { font-size: 18px; }
+  .topbar-year  { font-size: 11px; }
   .topbar-hello {
     max-width: 90px;
     overflow: hidden;
