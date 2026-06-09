@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type TabKey = 'groups' | 'bracket' | 'champion' | 'leaderboard' | 'admin';
+export type TabKey = 'today' | 'groups' | 'bracket' | 'leaderboard' | 'admin';
 
 interface UIState {
   tab: TabKey;
@@ -10,7 +10,7 @@ interface UIState {
 }
 
 export const useUI = create<UIState>(set => ({
-  tab: 'groups',
+  tab: 'today',
   setTab: t => set({ tab: t }),
   authOpen: false,
   setAuthOpen: open => set({ authOpen: open }),

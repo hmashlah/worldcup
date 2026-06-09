@@ -115,18 +115,34 @@ CREATE TRIGGER wc26_match_results_touch
 -- Note: this fires on EVERY auth.users insert, regardless of which app
 -- the user signed up through. Display name is stored only in wc26_profiles
 -- so it can't clash with profile tables for your other projects.
+--
+-- The function MUST NOT block signup if it fails — otherwise Supabase
+-- reports a generic "database error saving new user" and the user is lost.
+-- We catch any exception, log a warning, and let auth.users insert proceed.
 CREATE OR REPLACE FUNCTION wc26_handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
 BEGIN
-  INSERT INTO wc26_profiles (user_id, display_name)
+  INSERT INTO public.wc26_profiles (user_id, display_name)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data ->> 'display_name', split_part(NEW.email, '@', 1))
   )
   ON CONFLICT (user_id) DO NOTHING;
   RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'wc26_handle_new_user failed for user %: %', NEW.id, SQLERRM;
+  RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
+
+-- Ensure the function (running as its owner) can write. Even SECURITY DEFINER
+-- functions can be denied by RLS if the owner lacks privileges.
+GRANT INSERT, SELECT ON public.wc26_profiles TO postgres, service_role;
+ALTER FUNCTION wc26_handle_new_user() OWNER TO postgres;
 
 DROP TRIGGER IF EXISTS on_auth_user_created_wc26 ON auth.users;
 CREATE TRIGGER on_auth_user_created_wc26
