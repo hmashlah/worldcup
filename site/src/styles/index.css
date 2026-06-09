@@ -865,6 +865,21 @@ footer {
     gap: 10px;
     row-gap: 8px;
   }
+  /* Stack the topbar in 3 clean rows on mobile:
+     1) brand (title + year + admin pill)
+     2) controls (greeting · sign out · theme toggle)
+     3) tabs (scrollable horizontal strip) */
+  .topbar-brand {
+    order: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .topbar-controls {
+    order: 2;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
   .topbar-title { font-size: 18px; }
   .topbar-year  { font-size: 11px; }
   .topbar-tabs {
@@ -882,7 +897,6 @@ footer {
     padding: 7px 10px;
     font-size: 12px;
   }
-  .topbar-controls { gap: 6px; }
   .topbar-hello {
     max-width: 90px;
     overflow: hidden;
