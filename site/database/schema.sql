@@ -214,3 +214,16 @@ UPDATE wc26_profiles p
  WHERE p.user_id = u.id
    AND lower(u.email) = lower('hmashlah@gmail.com')
    AND p.approved = FALSE;
+
+
+-- ── 8) Backfill: profile rows for users who signed up before the trigger
+-- existed (or where the trigger silently failed). The admin email is
+-- inserted as approved=TRUE; everyone else as approved=FALSE so you can
+-- decide in the Admin tab whether they should be in the league.
+-- Idempotent. Safe to re-run.
+INSERT INTO wc26_profiles (user_id, display_name, approved)
+SELECT u.id,
+       COALESCE(u.raw_user_meta_data ->> 'display_name', split_part(u.email, '@', 1)),
+       lower(u.email) = lower('hmashlah@gmail.com')
+  FROM auth.users u
+ WHERE NOT EXISTS (SELECT 1 FROM wc26_profiles p WHERE p.user_id = u.id);

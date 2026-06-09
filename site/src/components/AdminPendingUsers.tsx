@@ -1,12 +1,18 @@
 import { useMemo, useState } from 'react';
 import { useProfiles, useSetApproval } from '@/hooks/useProfiles';
+import { useAllPredictions } from '@/hooks/usePredictions';
+import { useResults } from '@/hooks/useResults';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function AdminPendingUsers() {
+  const { user } = useAuth();
   const profilesQ = useProfiles();
+  const predsQ = useAllPredictions();
+  const resultsQ = useResults();
   const setApproval = useSetApproval();
   const [showAll, setShowAll] = useState(false);
 
-  const { pending, approved } = useMemo(() => {
+  const { pending, approved, myProfile } = useMemo(() => {
     const all = Object.values(profilesQ.data ?? {});
     const sorted = [...all].sort((a, b) => {
       // Most recently created first
@@ -17,8 +23,9 @@ export function AdminPendingUsers() {
     return {
       pending: sorted.filter(p => !p.approved),
       approved: sorted.filter(p => p.approved),
+      myProfile: user ? profilesQ.data?.[user.id] : undefined,
     };
-  }, [profilesQ.data]);
+  }, [profilesQ.data, user]);
 
   if (profilesQ.isLoading) {
     return <div className="admin-pending-empty">loading users…</div>;
@@ -85,6 +92,30 @@ export function AdminPendingUsers() {
           ))}
         </div>
       )}
+
+      {/* Diagnostic snapshot — helps debug missing-from-leaderboard cases. */}
+      <div className="admin-diag">
+        <div className="admin-diag-row">
+          <span>Your profile</span>
+          <strong>
+            {!myProfile
+              ? '⚠ MISSING — not in wc26_profiles'
+              : myProfile.approved ? '✓ approved' : '⚠ NOT approved'}
+          </strong>
+        </div>
+        <div className="admin-diag-row">
+          <span>Profiles · approved / total</span>
+          <strong>{approved.length} / {(approved.length + pending.length)}</strong>
+        </div>
+        <div className="admin-diag-row">
+          <span>Predictions stored</span>
+          <strong>{predsQ.data?.length ?? '—'}</strong>
+        </div>
+        <div className="admin-diag-row">
+          <span>Actual results stored</span>
+          <strong>{Object.keys(resultsQ.data ?? {}).length}</strong>
+        </div>
+      </div>
     </div>
   );
 }
