@@ -892,6 +892,7 @@ footer {
     width: 100%;
     justify-content: flex-start;
     overflow-x: auto;
+    flex-wrap: nowrap;
     gap: 2px;
     padding-bottom: 2px;
     scrollbar-width: none;
@@ -2308,6 +2309,19 @@ footer {
   [data-theme='funky'] .section-intro h2 { font-size: 22px; }
   [data-theme='funky'] .day-relative { font-size: 22px; }
   [data-theme='funky'] .footer p { padding: 6px 14px; font-size: 11px; }
+
+  /* Funky tabs on mobile: drop letter-spacing and shrink padding so
+     all four (Matches / Groups / Bracket / Leaderboard) sit on one
+     line without needing horizontal scroll. */
+  [data-theme='funky'] .topbar-tabs .tab {
+    padding: 5px 8px;
+    font-size: 11px;
+    letter-spacing: 0;
+    border-width: 1.5px;
+  }
+  [data-theme='funky'] .topbar-tabs .tab.active {
+    box-shadow: 1.5px 1.5px 0 0 var(--ink);
+  }
 }
 
 /* Admin diagnostic — small status block at the bottom of the pending
