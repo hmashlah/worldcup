@@ -3,7 +3,6 @@ import { Flag } from '@/components/Flag';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMyPredictions, useUpsertPrediction } from '@/hooks/usePredictions';
 import { useResults, useUpsertResult } from '@/hooks/useResults';
-import { useUI } from '@/lib/ui-store';
 import { isLocked, fmtShortDate, parseKickoff } from '@/lib/time';
 import { scorePrediction } from '@/lib/scoring';
 
@@ -36,7 +35,6 @@ export function MatchRow(props: Props) {
     date, time, ground, isKO = false, variant = 'group', showMeta = true,
   } = props;
   const { user, isAdmin } = useAuth();
-  const { setAuthOpen } = useUI();
   const myPredsQ = useMyPredictions();
   const resultsQ = useResults();
   const upsertPred = useUpsertPrediction();
@@ -118,29 +116,23 @@ export function MatchRow(props: Props) {
         {/* Your prediction */}
         <div className={`mr-cell mr-pred ${!user ? 'mr-disabled' : ''}`}>
           <div className="mr-cell-label">your pick</div>
-          {user ? (
-            <div className="mr-score-input">
-              <input
-                type="number" min={0} max={20} inputMode="numeric"
-                value={predA} disabled={locked}
-                onChange={e => setPredA(e.target.value)}
-                onBlur={savePrediction}
-                aria-label={`your prediction ${labelLeft}`}
-              />
-              <span className="mr-dash">–</span>
-              <input
-                type="number" min={0} max={20} inputMode="numeric"
-                value={predB} disabled={locked}
-                onChange={e => setPredB(e.target.value)}
-                onBlur={savePrediction}
-                aria-label={`your prediction ${labelRight}`}
-              />
-            </div>
-          ) : (
-            <button className="mr-signin-prompt" onClick={() => setAuthOpen(true)}>
-              Sign in
-            </button>
-          )}
+          <div className="mr-score-input">
+            <input
+              type="number" min={0} max={20} inputMode="numeric"
+              value={predA} disabled={!user || locked}
+              onChange={e => setPredA(e.target.value)}
+              onBlur={savePrediction}
+              aria-label={`your prediction ${labelLeft}`}
+            />
+            <span className="mr-dash">–</span>
+            <input
+              type="number" min={0} max={20} inputMode="numeric"
+              value={predB} disabled={!user || locked}
+              onChange={e => setPredB(e.target.value)}
+              onBlur={savePrediction}
+              aria-label={`your prediction ${labelRight}`}
+            />
+          </div>
           {locked && user && !myPred && (
             <div className="mr-locked-note">locked — no pick</div>
           )}

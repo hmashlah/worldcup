@@ -11,7 +11,7 @@ export function useProfiles() {
   return useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('profiles').select('*');
+      const { data, error } = await supabase.from('wc26_profiles').select('*');
       if (error) throw error;
       const map: Record<string, ProfileRow> = {};
       for (const p of (data ?? []) as ProfileRow[]) map[p.user_id] = p;
