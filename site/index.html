@@ -1,82 +1,17 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Our World Cup 2026 ♡</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
-  <link rel="stylesheet" href="./style.css" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%99%A1%3C/text%3E%3C/svg%3E" />
-</head>
-<body>
-  <header class="hero">
-    <div class="hero-inner">
-      <div class="kicker">our cozy bracket · USA · Canada · Mexico</div>
-      <h1>World Cup <span class="year">2026</span></h1>
-      <p class="subtitle">A little wallchart for us to fill in together <span class="heart">♡</span></p>
-      <div class="hero-controls">
-        <button id="resetBtn" class="ghost-btn" title="Clear all scores">Reset all scores</button>
-        <span id="savedHint" class="saved-hint">Saved on this device</span>
-      </div>
-    </div>
-    <div class="hero-petals" aria-hidden="true"></div>
-  </header>
-
-  <nav class="tabs">
-    <button class="tab active" data-tab="groups">Group Stage</button>
-    <button class="tab" data-tab="bracket">Knockouts</button>
-    <button class="tab" data-tab="winner">Champion</button>
-  </nav>
-
-  <main>
-    <section id="tab-groups" class="tab-panel active">
-      <div class="section-intro">
-        <h2>Group Stage</h2>
-        <p>Enter the score after each match. Standings update automatically. Top 2 of each group + the 8 best 3rd-placed teams advance.</p>
-      </div>
-      <div id="groupsGrid" class="groups-grid"></div>
-    </section>
-
-    <section id="tab-bracket" class="tab-panel">
-      <div class="section-intro">
-        <h2>Knockout Stage</h2>
-        <p>Once a match has both teams (winners feed in from the previous round), enter the score. Penalty shootouts? Just put the higher score for the winner.</p>
-      </div>
-      <div id="bracketWrap" class="bracket-wrap"></div>
-    </section>
-
-    <section id="tab-winner" class="tab-panel">
-      <div class="champion-card">
-        <div class="confetti" aria-hidden="true"></div>
-        <div class="trophy">🏆</div>
-        <div class="champion-label">Our 2026 Champion</div>
-        <div id="championName" class="champion-name">—</div>
-        <div class="champion-sub" id="championSub">Fill in the final to crown a winner</div>
-        <div class="podium">
-          <div class="podium-step second">
-            <div class="podium-label">Runner-up</div>
-            <div id="runnerUp" class="podium-name">—</div>
-          </div>
-          <div class="podium-step first">
-            <div class="podium-label">Champion</div>
-            <div id="podiumChamp" class="podium-name">—</div>
-          </div>
-          <div class="podium-step third">
-            <div class="podium-label">Third place</div>
-            <div id="thirdPlace" class="podium-name">—</div>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer>
-    <p>Made with <span class="heart">♡</span> for our 2026 summer · scores live in your browser</p>
-  </footer>
-
-  <script src="./app.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Our World Cup 2026 ♡</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%99%A1%3C/text%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
