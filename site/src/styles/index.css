@@ -106,18 +106,41 @@ html {
   cursor: pointer;
   border: 1px solid var(--ink);
   font-family: var(--sans);
-  padding: 2px 8px;
+  padding: 2px 8px 2px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
   transition: background .12s, color .12s, transform .08s;
 }
 .admin-pill-toggle:hover { transform: translateY(-0.5px); }
+.admin-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+  transition: background .12s, opacity .12s;
+}
 .admin-pill-toggle.is-on {
   background: var(--ink);
   color: var(--surface);
+}
+.admin-pill-toggle.is-on .admin-pill-dot {
+  background: #4ade80; /* green = live */
+  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.25);
 }
 .admin-pill-toggle.is-off {
   background: transparent;
   color: var(--ink-soft);
   border-color: var(--line);
+}
+.admin-pill-toggle.is-off .admin-pill-dot {
+  background: transparent;
+  border: 1px solid currentColor;
+  width: 6px;
+  height: 6px;
+  box-sizing: border-box;
 }
 .admin-pill-toggle.is-off:hover { color: var(--ink); border-color: var(--ink-soft); }
 

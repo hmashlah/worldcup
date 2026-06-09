@@ -53,11 +53,13 @@ export function Topbar() {
             className={'admin-pill admin-pill-toggle' + (adminMode ? ' is-on' : ' is-off')}
             onClick={toggleAdminMode}
             title={adminMode
-              ? 'Admin mode ON · click to view as a regular user'
-              : 'Admin mode OFF · click to enable admin tools'}
+              ? 'Admin mode ON · tap to view as a regular user'
+              : 'Admin mode OFF · tap to enable admin tools'}
             aria-pressed={adminMode}
+            aria-label={adminMode ? 'Admin mode on' : 'Admin mode off'}
           >
-            admin{adminMode ? '' : ' off'}
+            <span className="admin-pill-dot" aria-hidden />
+            admin
           </button>
         )}
       </div>
