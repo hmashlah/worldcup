@@ -3,6 +3,7 @@ import { Flag } from '@/components/Flag';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMyPredictions, useUpsertPrediction } from '@/hooks/usePredictions';
 import { useResults, useUpsertResult, useDeleteResult } from '@/hooks/useResults';
+import { useNow } from '@/hooks/useNow';
 import { isLocked, parseKickoff, fmtShortDate } from '@/lib/time';
 import { scorePrediction } from '@/lib/scoring';
 import { useUI } from '@/lib/ui-store';
@@ -55,7 +56,10 @@ export function MatchCard(p: Props) {
   const upsertRes = useUpsertResult();
   const deleteRes = useDeleteResult();
 
-  const locked = isLocked(date, time);
+  // Re-render every 30s so a card open at 12:59 visibly locks at kickoff
+  // without needing user interaction.
+  const now = useNow(30_000);
+  const locked = isLocked(date, time, now);
   const myPred = myPredsQ.data?.[matchId];
   const result = resultsQ.data?.[matchId];
 
@@ -78,13 +82,17 @@ export function MatchCard(p: Props) {
   }, [result?.team1_score, result?.team2_score, result?.advancer]);
 
   const savePred = useCallback((overrides?: { advancer?: string }) => {
-    if (!user || locked) return;
+    if (!user) return;
+    // Re-check the lock against the live clock — `locked` from render could
+    // be up to ~30s stale, and a determined user could trigger save (blur,
+    // Enter) within that window.
+    if (isLocked(date, time)) return;
     const x = parseInt(a, 10), y = parseInt(b, 10);
     if (Number.isNaN(x) || Number.isNaN(y)) return;
     const finalAdv = overrides?.advancer ?? adv;
     if (myPred && myPred.team1_score === x && myPred.team2_score === y && (myPred.advancer ?? '') === finalAdv) return;
     upsertPred.mutate({ match_id: matchId, team1_score: x, team2_score: y, advancer: finalAdv || null });
-  }, [user, locked, a, b, adv, myPred, matchId, upsertPred]);
+  }, [user, date, time, a, b, adv, myPred, matchId, upsertPred]);
 
   const saveResult = useCallback((overrides?: { advancer?: string }) => {
     if (!adminActive) return;
