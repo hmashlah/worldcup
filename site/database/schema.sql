@@ -227,3 +227,68 @@ SELECT u.id,
        lower(u.email) = lower('hmashlah@gmail.com')
   FROM auth.users u
  WHERE NOT EXISTS (SELECT 1 FROM wc26_profiles p WHERE p.user_id = u.id);
+
+
+-- ── 9) Optional: notify admin via webhook on new signup ───────────────
+-- Fires after a new wc26_profiles row is inserted, posts to a Cloudflare
+-- Pages Function which relays to Telegram. Requires the pg_net extension
+-- (built into Supabase) and three GUCs set on the database:
+--
+--   ALTER DATABASE postgres SET app.wc26_webhook_url       = 'https://worldcup-1jo.pages.dev/notify-signup';
+--   ALTER DATABASE postgres SET app.wc26_webhook_secret    = '<a long random string>';
+--
+-- The same secret must be set as WC26_WEBHOOK_SECRET in the Cloudflare
+-- Pages env vars. Set TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID there too.
+--
+-- If any GUC is unset, the trigger silently no-ops (safe by default).
+
+CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;
+
+CREATE OR REPLACE FUNCTION wc26_notify_signup()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions, pg_temp
+AS $$
+DECLARE
+  hook_url TEXT;
+  hook_sec TEXT;
+  user_email TEXT;
+BEGIN
+  hook_url := current_setting('app.wc26_webhook_url', true);
+  hook_sec := current_setting('app.wc26_webhook_secret', true);
+
+  -- No URL configured → do nothing (safe default).
+  IF hook_url IS NULL OR hook_url = '' THEN
+    RETURN NEW;
+  END IF;
+
+  -- Look up the email from auth.users for the message body.
+  SELECT email INTO user_email FROM auth.users WHERE id = NEW.user_id;
+
+  -- Fire-and-forget; pg_net is async so signup is never blocked by this.
+  PERFORM net.http_post(
+    url := hook_url,
+    headers := jsonb_build_object(
+      'content-type', 'application/json',
+      'x-wc26-secret', COALESCE(hook_sec, '')
+    ),
+    body := jsonb_build_object(
+      'user_id', NEW.user_id,
+      'display_name', NEW.display_name,
+      'email', user_email,
+      'created_at', NEW.created_at
+    )
+  );
+
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'wc26_notify_signup failed for user %: %', NEW.user_id, SQLERRM;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS wc26_profiles_notify_signup ON wc26_profiles;
+CREATE TRIGGER wc26_profiles_notify_signup
+  AFTER INSERT ON wc26_profiles
+  FOR EACH ROW EXECUTE FUNCTION wc26_notify_signup();
