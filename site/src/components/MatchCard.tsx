@@ -3,7 +3,7 @@ import { Flag } from '@/components/Flag';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMyPredictions, useUpsertPrediction } from '@/hooks/usePredictions';
 import { useResults, useUpsertResult, useDeleteResult } from '@/hooks/useResults';
-import { isLocked, parseKickoff } from '@/lib/time';
+import { isLocked, parseKickoff, fmtShortDate } from '@/lib/time';
 import { scorePrediction } from '@/lib/scoring';
 import { useUI } from '@/lib/ui-store';
 
@@ -21,6 +21,9 @@ interface Props {
   isKO?: boolean;
   /** Show the round name (e.g. "Round of 16") in meta. */
   roundLabel?: string;
+  /** Show the calendar date alongside the kickoff time in meta. Off by default
+   *  because callers like DayView already group matches under a date header. */
+  showDate?: boolean;
 }
 
 /**
@@ -39,7 +42,7 @@ export function MatchCard(p: Props) {
   const {
     matchId, team1, team2, team1IsResolved, team2IsResolved,
     team1Placeholder, team2Placeholder, date, time, ground,
-    isKO = false, roundLabel,
+    isKO = false, roundLabel, showDate = false,
   } = p;
   const { user, isAdmin } = useAuth();
   const adminMode = useUI(s => s.adminMode);
@@ -233,7 +236,7 @@ export function MatchCard(p: Props) {
 
       <div className="mc-meta">
         <span className="mc-meta-time">
-          {kickoffStr} {locked && <span className="mc-lock">· 🔒</span>}
+          {showDate && <>{fmtShortDate(date)} · </>}{kickoffStr} {locked && <span className="mc-lock">· 🔒</span>}
         </span>
         {roundLabel && <span className="mc-meta-round">{roundLabel}</span>}
         <span className="mc-meta-ground">{ground}</span>

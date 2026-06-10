@@ -165,6 +165,7 @@ function KoCardWrapper({
         ground={match.ground}
         isKO={isKnockoutRound(match.round)}
         roundLabel={match.round}
+        showDate
       />
     </div>
   );

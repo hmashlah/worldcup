@@ -74,6 +74,7 @@ function GroupCardCompact({ group, isThirdQualified }: CardProps) {
               date={m.date}
               time={m.time}
               ground={m.ground}
+              showDate
             />
           ))}
         </div>
