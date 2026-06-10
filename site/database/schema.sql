@@ -232,15 +232,15 @@ SELECT u.id,
 -- ── 9) Optional: notify admin via webhook on new signup ───────────────
 -- Fires after a new wc26_profiles row is inserted, posts to a Cloudflare
 -- Pages Function which relays to Telegram. Requires the pg_net extension
--- (built into Supabase) and three GUCs set on the database:
+-- (built into Supabase).
 --
---   ALTER DATABASE postgres SET app.wc26_webhook_url       = 'https://worldcup-1jo.pages.dev/notify-signup';
---   ALTER DATABASE postgres SET app.wc26_webhook_secret    = '<a long random string>';
+-- The webhook URL and shared secret are baked into the function below
+-- because Supabase's SQL Editor doesn't have permission to ALTER DATABASE
+-- SET app.* GUCs. The same secret must be set as WC26_WEBHOOK_SECRET in
+-- the Cloudflare Pages env vars (along with TELEGRAM_BOT_TOKEN and
+-- TELEGRAM_CHAT_ID).
 --
--- The same secret must be set as WC26_WEBHOOK_SECRET in the Cloudflare
--- Pages env vars. Set TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID there too.
---
--- If any GUC is unset, the trigger silently no-ops (safe by default).
+-- If you fork this code, change the constants below to your own values.
 
 CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;
 
@@ -251,13 +251,10 @@ SECURITY DEFINER
 SET search_path = public, extensions, pg_temp
 AS $$
 DECLARE
-  hook_url TEXT;
-  hook_sec TEXT;
+  hook_url TEXT := 'https://worldcup-1jo.pages.dev/notify-signup';
+  hook_sec TEXT := 'GORJT6jPnndp2SKYIjKwQL/dC835J4fdVoCTUvkjjoo';
   user_email TEXT;
 BEGIN
-  hook_url := current_setting('app.wc26_webhook_url', true);
-  hook_sec := current_setting('app.wc26_webhook_secret', true);
-
   -- No URL configured → do nothing (safe default).
   IF hook_url IS NULL OR hook_url = '' THEN
     RETURN NEW;
@@ -271,7 +268,7 @@ BEGIN
     url := hook_url,
     headers := jsonb_build_object(
       'content-type', 'application/json',
-      'x-wc26-secret', COALESCE(hook_sec, '')
+      'x-wc26-secret', hook_sec
     ),
     body := jsonb_build_object(
       'user_id', NEW.user_id,
