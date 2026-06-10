@@ -1062,7 +1062,7 @@ footer {
 
   /* Admin pending list */
   .admin-pending { padding: 14px; }
-  .admin-pending-row { padding: 8px 10px; gap: 8px; }
+  .admin-pending-row { padding: 8px 10px; gap: 6px; flex-wrap: wrap; }
   .admin-pending-name { font-size: 13px; }
   .admin-pending-when { font-size: 11px; }
   .admin-pending-approve { padding: 6px 10px; font-size: 12px; }
@@ -2247,6 +2247,15 @@ footer {
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   background: var(--bg);
+}
+.admin-pending-decline {
+  font-size: 12px;
+  padding: 5px 10px;
+  color: var(--ink-soft);
+}
+.admin-pending-decline:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 .admin-pending-name {
   flex: 1 1 auto;
