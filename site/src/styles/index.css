@@ -727,7 +727,7 @@ footer {
 }
 .leaderboard-head, .leaderboard-row {
   display: grid;
-  grid-template-columns: 36px 1fr 56px 76px 56px 56px 64px;
+  grid-template-columns: 36px 1fr 56px 56px 76px 56px 64px;
   align-items: center;
   gap: 12px;
   padding: 10px 8px;
@@ -1054,10 +1054,10 @@ footer {
   .leaderboard-row > :nth-child(4) { grid-column: 3; }
   .leaderboard-row > :nth-child(5) { grid-column: 4; }
   .leaderboard-row > :nth-child(6) { grid-column: 5; }
-  .leaderboard-row > :nth-child(3)::before { content: "exact ";   color: var(--ink-faint); font-weight: 700; }
-  .leaderboard-row > :nth-child(4)::before { content: "· outcome "; color: var(--ink-faint); font-weight: 700; }
-  .leaderboard-row > :nth-child(5)::before { content: "· adv ";    color: var(--ink-faint); font-weight: 700; }
-  .leaderboard-row > :nth-child(6)::before { content: "· picks ";  color: var(--ink-faint); font-weight: 700; }
+  .leaderboard-row > :nth-child(3)::before { content: "picks ";    color: var(--ink-faint); font-weight: 700; }
+  .leaderboard-row > :nth-child(4)::before { content: "· exact ";   color: var(--ink-faint); font-weight: 700; }
+  .leaderboard-row > :nth-child(5)::before { content: "· outcome "; color: var(--ink-faint); font-weight: 700; }
+  .leaderboard-row > :nth-child(6)::before { content: "· adv ";     color: var(--ink-faint); font-weight: 700; }
   .lb-name { font-size: 14px; }
 
   /* Admin pending list */
