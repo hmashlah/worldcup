@@ -42,6 +42,29 @@ export function useSetApproval() {
   });
 }
 
+/** Admin: hard-delete a profile (used to decline a pending signup).
+ *  The auth.users row stays (only a service role can delete it), but
+ *  without a profile the user is stuck on the "waiting for approval"
+ *  screen forever and can't submit predictions.
+ */
+export function useDeleteProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      // Predictions get cascade-deleted via the FK on user_id.
+      const { error } = await supabase
+        .from('wc26_profiles')
+        .delete()
+        .eq('user_id', userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profiles'] });
+      qc.invalidateQueries({ queryKey: ['predictions'] });
+    },
+  });
+}
+
 /** Current user's own profile — used to gate the app on `approved`. */
 export function useMyProfile(userId: string | null) {
   return useQuery({

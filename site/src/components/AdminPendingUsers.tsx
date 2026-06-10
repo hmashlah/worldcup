@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useProfiles, useSetApproval } from '@/hooks/useProfiles';
+import { useProfiles, useSetApproval, useDeleteProfile } from '@/hooks/useProfiles';
 import { useAllPredictions } from '@/hooks/usePredictions';
 import { useResults } from '@/hooks/useResults';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,6 +10,7 @@ export function AdminPendingUsers() {
   const predsQ = useAllPredictions();
   const resultsQ = useResults();
   const setApproval = useSetApproval();
+  const deleteProfile = useDeleteProfile();
   const [showAll, setShowAll] = useState(false);
 
   const { pending, approved, myProfile } = useMemo(() => {
@@ -54,10 +55,22 @@ export function AdminPendingUsers() {
               </span>
               <button
                 className="btn btn-primary admin-pending-approve"
-                disabled={setApproval.isPending}
+                disabled={setApproval.isPending || deleteProfile.isPending}
                 onClick={() => setApproval.mutate({ userId: p.user_id, approved: true })}
               >
                 Approve
+              </button>
+              <button
+                className="btn btn-ghost admin-pending-decline"
+                disabled={setApproval.isPending || deleteProfile.isPending}
+                onClick={() => {
+                  if (confirm(`Decline ${p.display_name}? This removes them from the league. They can't sign back in with the same email.`)) {
+                    deleteProfile.mutate(p.user_id);
+                  }
+                }}
+                title="Reject this signup"
+              >
+                Decline
               </button>
             </div>
           ))}

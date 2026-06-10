@@ -57,6 +57,12 @@ RETURNS BOOLEAN AS $$
   SELECT lower(coalesce(auth.jwt() ->> 'email', '')) = lower('hmashlah@gmail.com');
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
+-- Admin can delete any profile (used to decline pending signups).
+DROP POLICY IF EXISTS "wc26 admin deletes any profile" ON wc26_profiles;
+CREATE POLICY "wc26 admin deletes any profile"
+  ON wc26_profiles FOR DELETE TO authenticated
+  USING (wc26_is_admin());
+
 -- Admin can update any profile (used to approve / revoke users).
 DROP POLICY IF EXISTS "wc26 admin updates any profile" ON wc26_profiles;
 CREATE POLICY "wc26 admin updates any profile"
