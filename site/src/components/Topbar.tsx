@@ -27,13 +27,16 @@ export function Topbar() {
   };
 
   const pendingToday = useMemo(() => {
-    if (!user || !dataQ.data) return 0;
+    // Wait for both tournament data AND the user's predictions to load
+    // before computing the count, otherwise the badge flashes "N to pick"
+    // for a frame while predictions are still in flight.
+    if (!user || !dataQ.data || !predsQ.data) return 0;
     const days = matchesByDay(dataQ.data);
     const target = defaultDay(days);
     if (!target) return 0;
     const day = days.find(d => d.date === target);
     if (!day) return 0;
-    return countUnsubmitted(day.matches, predsQ.data ?? {});
+    return countUnsubmitted(day.matches, predsQ.data);
   }, [user, dataQ.data, predsQ.data]);
 
   // Count of users awaiting admin approval (admin-only signal).
