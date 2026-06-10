@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useMyPredictions } from '@/hooks/usePredictions';
+import { useProfiles } from '@/hooks/useProfiles';
 import { matchesByDay, defaultDay, countUnsubmitted } from '@/lib/days';
 import { useUI, type TabKey } from '@/lib/ui-store';
 
@@ -17,6 +18,7 @@ export function Topbar() {
   const { tab, setTab, setAuthOpen, theme, toggleTheme, adminMode, toggleAdminMode } = useUI();
   const dataQ = useTournamentData();
   const predsQ = useMyPredictions();
+  const profilesQ = useProfiles();
   const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = async () => {
@@ -33,6 +35,12 @@ export function Topbar() {
     if (!day) return 0;
     return countUnsubmitted(day.matches, predsQ.data ?? {});
   }, [user, dataQ.data, predsQ.data]);
+
+  // Count of users awaiting admin approval (admin-only signal).
+  const pendingApprovals = useMemo(() => {
+    if (!isAdmin || !profilesQ.data) return 0;
+    return Object.values(profilesQ.data).filter(p => !p.approved).length;
+  }, [isAdmin, profilesQ.data]);
 
   const adminActive = isAdmin && adminMode;
   // If admin turns admin mode off while sitting on the Admin tab, bounce them.
@@ -57,6 +65,11 @@ export function Topbar() {
             onClick={() => setTab(t.key)}
           >
             {t.label}
+            {t.key === 'admin' && pendingApprovals > 0 && (
+              <span className="tab-badge" title={`${pendingApprovals} pending approval${pendingApprovals === 1 ? '' : 's'}`}>
+                {pendingApprovals}
+              </span>
+            )}
           </button>
         ))}
       </nav>
