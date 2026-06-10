@@ -130,18 +130,76 @@ DROP POLICY IF EXISTS "wc26 approved user inserts own predictions" ON wc26_predi
 DROP POLICY IF EXISTS "wc26 approved user updates own predictions" ON wc26_predictions;
 DROP POLICY IF EXISTS "wc26 approved user deletes own predictions" ON wc26_predictions;
 
+-- ── 4a) wc26_match_kickoffs (server-side kickoff source of truth) ─────
+-- The client lock in MatchCard reads tournament.json, which a determined
+-- user can bypass via the Supabase JS client in devtools. To enforce the
+-- lock server-side, predictions for a match are only writable while
+-- now() < kickoff_at, looked up from this table.
+--
+-- Seeding: run `node site/scripts/build-kickoffs-sql.mjs` from the repo
+-- root to emit the INSERT statements from public/data.json, then paste
+-- the result into the Supabase SQL editor. Re-run on schedule changes.
+--
+-- Fail-closed: if a row is missing for a match_id, the policy rejects
+-- the write. Don't approve users until kickoffs are seeded.
+CREATE TABLE IF NOT EXISTS wc26_match_kickoffs (
+  match_id   TEXT PRIMARY KEY,
+  kickoff_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE wc26_match_kickoffs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "wc26 everyone authenticated reads kickoffs" ON wc26_match_kickoffs;
+CREATE POLICY "wc26 everyone authenticated reads kickoffs"
+  ON wc26_match_kickoffs FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "wc26 admin writes kickoffs" ON wc26_match_kickoffs;
+CREATE POLICY "wc26 admin writes kickoffs"
+  ON wc26_match_kickoffs FOR ALL TO authenticated
+  USING (wc26_is_admin())
+  WITH CHECK (wc26_is_admin());
+
+-- Helper used by the prediction policies. STABLE so Postgres can hoist
+-- the call out of row-by-row evaluation. Returns FALSE for unknown
+-- match_ids (fail closed) and FALSE once kickoff has passed.
+CREATE OR REPLACE FUNCTION wc26_match_is_open(p_match_id TEXT)
+RETURNS BOOLEAN AS $$
+  SELECT COALESCE(
+    (SELECT NOW() < kickoff_at FROM wc26_match_kickoffs WHERE match_id = p_match_id),
+    FALSE
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+
 CREATE POLICY "wc26 approved user inserts own predictions"
   ON wc26_predictions FOR INSERT TO authenticated
-  WITH CHECK (auth.uid() = user_id AND (wc26_is_approved() OR wc26_is_admin()));
+  WITH CHECK (
+    auth.uid() = user_id
+    AND (wc26_is_approved() OR wc26_is_admin())
+    AND wc26_match_is_open(match_id)
+  );
 
 CREATE POLICY "wc26 approved user updates own predictions"
   ON wc26_predictions FOR UPDATE TO authenticated
-  USING (auth.uid() = user_id AND (wc26_is_approved() OR wc26_is_admin()))
-  WITH CHECK (auth.uid() = user_id AND (wc26_is_approved() OR wc26_is_admin()));
+  USING (
+    auth.uid() = user_id
+    AND (wc26_is_approved() OR wc26_is_admin())
+    AND wc26_match_is_open(match_id)
+  )
+  WITH CHECK (
+    auth.uid() = user_id
+    AND (wc26_is_approved() OR wc26_is_admin())
+    AND wc26_match_is_open(match_id)
+  );
 
 CREATE POLICY "wc26 approved user deletes own predictions"
   ON wc26_predictions FOR DELETE TO authenticated
-  USING (auth.uid() = user_id AND (wc26_is_approved() OR wc26_is_admin()));
+  USING (
+    auth.uid() = user_id
+    AND (wc26_is_approved() OR wc26_is_admin())
+    AND wc26_match_is_open(match_id)
+  );
 
 
 -- ── 5) shared wc26_touch_updated_at trigger ───────────────────────────
