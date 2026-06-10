@@ -48,10 +48,10 @@ export function LeaderboardCard() {
       <div className="leaderboard-head">
         <span>#</span>
         <span>Player</span>
+        <span title="Total predictions submitted that have an actual">Picks</span>
         <span title="Exact-score predictions">Exact</span>
         <span title="Right outcome (W/D/L)">Outcome</span>
         <span title="Right knockout advancer">Adv.</span>
-        <span title="Total predictions submitted that have an actual">Picks</span>
         <span>Total</span>
       </div>
       {entries.map((e, i) => {
@@ -63,10 +63,10 @@ export function LeaderboardCard() {
           >
             <span className="lb-rank">{ROSETTES[rank - 1] ?? `#${rank}`}</span>
             <span className="lb-name">{e.display_name}</span>
+            <span>{e.predictions}</span>
             <span>{e.exact}</span>
             <span>{e.outcome}</span>
             <span>{e.advancer}</span>
-            <span>{e.predictions}</span>
             <span className="lb-total">{e.total}</span>
           </div>
         );
