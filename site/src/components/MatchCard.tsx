@@ -9,6 +9,21 @@ import { isLocked, parseKickoff, fmtShortDate } from '@/lib/time';
 import { scorePrediction } from '@/lib/scoring';
 import { useUI } from '@/lib/ui-store';
 
+/** Reduce country-name pairs that differ between data.json and FD to a
+ *  single canonical lowercased string, so the live-score orientation
+ *  check works without a full alias map round-trip. */
+function normalizeNation(name: string): string {
+  const ALIASES: Record<string, string> = {
+    'czechia': 'czech republic',
+    'bosnia-herzegovina': 'bosnia & herzegovina',
+    'cape verde islands': 'cape verde',
+    'congo dr': 'dr congo',
+    'united states': 'usa',
+  };
+  const lower = name.trim().toLowerCase();
+  return ALIASES[lower] ?? lower;
+}
+
 interface Props {
   matchId: string;
   team1: string;
@@ -130,6 +145,28 @@ export function MatchCard(p: Props) {
   const showDetails = team1IsResolved && team2IsResolved;
   const openMatch = useUI(s => s.openMatch);
 
+  // Live score for this match, if any. FD's home/away may not match our
+  // team1/team2 — flip the displayed scoreline if it doesn't.
+  const liveScore = (() => {
+    if (!live) return null;
+    const ft = live.payload.score?.fullTime;
+    if (!ft) return null;
+    const fdHomeName = (live.payload.homeTeam?.name ?? '').toLowerCase();
+    const ourTeam1 = team1.toLowerCase();
+    // Cheap orientation check — if FD home matches our team1, scoreline
+    // is in our orientation; otherwise flip. Doesn't need the full alias
+    // map because every team name in the live payload comes back from
+    // the same FD instance and our team1 was matched against FD at
+    // mapping-build time anyway.
+    const sameOrder = fdHomeName === ourTeam1
+      || normalizeNation(fdHomeName) === normalizeNation(ourTeam1);
+    return {
+      left: sameOrder ? ft.home : ft.away,
+      right: sameOrder ? ft.away : ft.home,
+      phase: live.payload.status === 'PAUSED' ? 'HT' : 'live',
+    };
+  })();
+
   return (
     <div className={`mc ${locked ? 'mc-locked' : ''}`}>
       {/* PREDICTION row — always the user's own pick, even for admin */}
@@ -186,6 +223,19 @@ export function MatchCard(p: Props) {
               <Flag team={t} /> {t}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* LIVE row — when this match is in progress. Shown to everyone
+          including admin (admin still gets the actual-input row below
+          to type the final once it ends). Mutually exclusive with the
+          "final" read-only row since a finished match isn't live. */}
+      {liveScore && (
+        <div className="mc-live">
+          <span className="mc-live-score-pill">{liveScore.phase}</span>
+          <span className="mc-live-score">
+            {liveScore.left ?? '–'} – {liveScore.right ?? '–'}
+          </span>
         </div>
       )}
 

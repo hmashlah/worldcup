@@ -2702,3 +2702,39 @@ footer {
   background: #ef4444;
   animation: mdp-live-pulse 1.4s ease-in-out infinite;
 }
+
+/* MatchCard — live score row, sits where "final" goes for finished games */
+.mc-live {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, #ef4444 8%, transparent);
+}
+.mc-live-score-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #b91c1c;
+}
+.mc-live-score-pill::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #ef4444;
+  animation: mdp-live-pulse 1.4s ease-in-out infinite;
+}
+.mc-live-score {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
