@@ -104,8 +104,14 @@ function deriveAdvancer(m: FdMatch): string | null {
 }
 
 function shouldUpsert(m: FdMatch): boolean {
-  // Only sync matches that have a usable score. Anything still SCHEDULED
-  // / TIMED has fullTime null,null — skip.
+  // Only sync matches FD has marked as fully finished. FD populates
+  // `score.fullTime` LIVE while a match is in progress (so a 0-1 in the
+  // 30th minute would otherwise look final to us), so checking the
+  // status field is essential. Any other status (SCHEDULED, TIMED,
+  // IN_PLAY, PAUSED, LIVE, SUSPENDED, POSTPONED, CANCELLED, AWARDED)
+  // is ignored — admin can still type in a forfeited / awarded result
+  // manually.
+  if (m.status !== 'FINISHED') return false;
   const ft = m.score.fullTime;
   return !!ft && ft.home !== null && ft.away !== null && Number.isFinite(ft.home) && Number.isFinite(ft.away);
 }
