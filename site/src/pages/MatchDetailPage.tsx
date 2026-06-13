@@ -142,16 +142,41 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
             <span className="mdp-final-score-num">{result.team2_score}</span>
             <span className="mdp-final-name">{team2Display}</span>
           </div>
+          {result.payload?.score?.halfTime && typeof result.payload.score.halfTime.home === 'number' && (
+            <div className="mdp-halftime">
+              half-time:{' '}
+              <strong>
+                {result.payload.score.halfTime.home}–{result.payload.score.halfTime.away}
+              </strong>
+            </div>
+          )}
+          {result.payload?.score?.duration && result.payload.score.duration !== 'REGULAR' && (
+            <div className="mdp-duration">
+              decided{' '}
+              {result.payload.score.duration === 'EXTRA_TIME'
+                ? 'after extra time'
+                : 'on penalties'}
+            </div>
+          )}
           {isKnockoutMatch && result.advancer && (
             <div className="mdp-advanced">
               <strong>{result.advancer}</strong> advanced
             </div>
           )}
-          {/* The 2026 archive doesn't carry scorer data (it's a future
-              tournament), so this list will only ever populate if you
-              later add goal scorers to wc26_match_results. Kept here for
-              forward compatibility — until then, `goals` is always [].
-              Cleanly hides itself when empty. */}
+          {result.source === 'api' && (
+            <p className="mdp-source-note">
+              Auto-filled from football-data.org. Admin can correct in the match card.
+            </p>
+          )}
+          {result.payload?.referees && result.payload.referees.length > 0 && (
+            <div className="mdp-referees">
+              <span className="mdp-referees-label">Referee:</span>{' '}
+              {result.payload.referees
+                .filter(r => r.type === 'REFEREE')
+                .map(r => r.name)
+                .join(', ') || result.payload.referees[0].name}
+            </div>
+          )}
         </section>
       )}
 
