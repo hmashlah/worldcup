@@ -316,7 +316,7 @@ SET search_path = public, extensions, pg_temp
 AS $$
 DECLARE
   hook_url TEXT := 'https://worldcup-1jo.pages.dev/notify-signup';
-  hook_sec TEXT := 'GORJT6jPnndp2SKYIjKwQL/dC835J4fdVoCTUvkjjoo';
+  hook_sec TEXT := 'C5C8HNBEyo3ciFCO+QDMJSdcDM80erBI2LEASOl0nOc=';
   user_email TEXT;
 BEGIN
   -- No URL configured → do nothing (safe default).
