@@ -1,6 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
+/** Slim row used by every list view (leaderboard, match cards, bracket).
+ *  Excludes the FD payload (which can be ~1.5 KB per row) — that's
+ *  fetched separately via useMatchResult only when a detail page opens.
+ *  Saves ~40× on egress for the polling that runs on every page load. */
 export interface ResultRow {
   match_id: string;
   team1_score: number;
@@ -8,7 +12,10 @@ export interface ResultRow {
   advancer: string | null;
   /** 'admin' for manual entries, 'api' for football-data.org auto-fill. */
   source?: 'admin' | 'api';
-  /** Raw football-data.org match record (only set when source='api'). */
+}
+
+/** Full row including FD payload — only used by MatchDetailPage. */
+export interface FullResultRow extends ResultRow {
   payload?: FdMatchPayload | null;
 }
 
@@ -39,23 +46,61 @@ export interface ResultDraft {
   advancer?: string | null;
 }
 
-/** Actual results, indexed by match_id. Anyone authenticated can read. */
+/**
+ * Actual results, indexed by match_id. Slim columns only — pulls scores
+ * + advancer + source for every match in the tournament. Use
+ * useMatchResult for the rich payload (referees / half-time / duration)
+ * on the match detail page.
+ *
+ * Polled at 60s focused / 5min background. The leaderboard and match
+ * cards re-render the moment the row changes, so a 60s lag on a finished
+ * match feels reasonable — and it keeps egress within free-tier limits.
+ * The hot live data (in-progress scores) lives in a separate table
+ * (wc26_match_live) that polls faster.
+ */
 export function useResults() {
   return useQuery({
     queryKey: ['match_results'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('wc26_match_results')
-        .select('match_id, team1_score, team2_score, advancer, source, payload');
+        .select('match_id, team1_score, team2_score, advancer, source');
       if (error) throw error;
       const map: Record<string, ResultRow> = {};
       for (const r of (data ?? []) as ResultRow[]) map[r.match_id] = r;
       return map;
     },
-    // Match useLiveMatches' cadence — when a match transitions from
-    // live to finished, the new row lands in wc26_match_results within
-    // ~15s of the cron firing, and we want the page to flip from "LIVE"
-    // to "Result" without a manual refresh. Idle tabs drop to 60s.
+    refetchInterval: () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return 5 * 60_000;
+      }
+      return 60_000;
+    },
+    refetchOnWindowFocus: true,
+  });
+}
+
+/**
+ * Full result row including the FD payload, fetched per-match. Used by
+ * MatchDetailPage so we don't fan the ~1.5 KB payload across every
+ * polling tick of the bulk results query. Refetches at the same
+ * cadence as wc26_match_live so referee / half-time data appears
+ * promptly during play.
+ */
+export function useMatchResult(matchId: string | null) {
+  return useQuery({
+    queryKey: ['match_result', matchId],
+    enabled: !!matchId,
+    queryFn: async () => {
+      if (!matchId) return null;
+      const { data, error } = await supabase
+        .from('wc26_match_results')
+        .select('match_id, team1_score, team2_score, advancer, source, payload')
+        .eq('match_id', matchId)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as FullResultRow | null) ?? null;
+    },
     refetchInterval: () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
         return 60_000;
@@ -89,6 +134,7 @@ export function useUpsertResult() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['match_results'] });
+      qc.invalidateQueries({ queryKey: ['match_result'] });
     },
   });
 }
@@ -106,6 +152,7 @@ export function useDeleteResult() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['match_results'] });
+      qc.invalidateQueries({ queryKey: ['match_result'] });
     },
   });
 }
