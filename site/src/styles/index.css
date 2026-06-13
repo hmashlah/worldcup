@@ -2407,3 +2407,227 @@ footer {
 @media (max-width: 720px) {
   .tab-badge { min-width: 16px; height: 16px; font-size: 9px; margin-left: 4px; padding: 0 4px; }
 }
+
+/* ── Match details "details →" link on MatchCard ─────────────────── */
+
+.mc-details-link {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+  margin-left: auto;
+}
+.mc-details-link:hover { color: var(--ink); text-decoration: underline; }
+
+/* ── Match Detail Page (MDP) ─────────────────────────────────────── */
+
+.mdp { max-width: 720px; margin: 0 auto; padding: 0 12px; }
+
+.mdp-back-row { margin-bottom: 12px; }
+.mdp-back {
+  background: transparent;
+  border: 0;
+  padding: 6px 0;
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.mdp-back:hover { color: var(--ink); }
+
+.mdp-header {
+  text-align: center;
+  padding: 20px 0 24px;
+  border-bottom: 1px solid var(--ink-soft);
+  margin-bottom: 24px;
+}
+.mdp-teams {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.mdp-team { display: flex; align-items: center; gap: 8px; }
+.mdp-team .fi { font-size: 28px; }
+.mdp-team-name { letter-spacing: -0.01em; }
+.mdp-team-placeholder {
+  color: var(--ink-soft);
+  font-style: italic;
+  font-size: 16px;
+  font-weight: 500;
+}
+.mdp-vs { color: var(--ink-soft); font-size: 16px; font-weight: 400; }
+.mdp-meta {
+  font-size: 13px;
+  color: var(--ink-soft);
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.mdp-meta-locked { color: var(--ink-soft); }
+.mdp-venue {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+.mdp-venue-detail { color: var(--ink); margin: 0; }
+
+.mdp-section {
+  padding: 20px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink-soft) 30%, transparent);
+}
+.mdp-section:last-child { border-bottom: 0; }
+
+.mdp-h3 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  margin: 0 0 14px;
+  font-weight: 600;
+}
+
+.mdp-final-score {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.mdp-final-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+.mdp-final-score-num { font-variant-numeric: tabular-nums; }
+.mdp-dash { color: var(--ink-soft); }
+.mdp-advanced {
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* Predictions list */
+.mdp-pred-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mdp-pred-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--ink-soft) 25%, transparent);
+  border-radius: 6px;
+  font-size: 14px;
+}
+.mdp-pred-self {
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  border-color: var(--ink-soft);
+}
+.mdp-pred-name { font-weight: 600; min-width: 0; flex: 1; }
+.mdp-pred-score { font-variant-numeric: tabular-nums; font-weight: 600; }
+.mdp-pred-adv { font-size: 12.5px; color: var(--ink-soft); }
+.mdp-pred-pts {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.mdp-empty,
+.mdp-hint {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+.mdp-hint { margin-top: 8px; font-style: italic; }
+
+/* Head-to-head */
+.mdp-h2h-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+.mdp-h2h-summary strong { font-size: 18px; margin-right: 4px; }
+.mdp-h2h-goals {
+  width: 100%;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.mdp-h2h-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.mdp-h2h-card {
+  border: 1px solid color-mix(in srgb, var(--ink-soft) 25%, transparent);
+  border-radius: 8px;
+  padding: 12px;
+}
+.mdp-h2h-card-head {
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+.mdp-h2h-year { font-weight: 700; color: var(--ink); }
+.mdp-h2h-round {}
+.mdp-h2h-date { margin-left: auto; }
+.mdp-h2h-score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 16px;
+  flex-wrap: wrap;
+}
+.mdp-h2h-score strong { font-size: 20px; }
+.mdp-h2h-scorers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.mdp-h2h-scorers ul { list-style: none; padding: 0; margin: 0; }
+.mdp-h2h-goal { line-height: 1.6; }
+.mdp-h2h-goal.right { text-align: right; }
+.mdp-h2h-venue {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  text-align: center;
+  margin-top: 8px;
+}
+
+@media (max-width: 720px) {
+  .mdp { padding: 0 8px; }
+  .mdp-teams { font-size: 18px; gap: 10px; }
+  .mdp-team .fi { font-size: 22px; }
+  .mdp-final-score { font-size: 22px; gap: 8px; }
+  .mdp-h2h-score { font-size: 14px; gap: 6px; }
+  .mdp-h2h-score strong { font-size: 17px; }
+}
