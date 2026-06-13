@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Flag } from '@/components/Flag';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTournamentData } from '@/hooks/useTournamentData';
-import { useResults } from '@/hooks/useResults';
+import { useResults, useMatchResult, type FullResultRow } from '@/hooks/useResults';
 import { useLiveMatches } from '@/hooks/useLiveMatches';
 import { useAllPredictions } from '@/hooks/usePredictions';
 import { useProfiles } from '@/hooks/useProfiles';
@@ -34,7 +34,12 @@ import type {
 export function MatchDetailPage({ matchId }: { matchId: string }) {
   const closeMatch = useUI(s => s.closeMatch);
   const dataQ = useTournamentData();
+  // Slim list of all results — used to resolve KO slots ("W74" → team).
   const resultsQ = useResults();
+  // Full row including FD payload (referees / half-time / duration) for
+  // ONLY this match. Polled at live cadence so referee + HT data show
+  // up promptly during play.
+  const matchResultQ = useMatchResult(matchId);
   const liveQ = useLiveMatches();
   const predsQ = useAllPredictions();
   const profilesQ = useProfiles();
@@ -87,7 +92,13 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
   const team1Display = team1Resolved ?? prettySlot((match as KoMatch).team1);
   const team2Display = team2Resolved ?? prettySlot((match as KoMatch).team2);
 
-  const result = results?.[matchId];
+  // Use the per-match query (with payload) for the rich Result section,
+  // falling back to the slim bulk query while it loads so we don't flash
+  // an empty card on first paint. Cast through FullResultRow because the
+  // bulk row is a strict subset (no payload), and the rich UI only reads
+  // payload?.* (optional access tolerates both shapes).
+  const result: FullResultRow | null =
+    (matchResultQ.data ?? results?.[matchId] ?? null) as FullResultRow | null;
   const kickoff = parseKickoff(match.date, match.time);
   const locked = isLocked(match.date, match.time, now);
   const kickoffStr = kickoff.toLocaleString([], {
