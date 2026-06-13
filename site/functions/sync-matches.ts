@@ -89,6 +89,13 @@ interface PayloadOnlyPatch {
 
 const FD_ENDPOINT = 'https://api.football-data.org/v4/competitions/WC/matches';
 
+/** FD statuses for matches currently in progress. We mirror these into
+ *  wc26_match_live so the UI can render a live score. Anything else
+ *  (SCHEDULED, TIMED, FINISHED, POSTPONED…) means there's no live state
+ *  worth showing — for FINISHED we use wc26_match_results instead. */
+const LIVE_STATUSES = new Set(['IN_PLAY', 'LIVE', 'PAUSED']);
+const isLive = (m: FdMatch) => LIVE_STATUSES.has(m.status);
+
 /**
  * Decide who advances on a knockout match. football-data.org's
  * `score.winner` is HOME_TEAM/AWAY_TEAM/DRAW based on the *full match*
@@ -220,6 +227,65 @@ async function patchPayloads(
   return { ok, errors };
 }
 
+async function upsertLive(
+  env: Env,
+  rows: Array<{ match_id: string; payload: FdMatch }>,
+): Promise<{ ok: number; errors: string[] }> {
+  if (rows.length === 0) return { ok: 0, errors: [] };
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/wc26_match_live?on_conflict=match_id`,
+    {
+      method: 'POST',
+      headers: {
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'content-type': 'application/json',
+        prefer: 'resolution=merge-duplicates,return=minimal',
+      },
+      body: JSON.stringify(rows),
+    },
+  );
+  if (!res.ok) return { ok: 0, errors: [`live upsert ${res.status}: ${await res.text()}`] };
+  return { ok: rows.length, errors: [] };
+}
+
+async function deleteLiveRows(
+  env: Env,
+  matchIds: string[],
+): Promise<{ ok: number; errors: string[] }> {
+  if (matchIds.length === 0) return { ok: 0, errors: [] };
+  // Postgrest accepts an `in` filter on the primary key for batch deletes.
+  const inList = matchIds.map(encodeURIComponent).join(',');
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/wc26_match_live?match_id=in.(${inList})`,
+    {
+      method: 'DELETE',
+      headers: {
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        prefer: 'return=minimal',
+      },
+    },
+  );
+  if (!res.ok) return { ok: 0, errors: [`live delete ${res.status}: ${await res.text()}`] };
+  return { ok: matchIds.length, errors: [] };
+}
+
+async function fetchExistingLiveIds(env: Env): Promise<string[]> {
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/wc26_match_live?select=match_id`,
+    {
+      headers: {
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+    },
+  );
+  if (!res.ok) throw new Error(`supabase live select ${res.status}: ${await res.text()}`);
+  const rows: Array<{ match_id: string }> = await res.json();
+  return rows.map(r => r.match_id);
+}
+
 export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   // Auth.
   const secret = ctx.request.headers.get('x-wc26-secret') ?? '';
@@ -265,8 +331,17 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     return Response.json({ error: `supabase: ${(e as Error).message}` }, { status: 502 });
   }
 
+  let existingLiveIds: string[];
+  try {
+    existingLiveIds = await fetchExistingLiveIds(ctx.env);
+  } catch (e) {
+    return Response.json({ error: `supabase live: ${(e as Error).message}` }, { status: 502 });
+  }
+
   const toUpsert: UpsertRow[] = [];
   const toPatch: Array<{ match_id: string; patch: PayloadOnlyPatch }> = [];
+  const toLiveUpsert: Array<{ match_id: string; payload: FdMatch }> = [];
+  const stillLiveIds = new Set<string>();
   let skipped_admin_unchanged = 0;
   let skipped_no_score = 0;
   let skipped_unmapped = 0;
@@ -274,10 +349,20 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   for (const m of fdMatches) {
     const ourId = fdToOurs[m.id];
     if (!ourId) {
-      // Likely a KO match whose slot tokens we haven't re-mapped yet.
       skipped_unmapped++;
       continue;
     }
+
+    // Live branch — match in progress. Mirror into wc26_match_live.
+    // Note: live rows live alongside (possibly absent) wc26_match_results
+    // rows. The UI joins them.
+    if (isLive(m)) {
+      toLiveUpsert.push({ match_id: ourId, payload: m });
+      stillLiveIds.add(ourId);
+      // Don't touch wc26_match_results during live play.
+      continue;
+    }
+
     if (!shouldUpsert(m)) {
       skipped_no_score++;
       continue;
@@ -308,16 +393,29 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     });
   }
 
+  // Any wc26_match_live row that's no longer live (match finished, was
+  // postponed, etc.) gets deleted so we don't show stale "live" state.
+  const toLiveDelete = existingLiveIds.filter(id => !stillLiveIds.has(id));
+
   const upsertRes = await upsertResults(ctx.env, toUpsert);
   const patchRes = await patchPayloads(ctx.env, toPatch);
+  const liveUpsertRes = await upsertLive(ctx.env, toLiveUpsert);
+  const liveDeleteRes = await deleteLiveRows(ctx.env, toLiveDelete);
 
   return Response.json({
     upserted: upsertRes.ok,
     admin_payload_enriched: patchRes.ok,
+    live_upserted: liveUpsertRes.ok,
+    live_deleted: liveDeleteRes.ok,
     skipped_admin_unchanged,
     skipped_no_score,
     skipped_unmapped,
     fd_total: fdMatches.length,
-    errors: [...upsertRes.errors, ...patchRes.errors],
+    errors: [
+      ...upsertRes.errors,
+      ...patchRes.errors,
+      ...liveUpsertRes.errors,
+      ...liveDeleteRes.errors,
+    ],
   });
 };
