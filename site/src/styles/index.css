@@ -335,9 +335,20 @@ footer {
 .mc:hover { border-color: var(--ink-faint); }
 .mc-locked { background: var(--bg); }
 
+.mc {
+  /* Width of the prediction row's score-pair (2 × 36px inputs + 4px
+     gaps + ~10px dash). Fixed here so the final-result row below can
+     reserve the SAME middle-column width and its score lands directly
+     under the inputs. */
+  --mc-score-col: 92px;
+  --mc-pts-col: 28px;
+}
+
 .mc-row {
   display: grid;
-  grid-template-columns: 1fr auto 1fr auto;
+  /* Use the same column-width vars as .mc-actual so the two rows have
+     an identical column spine. */
+  grid-template-columns: 1fr var(--mc-score-col) 1fr var(--mc-pts-col);
   align-items: center;
   gap: 12px;
 }
@@ -417,11 +428,10 @@ footer {
 
 .mc-actual {
   display: grid;
-  /* Match the prediction row's first three columns so the final score
-     sits directly under the prediction inputs. The +pts column on the
-     prediction row is auto-sized; we ignore it here since the final
-     row has no per-row chip. */
-  grid-template-columns: 1fr auto 1fr;
+  /* IDENTICAL spine to .mc-row, so the score lands directly under the
+     prediction inputs. Both rows are children of .mc, which exposes
+     the column-width vars. */
+  grid-template-columns: 1fr var(--mc-score-col) 1fr var(--mc-pts-col);
   align-items: baseline;
   gap: 12px;
   margin-top: 8px;
@@ -429,8 +439,6 @@ footer {
   color: var(--ink-soft);
 }
 .mc-actual-label {
-  /* First grid cell: lives where team1 lives, right-aligned so it
-     reads as "final" pointing at the score that follows. */
   grid-column: 1;
   justify-self: end;
   font-size: 10px;
@@ -439,8 +447,8 @@ footer {
   font-weight: 800;
 }
 .mc-actual-score {
-  /* Middle "auto" cell — same column as the prediction's score-pair. */
   grid-column: 2;
+  justify-self: center;
   font-weight: 800;
   font-size: 15px;
   color: var(--ink);
@@ -939,10 +947,17 @@ footer {
 
   /* Match card: bigger tap targets for score inputs on phones,
      dash visible but tighter, team name truncates cleanly */
-  .mc { padding: 10px 12px; }
+  .mc { padding: 10px 12px; --mc-score-col: 88px; }
   .mc-row {
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: 1fr var(--mc-score-col) 1fr;
     gap: 8px;
+  }
+  /* Match the prediction row's mobile 3-column layout so the final
+     score still sits directly beneath the prediction inputs. */
+  .mc-actual,
+  .mc-actual-admin,
+  .mc-live {
+    grid-template-columns: 1fr var(--mc-score-col) 1fr;
   }
   .mc-team { font-size: 13px; gap: 6px; }
   .mc-name { font-size: 13px; }
@@ -1122,7 +1137,7 @@ footer {
    with the scores. */
 .mc-actual-admin {
   display: grid;
-  grid-template-columns: 1fr auto 1fr auto;
+  grid-template-columns: 1fr var(--mc-score-col) 1fr var(--mc-pts-col);
   align-items: center;
   gap: 12px;
   margin-top: 10px;
@@ -2715,15 +2730,20 @@ footer {
 
 /* MatchCard — live score row, sits where "final" goes for finished games */
 .mc-live {
-  display: flex;
+  display: grid;
+  /* Same column spine as .mc-actual / .mc-row so the live score lands
+     directly under the prediction inputs, exactly like FINAL does. */
+  grid-template-columns: 1fr var(--mc-score-col) 1fr var(--mc-pts-col);
   align-items: center;
-  gap: 10px;
-  margin-top: 6px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  background: color-mix(in srgb, #ef4444 8%, transparent);
+  gap: 12px;
+  margin-top: 8px;
+  padding: 6px 0;
+  background: transparent; /* tint comes from the pill + score, not the row */
 }
 .mc-live-score-pill {
+  /* First grid cell — same column where the FINAL label sits. */
+  grid-column: 1;
+  justify-self: end;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -2743,8 +2763,109 @@ footer {
   animation: mdp-live-pulse 1.4s ease-in-out infinite;
 }
 .mc-live-score {
+  /* Second grid cell — same column as the prediction input pair. */
+  grid-column: 2;
+  justify-self: center;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
+  color: #b91c1c; /* match the live pill instead of muted ink */
+}
+
+/* ── Funky mode — Match Detail Page readability fixes ──────────────
+   The funky theme uses a vivid purple/pink diagonal background, against
+   which `--ink-soft` (a desaturated near-ink) reads as low-contrast soup.
+   Lift each MDP section onto a white surface card with the same hard
+   border + offset shadow used elsewhere in funky mode. */
+
+[data-theme='funky'] .mdp-section {
+  background: var(--surface);
   color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 0 var(--ink), 0 8px 24px rgba(24, 18, 38, 0.18);
+  padding: 16px 18px;
+  margin: 0 0 16px;
+}
+
+/* The header is a section too — give it the same treatment so the
+   teams/meta line reads on a white surface. */
+[data-theme='funky'] .mdp-header {
+  background: var(--surface);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 0 var(--ink), 0 8px 24px rgba(24, 18, 38, 0.18);
+  padding: 18px 16px 20px;
+  margin: 0 0 16px;
+}
+
+/* Section labels (RESULT, LEAGUE PREDICTIONS, …) sit on the white
+   surface now — bump them to ink so they read as proper headings. */
+[data-theme='funky'] .mdp-h3 {
+  color: var(--ink);
+  opacity: 0.75;
+}
+
+/* Meta text inside the lifted cards: was --ink-soft (against gradient),
+   now --ink at reduced opacity (against white) → readable but still
+   visually quieter than the score itself. */
+[data-theme='funky'] .mdp-meta,
+[data-theme='funky'] .mdp-meta-locked,
+[data-theme='funky'] .mdp-venue,
+[data-theme='funky'] .mdp-halftime,
+[data-theme='funky'] .mdp-duration,
+[data-theme='funky'] .mdp-referees,
+[data-theme='funky'] .mdp-source-note,
+[data-theme='funky'] .mdp-empty,
+[data-theme='funky'] .mdp-hint,
+[data-theme='funky'] .mdp-final-name,
+[data-theme='funky'] .mdp-h2h-card-head,
+[data-theme='funky'] .mdp-h2h-scorers,
+[data-theme='funky'] .mdp-h2h-venue,
+[data-theme='funky'] .mdp-h2h-goals,
+[data-theme='funky'] .mdp-advanced {
+  color: var(--ink);
+  opacity: 0.78;
+}
+
+/* Back button needs its own contrast bump — sits over the gradient,
+   not over a card. White pill matches the surface aesthetic. */
+[data-theme='funky'] .mdp-back {
+  background: var(--surface);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-weight: 700;
+  box-shadow: 2px 2px 0 0 var(--ink);
+}
+[data-theme='funky'] .mdp-back:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 0 var(--ink);
+}
+
+/* Live section keeps its red tint but sits on a card too. */
+[data-theme='funky'] .mdp-live-section {
+  background: color-mix(in srgb, #ef4444 8%, var(--surface));
+  border-color: #b91c1c;
+  box-shadow: 4px 4px 0 0 #b91c1c, 0 8px 24px rgba(185, 28, 28, 0.18);
+}
+
+/* H2H card list items: each gets a subtle inner panel */
+[data-theme='funky'] .mdp-h2h-card {
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ink) 4%, var(--surface));
+}
+
+/* Prediction list rows on detail page — the "self" highlight was a
+   slight ink-tint that disappears on white surface. Strengthen it. */
+[data-theme='funky'] .mdp-pred-row {
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+}
+[data-theme='funky'] .mdp-pred-self {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  border-color: var(--accent);
 }
