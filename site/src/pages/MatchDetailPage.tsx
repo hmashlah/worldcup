@@ -472,6 +472,7 @@ function LiveSection({
 
   // PAUSED is half-time. IN_PLAY/LIVE is "running".
   const phaseLabel = payload.status === 'PAUSED' ? 'half-time' : 'in play';
+  const refs = (payload.referees ?? []).filter(r => r.type === 'REFEREE');
 
   return (
     <section className="mdp-section mdp-live-section">
@@ -495,6 +496,12 @@ function LiveSection({
           <strong>
             {htLeft}–{htRight}
           </strong>
+        </div>
+      )}
+      {refs.length > 0 && (
+        <div className="mdp-referees">
+          <span className="mdp-referees-label">Referee:</span>{' '}
+          {refs.map(r => r.name).join(', ')}
         </div>
       )}
       <p className="mdp-source-note">
