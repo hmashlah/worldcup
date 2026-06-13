@@ -75,28 +75,11 @@ function localDateKey(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-/**
- * Like localDateKey, but the "day" doesn't roll over at midnight — it
- * rolls over at 5am local. So at 00:30 on Sunday you still get
- * Saturday's date, which is the day whose matches are actually still
- * being played / freshly finished.
- *
- * Football fans mentally bucket "Saturday's matches" as the cluster
- * starting Saturday afternoon and ending in the wee hours of Sunday;
- * a strict midnight rollover hides the late kickoffs from view exactly
- * when people are watching them.
- */
-function viewerDayKey(d: Date): string {
-  const shifted = new Date(d.getTime() - 5 * 60 * 60 * 1000);
-  return localDateKey(shifted);
-}
-
 /** "Today", "Tomorrow", "Yesterday", or "Mon, Jun 11" */
 export function relativeDayLabel(date: string, now: Date = new Date()): string {
-  // Use the 5am-rollover viewer day so labels and defaultDay agree.
-  const today = viewerDayKey(now);
-  const tomorrow = viewerDayKey(new Date(now.getTime() + 86400000));
-  const yesterday = viewerDayKey(new Date(now.getTime() - 86400000));
+  const today = localDateKey(now);
+  const tomorrow = localDateKey(new Date(now.getTime() + 86400000));
+  const yesterday = localDateKey(new Date(now.getTime() - 86400000));
   if (date === today) return 'Today';
   if (date === tomorrow) return 'Tomorrow';
   if (date === yesterday) return 'Yesterday';
@@ -111,17 +94,42 @@ export function shortDayLabel(date: string): string {
 }
 
 /**
- * Pick which day to default to.
- * - If today (5am-rollover) has matches, use today.
- * - Otherwise, the next upcoming match-day (or the most recent past one
- *   if the tournament is over).
+ * Pick which day-bucket to land on when the user opens the page.
+ *
+ * The schedule data uses each match's STADIUM-LOCAL date — so a match
+ * that kicks off in Mexico at 22:30 local on June 12 is filed under
+ * '2026-06-12' even though European viewers experience it at 03:00 on
+ * June 13. A naive `today === bucket.date` check leaves European
+ * viewers staring at the wrong day for hours every match-night.
+ *
+ * Rule that handles every timezone: pick the first bucket whose latest
+ * match hasn't ended yet (kickoff + ~2.5h covers regulation + ET +
+ * stoppage with a small cushion). Fall back to the next upcoming
+ * bucket, or the last one if the tournament is over.
+ *
+ * Result: at 00:07 Berlin time, with the Mexico/US late-night cluster
+ * still in progress, the page lands on that cluster's date instead of
+ * skipping ahead to a bucket that hasn't started yet.
  */
-export function defaultDay(days: Array<{ date: string }>, now: Date = new Date()): string | null {
+const ASSUMED_MATCH_DURATION_MS = 2.5 * 60 * 60 * 1000;
+
+export function defaultDay(
+  days: Array<{ date: string; matches: DayMatch[] }>,
+  now: Date = new Date(),
+): string | null {
   if (!days.length) return null;
-  const today = viewerDayKey(now);
-  if (days.some(d => d.date === today)) return today;
-  const future = days.find(d => d.date > today);
-  if (future) return future.date;
+  const nowMs = now.getTime();
+  // Walk in chronological order; first bucket with a still-running or
+  // upcoming match wins. Within a bucket we look at the LAST match's
+  // end time so a single late kickoff keeps the whole day "current".
+  for (const d of days) {
+    const lastEndMs = d.matches.reduce(
+      (acc, m) => Math.max(acc, m.kickoff + ASSUMED_MATCH_DURATION_MS),
+      0,
+    );
+    if (lastEndMs > nowMs) return d.date;
+  }
+  // Tournament is over — show the final day.
   return days[days.length - 1].date;
 }
 
