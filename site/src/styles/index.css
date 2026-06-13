@@ -416,21 +416,31 @@ footer {
 .mc-points.pts-4 { background: var(--ink); color: var(--surface); }
 
 .mc-actual {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  /* Match the prediction row's first three columns so the final score
+     sits directly under the prediction inputs. The +pts column on the
+     prediction row is auto-sized; we ignore it here since the final
+     row has no per-row chip. */
+  grid-template-columns: 1fr auto 1fr;
   align-items: baseline;
-  gap: 8px;
+  gap: 12px;
   margin-top: 8px;
   font-size: 13px;
   color: var(--ink-soft);
 }
 .mc-actual-label {
+  /* First grid cell: lives where team1 lives, right-aligned so it
+     reads as "final" pointing at the score that follows. */
+  grid-column: 1;
+  justify-self: end;
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 800;
 }
 .mc-actual-score {
+  /* Middle "auto" cell — same column as the prediction's score-pair. */
+  grid-column: 2;
   font-weight: 800;
   font-size: 15px;
   color: var(--ink);
