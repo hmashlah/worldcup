@@ -1,0 +1,506 @@
+{
+  "G-A-1": {
+    "fd_id": 537327,
+    "home": "Mexico",
+    "away": "South Africa",
+    "date": "2026-06-11",
+    "same_order_as_fd": true
+  },
+  "G-A-2": {
+    "fd_id": 537328,
+    "home": "South Korea",
+    "away": "Czechia",
+    "date": "2026-06-12",
+    "same_order_as_fd": true
+  },
+  "G-A-3": {
+    "fd_id": 537329,
+    "home": "Czechia",
+    "away": "South Africa",
+    "date": "2026-06-18",
+    "same_order_as_fd": true
+  },
+  "G-A-4": {
+    "fd_id": 537330,
+    "home": "Mexico",
+    "away": "South Korea",
+    "date": "2026-06-19",
+    "same_order_as_fd": true
+  },
+  "G-A-5": {
+    "fd_id": 537331,
+    "home": "Czechia",
+    "away": "Mexico",
+    "date": "2026-06-25",
+    "same_order_as_fd": true
+  },
+  "G-A-6": {
+    "fd_id": 537332,
+    "home": "South Africa",
+    "away": "South Korea",
+    "date": "2026-06-25",
+    "same_order_as_fd": true
+  },
+  "G-B-1": {
+    "fd_id": 537333,
+    "home": "Canada",
+    "away": "Bosnia-Herzegovina",
+    "date": "2026-06-12",
+    "same_order_as_fd": true
+  },
+  "G-B-2": {
+    "fd_id": 537334,
+    "home": "Qatar",
+    "away": "Switzerland",
+    "date": "2026-06-13",
+    "same_order_as_fd": true
+  },
+  "G-B-3": {
+    "fd_id": 537335,
+    "home": "Switzerland",
+    "away": "Bosnia-Herzegovina",
+    "date": "2026-06-18",
+    "same_order_as_fd": true
+  },
+  "G-B-4": {
+    "fd_id": 537336,
+    "home": "Canada",
+    "away": "Qatar",
+    "date": "2026-06-18",
+    "same_order_as_fd": true
+  },
+  "G-B-5": {
+    "fd_id": 537337,
+    "home": "Switzerland",
+    "away": "Canada",
+    "date": "2026-06-24",
+    "same_order_as_fd": true
+  },
+  "G-B-6": {
+    "fd_id": 537338,
+    "home": "Bosnia-Herzegovina",
+    "away": "Qatar",
+    "date": "2026-06-24",
+    "same_order_as_fd": true
+  },
+  "G-C-1": {
+    "fd_id": 537339,
+    "home": "Brazil",
+    "away": "Morocco",
+    "date": "2026-06-13",
+    "same_order_as_fd": true
+  },
+  "G-C-2": {
+    "fd_id": 537340,
+    "home": "Haiti",
+    "away": "Scotland",
+    "date": "2026-06-14",
+    "same_order_as_fd": true
+  },
+  "G-C-3": {
+    "fd_id": 537342,
+    "home": "Scotland",
+    "away": "Morocco",
+    "date": "2026-06-19",
+    "same_order_as_fd": true
+  },
+  "G-C-4": {
+    "fd_id": 537341,
+    "home": "Brazil",
+    "away": "Haiti",
+    "date": "2026-06-20",
+    "same_order_as_fd": true
+  },
+  "G-C-5": {
+    "fd_id": 537343,
+    "home": "Scotland",
+    "away": "Brazil",
+    "date": "2026-06-24",
+    "same_order_as_fd": true
+  },
+  "G-C-6": {
+    "fd_id": 537344,
+    "home": "Morocco",
+    "away": "Haiti",
+    "date": "2026-06-24",
+    "same_order_as_fd": true
+  },
+  "G-D-1": {
+    "fd_id": 537345,
+    "home": "United States",
+    "away": "Paraguay",
+    "date": "2026-06-13",
+    "same_order_as_fd": true
+  },
+  "G-D-2": {
+    "fd_id": 537346,
+    "home": "Australia",
+    "away": "Turkey",
+    "date": "2026-06-14",
+    "same_order_as_fd": true
+  },
+  "G-D-3": {
+    "fd_id": 537348,
+    "home": "United States",
+    "away": "Australia",
+    "date": "2026-06-19",
+    "same_order_as_fd": true
+  },
+  "G-D-4": {
+    "fd_id": 537347,
+    "home": "Turkey",
+    "away": "Paraguay",
+    "date": "2026-06-20",
+    "same_order_as_fd": true
+  },
+  "G-D-5": {
+    "fd_id": 537349,
+    "home": "Turkey",
+    "away": "United States",
+    "date": "2026-06-26",
+    "same_order_as_fd": true
+  },
+  "G-D-6": {
+    "fd_id": 537350,
+    "home": "Paraguay",
+    "away": "Australia",
+    "date": "2026-06-26",
+    "same_order_as_fd": true
+  },
+  "G-E-1": {
+    "fd_id": 537351,
+    "home": "Germany",
+    "away": "Curaçao",
+    "date": "2026-06-14",
+    "same_order_as_fd": true
+  },
+  "G-E-2": {
+    "fd_id": 537352,
+    "home": "Ivory Coast",
+    "away": "Ecuador",
+    "date": "2026-06-14",
+    "same_order_as_fd": true
+  },
+  "G-E-3": {
+    "fd_id": 537353,
+    "home": "Germany",
+    "away": "Ivory Coast",
+    "date": "2026-06-20",
+    "same_order_as_fd": true
+  },
+  "G-E-4": {
+    "fd_id": 537354,
+    "home": "Ecuador",
+    "away": "Curaçao",
+    "date": "2026-06-21",
+    "same_order_as_fd": true
+  },
+  "G-E-5": {
+    "fd_id": 537356,
+    "home": "Curaçao",
+    "away": "Ivory Coast",
+    "date": "2026-06-25",
+    "same_order_as_fd": true
+  },
+  "G-E-6": {
+    "fd_id": 537355,
+    "home": "Ecuador",
+    "away": "Germany",
+    "date": "2026-06-25",
+    "same_order_as_fd": true
+  },
+  "G-F-1": {
+    "fd_id": 537357,
+    "home": "Netherlands",
+    "away": "Japan",
+    "date": "2026-06-14",
+    "same_order_as_fd": true
+  },
+  "G-F-2": {
+    "fd_id": 537358,
+    "home": "Sweden",
+    "away": "Tunisia",
+    "date": "2026-06-15",
+    "same_order_as_fd": true
+  },
+  "G-F-3": {
+    "fd_id": 537359,
+    "home": "Netherlands",
+    "away": "Sweden",
+    "date": "2026-06-20",
+    "same_order_as_fd": true
+  },
+  "G-F-4": {
+    "fd_id": 537360,
+    "home": "Tunisia",
+    "away": "Japan",
+    "date": "2026-06-21",
+    "same_order_as_fd": true
+  },
+  "G-F-5": {
+    "fd_id": 537362,
+    "home": "Japan",
+    "away": "Sweden",
+    "date": "2026-06-25",
+    "same_order_as_fd": true
+  },
+  "G-F-6": {
+    "fd_id": 537361,
+    "home": "Tunisia",
+    "away": "Netherlands",
+    "date": "2026-06-25",
+    "same_order_as_fd": true
+  },
+  "G-G-1": {
+    "fd_id": 537363,
+    "home": "Belgium",
+    "away": "Egypt",
+    "date": "2026-06-15",
+    "same_order_as_fd": true
+  },
+  "G-G-2": {
+    "fd_id": 537364,
+    "home": "Iran",
+    "away": "New Zealand",
+    "date": "2026-06-16",
+    "same_order_as_fd": true
+  },
+  "G-G-3": {
+    "fd_id": 537365,
+    "home": "Belgium",
+    "away": "Iran",
+    "date": "2026-06-21",
+    "same_order_as_fd": true
+  },
+  "G-G-4": {
+    "fd_id": 537366,
+    "home": "New Zealand",
+    "away": "Egypt",
+    "date": "2026-06-22",
+    "same_order_as_fd": true
+  },
+  "G-G-5": {
+    "fd_id": 537368,
+    "home": "Egypt",
+    "away": "Iran",
+    "date": "2026-06-27",
+    "same_order_as_fd": true
+  },
+  "G-G-6": {
+    "fd_id": 537367,
+    "home": "New Zealand",
+    "away": "Belgium",
+    "date": "2026-06-27",
+    "same_order_as_fd": true
+  },
+  "G-H-1": {
+    "fd_id": 537369,
+    "home": "Spain",
+    "away": "Cape Verde Islands",
+    "date": "2026-06-15",
+    "same_order_as_fd": true
+  },
+  "G-H-2": {
+    "fd_id": 537370,
+    "home": "Saudi Arabia",
+    "away": "Uruguay",
+    "date": "2026-06-15",
+    "same_order_as_fd": true
+  },
+  "G-H-3": {
+    "fd_id": 537371,
+    "home": "Spain",
+    "away": "Saudi Arabia",
+    "date": "2026-06-21",
+    "same_order_as_fd": true
+  },
+  "G-H-4": {
+    "fd_id": 537372,
+    "home": "Uruguay",
+    "away": "Cape Verde Islands",
+    "date": "2026-06-21",
+    "same_order_as_fd": true
+  },
+  "G-H-5": {
+    "fd_id": 537373,
+    "home": "Uruguay",
+    "away": "Spain",
+    "date": "2026-06-27",
+    "same_order_as_fd": true
+  },
+  "G-H-6": {
+    "fd_id": 537374,
+    "home": "Cape Verde Islands",
+    "away": "Saudi Arabia",
+    "date": "2026-06-27",
+    "same_order_as_fd": true
+  },
+  "G-I-1": {
+    "fd_id": 537391,
+    "home": "France",
+    "away": "Senegal",
+    "date": "2026-06-16",
+    "same_order_as_fd": true
+  },
+  "G-I-2": {
+    "fd_id": 537392,
+    "home": "Iraq",
+    "away": "Norway",
+    "date": "2026-06-16",
+    "same_order_as_fd": true
+  },
+  "G-I-3": {
+    "fd_id": 537393,
+    "home": "France",
+    "away": "Iraq",
+    "date": "2026-06-22",
+    "same_order_as_fd": true
+  },
+  "G-I-4": {
+    "fd_id": 537394,
+    "home": "Norway",
+    "away": "Senegal",
+    "date": "2026-06-23",
+    "same_order_as_fd": true
+  },
+  "G-I-5": {
+    "fd_id": 537395,
+    "home": "Norway",
+    "away": "France",
+    "date": "2026-06-26",
+    "same_order_as_fd": true
+  },
+  "G-I-6": {
+    "fd_id": 537396,
+    "home": "Senegal",
+    "away": "Iraq",
+    "date": "2026-06-26",
+    "same_order_as_fd": true
+  },
+  "G-J-1": {
+    "fd_id": 537397,
+    "home": "Argentina",
+    "away": "Algeria",
+    "date": "2026-06-17",
+    "same_order_as_fd": true
+  },
+  "G-J-2": {
+    "fd_id": 537398,
+    "home": "Austria",
+    "away": "Jordan",
+    "date": "2026-06-17",
+    "same_order_as_fd": true
+  },
+  "G-J-3": {
+    "fd_id": 537399,
+    "home": "Argentina",
+    "away": "Austria",
+    "date": "2026-06-22",
+    "same_order_as_fd": true
+  },
+  "G-J-4": {
+    "fd_id": 537400,
+    "home": "Jordan",
+    "away": "Algeria",
+    "date": "2026-06-23",
+    "same_order_as_fd": true
+  },
+  "G-J-5": {
+    "fd_id": 537402,
+    "home": "Algeria",
+    "away": "Austria",
+    "date": "2026-06-28",
+    "same_order_as_fd": true
+  },
+  "G-J-6": {
+    "fd_id": 537401,
+    "home": "Jordan",
+    "away": "Argentina",
+    "date": "2026-06-28",
+    "same_order_as_fd": true
+  },
+  "G-K-1": {
+    "fd_id": 537403,
+    "home": "Portugal",
+    "away": "Congo DR",
+    "date": "2026-06-17",
+    "same_order_as_fd": true
+  },
+  "G-K-2": {
+    "fd_id": 537404,
+    "home": "Uzbekistan",
+    "away": "Colombia",
+    "date": "2026-06-18",
+    "same_order_as_fd": true
+  },
+  "G-K-3": {
+    "fd_id": 537405,
+    "home": "Portugal",
+    "away": "Uzbekistan",
+    "date": "2026-06-23",
+    "same_order_as_fd": true
+  },
+  "G-K-4": {
+    "fd_id": 537406,
+    "home": "Colombia",
+    "away": "Congo DR",
+    "date": "2026-06-24",
+    "same_order_as_fd": true
+  },
+  "G-K-5": {
+    "fd_id": 537407,
+    "home": "Colombia",
+    "away": "Portugal",
+    "date": "2026-06-27",
+    "same_order_as_fd": true
+  },
+  "G-K-6": {
+    "fd_id": 537408,
+    "home": "Congo DR",
+    "away": "Uzbekistan",
+    "date": "2026-06-27",
+    "same_order_as_fd": true
+  },
+  "G-L-1": {
+    "fd_id": 537409,
+    "home": "England",
+    "away": "Croatia",
+    "date": "2026-06-17",
+    "same_order_as_fd": true
+  },
+  "G-L-2": {
+    "fd_id": 537410,
+    "home": "Ghana",
+    "away": "Panama",
+    "date": "2026-06-17",
+    "same_order_as_fd": true
+  },
+  "G-L-3": {
+    "fd_id": 537411,
+    "home": "England",
+    "away": "Ghana",
+    "date": "2026-06-23",
+    "same_order_as_fd": true
+  },
+  "G-L-4": {
+    "fd_id": 537412,
+    "home": "Panama",
+    "away": "Croatia",
+    "date": "2026-06-23",
+    "same_order_as_fd": true
+  },
+  "G-L-5": {
+    "fd_id": 537413,
+    "home": "Panama",
+    "away": "England",
+    "date": "2026-06-27",
+    "same_order_as_fd": true
+  },
+  "G-L-6": {
+    "fd_id": 537414,
+    "home": "Croatia",
+    "away": "Ghana",
+    "date": "2026-06-27",
+    "same_order_as_fd": true
+  }
+}

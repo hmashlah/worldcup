@@ -6,6 +6,30 @@ export interface ResultRow {
   team1_score: number;
   team2_score: number;
   advancer: string | null;
+  /** 'admin' for manual entries, 'api' for football-data.org auto-fill. */
+  source?: 'admin' | 'api';
+  /** Raw football-data.org match record (only set when source='api'). */
+  payload?: FdMatchPayload | null;
+}
+
+/** Subset of football-data.org match record we actually display. */
+export interface FdMatchPayload {
+  id: number;
+  utcDate: string;
+  status: string;
+  stage?: string;
+  group?: string;
+  matchday?: number;
+  venue?: string | null;
+  homeTeam: { id: number; name: string; tla?: string; crest?: string };
+  awayTeam: { id: number; name: string; tla?: string; crest?: string };
+  score: {
+    winner: 'HOME_TEAM' | 'AWAY_TEAM' | 'DRAW' | null;
+    duration: 'REGULAR' | 'EXTRA_TIME' | 'PENALTY_SHOOTOUT' | null;
+    fullTime?: { home: number | null; away: number | null };
+    halfTime?: { home: number | null; away: number | null };
+  };
+  referees?: Array<{ id: number; name: string; type: string; nationality?: string }>;
 }
 
 export interface ResultDraft {
@@ -20,7 +44,9 @@ export function useResults() {
   return useQuery({
     queryKey: ['match_results'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('wc26_match_results').select('*');
+      const { data, error } = await supabase
+        .from('wc26_match_results')
+        .select('match_id, team1_score, team2_score, advancer, source, payload');
       if (error) throw error;
       const map: Record<string, ResultRow> = {};
       for (const r of (data ?? []) as ResultRow[]) map[r.match_id] = r;
@@ -41,6 +67,10 @@ export function useUpsertResult() {
             team1_score: draft.team1_score,
             team2_score: draft.team2_score,
             advancer: draft.advancer ?? null,
+            // Mark explicit admin entries so the cron sync won't ever
+            // overwrite them. If admin corrects an API-sourced row, this
+            // promotes it to admin-locked.
+            source: 'admin',
           },
           { onConflict: 'match_id' },
         );
