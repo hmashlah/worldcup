@@ -14,9 +14,11 @@ export interface LiveMatchRow {
  * right now" feed maintained by /sync-matches; wc26_match_results is
  * the league's official finished-only scoreboard.
  *
- * The cron polls football-data.org every 2 minutes, so this data is up
- * to ~2 min stale. React Query refetches every 30s on its own; if no
- * matches are live, the table is empty and the request is cheap.
+ * Refetch cadence is intentionally aggressive when the user is
+ * actively watching: 15s on a focused tab, 60s in the background.
+ * The cron polls football-data.org every 15s during live play, so
+ * 15s on the client is roughly synchronized with the upstream cadence
+ * — any faster would just re-read the same row.
  */
 export function useLiveMatches() {
   return useQuery({
@@ -30,10 +32,19 @@ export function useLiveMatches() {
       for (const r of (data ?? []) as LiveMatchRow[]) map[r.match_id] = r;
       return map;
     },
-    // Refetch every 30 seconds. Cheaper than putting refetch logic on
-    // every page that cares; React Query dedupes across components.
-    refetchInterval: 30_000,
-    // Window-focus refetch is on by default — also useful when users
-    // tab back from a TV broadcast.
+    // 15s when the tab is focused, 60s when in the background. React
+    // Query passes `false` to indicate the tab is hidden, so we use
+    // the document's visibility state directly via the function form
+    // so both browser-tab-blur and OS-level lock states drop us to 60s.
+    refetchInterval: () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return 60_000;
+      }
+      return 15_000;
+    },
+    // Reset the timer the moment focus returns, so a backgrounded
+    // tab pulls fresh data immediately on focus instead of waiting
+    // up to 60s for the next tick.
+    refetchOnWindowFocus: true,
   });
 }

@@ -52,6 +52,17 @@ export function useResults() {
       for (const r of (data ?? []) as ResultRow[]) map[r.match_id] = r;
       return map;
     },
+    // Match useLiveMatches' cadence — when a match transitions from
+    // live to finished, the new row lands in wc26_match_results within
+    // ~15s of the cron firing, and we want the page to flip from "LIVE"
+    // to "Result" without a manual refresh. Idle tabs drop to 60s.
+    refetchInterval: () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return 60_000;
+      }
+      return 15_000;
+    },
+    refetchOnWindowFocus: true,
   });
 }
 
