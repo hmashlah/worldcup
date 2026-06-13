@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run build:h2h && tsc -b && vite build",
+    "build:h2h": "node scripts/build-h2h.mjs",
     "type-check": "tsc -b --noEmit",
     "preview": "vite preview"
   },

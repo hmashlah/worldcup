@@ -25,6 +25,11 @@ function applyThemeToDom(theme: ThemeKey) {
 interface UIState {
   tab: TabKey;
   setTab: (t: TabKey) => void;
+  /** When set, App renders MatchDetailPage as a full-screen overlay
+   *  instead of the current tab content. Closing it returns to `tab`. */
+  openMatchId: string | null;
+  openMatch: (id: string) => void;
+  closeMatch: () => void;
   authOpen: boolean;
   setAuthOpen: (open: boolean) => void;
   theme: ThemeKey;
@@ -40,6 +45,9 @@ interface UIState {
 export const useUI = create<UIState>(set => ({
   tab: 'today',
   setTab: t => set({ tab: t }),
+  openMatchId: null,
+  openMatch: id => set({ openMatchId: id }),
+  closeMatch: () => set({ openMatchId: null }),
   authOpen: false,
   setAuthOpen: open => set({ authOpen: open }),
   theme: readInitialTheme(),

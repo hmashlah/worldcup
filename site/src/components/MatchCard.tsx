@@ -121,6 +121,11 @@ export function MatchCard(p: Props) {
   const labelRight = team2IsResolved ? team2 : (team2Placeholder ?? team2);
   const kickoffDate = parseKickoff(date, time);
   const kickoffStr = kickoffDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  // Hide the Details link on KO matches with a TBD slot — without both
+  // teams confirmed, the head-to-head section has nothing meaningful to
+  // show. Group-stage cards always have both teams resolved.
+  const showDetails = team1IsResolved && team2IsResolved;
+  const openMatch = useUI(s => s.openMatch);
 
   return (
     <div className={`mc ${locked ? 'mc-locked' : ''}`}>
@@ -248,6 +253,16 @@ export function MatchCard(p: Props) {
         </span>
         {roundLabel && <span className="mc-meta-round">{roundLabel}</span>}
         <span className="mc-meta-ground">{ground}</span>
+        {showDetails && (
+          <button
+            type="button"
+            className="mc-details-link"
+            onClick={() => openMatch(matchId)}
+            aria-label="Match details"
+          >
+            details →
+          </button>
+        )}
       </div>
     </div>
   );

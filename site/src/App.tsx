@@ -6,6 +6,7 @@ import { Topbar } from '@/components/Topbar';
 import { AuthModal } from '@/components/AuthModal';
 import { PendingApproval } from '@/components/PendingApproval';
 import { AdminPendingUsers } from '@/components/AdminPendingUsers';
+import { MatchDetailPage } from '@/pages/MatchDetailPage';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useUI } from '@/lib/ui-store';
@@ -19,7 +20,7 @@ export default function App() {
 }
 
 function Shell() {
-  const { tab, authOpen, setAuthOpen, adminMode } = useUI();
+  const { tab, authOpen, setAuthOpen, adminMode, openMatchId } = useUI();
   const dataQ = useTournamentData();
   const { user, isAdmin, isApproved, approvalLoading } = useAuth();
   const adminActive = isAdmin && adminMode;
@@ -40,13 +41,15 @@ function Shell() {
               Failed to load tournament data.
             </p>}
             {dataQ.data && (
-              <>
-                {tab === 'today' && <TodayTab />}
-                {tab === 'groups' && <GroupsTab />}
-                {tab === 'bracket' && <BracketTab />}
-                {tab === 'leaderboard' && <LeaderboardTab />}
-                {tab === 'admin' && adminActive && <AdminTab />}
-              </>
+              openMatchId
+                ? <MatchDetailPage matchId={openMatchId} />
+                : <>
+                    {tab === 'today' && <TodayTab />}
+                    {tab === 'groups' && <GroupsTab />}
+                    {tab === 'bracket' && <BracketTab />}
+                    {tab === 'leaderboard' && <LeaderboardTab />}
+                    {tab === 'admin' && adminActive && <AdminTab />}
+                  </>
             )}
           </>
         )}
