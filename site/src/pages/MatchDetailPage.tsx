@@ -3,6 +3,7 @@ import { Flag } from '@/components/Flag';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useResults } from '@/hooks/useResults';
+import { useLiveMatches } from '@/hooks/useLiveMatches';
 import { useAllPredictions } from '@/hooks/usePredictions';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useH2H, pairKey, type H2HMatch, type H2HGoal } from '@/hooks/useH2H';
@@ -34,6 +35,7 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
   const closeMatch = useUI(s => s.closeMatch);
   const dataQ = useTournamentData();
   const resultsQ = useResults();
+  const liveQ = useLiveMatches();
   const predsQ = useAllPredictions();
   const profilesQ = useProfiles();
   const h2hQ = useH2H();
@@ -45,6 +47,7 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
   const loading = dataQ.isLoading || resultsQ.isLoading || h2hQ.isLoading;
   const data = dataQ.data;
   const results = resultsQ.data;
+  const live = liveQ.data?.[matchId];
 
   // Locate the match. Group matches live in a `Record<GroupName, ...>`,
   // KO matches in a flat array. We try both.
@@ -130,6 +133,16 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
         </div>
         <div className="mdp-venue">{match.ground}</div>
       </header>
+
+      {/* ─── Live in-progress ─────────────────────────────────────── */}
+      {live && (
+        <LiveSection
+          payload={live.payload}
+          team1Display={team1Display}
+          team2Display={team2Display}
+          team1Resolved={team1Resolved}
+        />
+      )}
 
       {/* ─── Result + scorers (if played) ───────────────────────────── */}
       {result && (
@@ -428,6 +441,89 @@ function ScorerLine({ g, side }: { g: H2HGoal; side: 'left' | 'right' }) {
       ⚽ {g.name} {minute}'{tag}
     </li>
   );
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// Live section
+// ──────────────────────────────────────────────────────────────────────
+
+function LiveSection({
+  payload,
+  team1Display,
+  team2Display,
+  team1Resolved,
+}: {
+  payload: import('@/hooks/useResults').FdMatchPayload;
+  team1Display: string;
+  team2Display: string;
+  team1Resolved: string | null;
+}) {
+  const ft = payload.score?.fullTime;
+  const ht = payload.score?.halfTime;
+  // FD's home/away may not match our team1/team2 ordering. Detect by
+  // comparing names. If home is OUR team2, flip the score display.
+  const sameOrder = team1Resolved
+    ? canonicalCmp(payload.homeTeam?.name ?? '', team1Resolved)
+    : true;
+  const liveLeft = ft ? (sameOrder ? ft.home : ft.away) : null;
+  const liveRight = ft ? (sameOrder ? ft.away : ft.home) : null;
+  const htLeft = ht ? (sameOrder ? ht.home : ht.away) : null;
+  const htRight = ht ? (sameOrder ? ht.away : ht.home) : null;
+
+  // PAUSED is half-time. IN_PLAY/LIVE is "running".
+  const phaseLabel = payload.status === 'PAUSED' ? 'half-time' : 'in play';
+
+  return (
+    <section className="mdp-section mdp-live-section">
+      <div className="mdp-live-pill">
+        <span className="mdp-live-dot" /> LIVE · {phaseLabel}
+      </div>
+      <div className="mdp-final-score">
+        <span className="mdp-final-name">{team1Display}</span>
+        <span className="mdp-final-score-num">
+          {liveLeft ?? '–'}
+        </span>
+        <span className="mdp-dash">–</span>
+        <span className="mdp-final-score-num">
+          {liveRight ?? '–'}
+        </span>
+        <span className="mdp-final-name">{team2Display}</span>
+      </div>
+      {htLeft !== null && htRight !== null && (
+        <div className="mdp-halftime">
+          half-time:{' '}
+          <strong>
+            {htLeft}–{htRight}
+          </strong>
+        </div>
+      )}
+      <p className="mdp-source-note">
+        Live scores from football-data.org · refreshes every ~2 minutes
+      </p>
+    </section>
+  );
+}
+
+/** True if two country names refer to the same nation, after applying
+ *  the FD alias map. Used to detect home/away orientation flips
+ *  between FD and our data.json. */
+function canonicalCmp(a: string, b: string): boolean {
+  return fdAliasNorm(a) === fdAliasNorm(b);
+}
+
+/** Normalize an FD or our-side name to a single canonical lowercased
+ *  string. Handles the alias gaps surfaced by build-fd-match-map.mjs. */
+function fdAliasNorm(name: string): string {
+  const FD_ALIASES: Record<string, string> = {
+    // FD-side → our-side (so both sides land on the same string).
+    'czechia': 'czech republic',
+    'bosnia-herzegovina': 'bosnia & herzegovina',
+    'cape verde islands': 'cape verde',
+    'congo dr': 'dr congo',
+    'united states': 'usa',
+  };
+  const lower = name.trim().toLowerCase();
+  return FD_ALIASES[lower] ?? lower;
 }
 
 // ──────────────────────────────────────────────────────────────────────

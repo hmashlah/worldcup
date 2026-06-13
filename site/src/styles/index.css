@@ -2649,3 +2649,56 @@ footer {
   margin: 12px 0 0;
 }
 .mdp-referees-label { font-weight: 600; }
+
+/* MDP — live (in-progress) match section */
+.mdp-live-section {
+  background: color-mix(in srgb, #ef4444 6%, transparent);
+  border-radius: 10px;
+  margin: 0 0 8px;
+  padding: 16px 12px;
+}
+.mdp-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #b91c1c;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.mdp-live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ef4444;
+  animation: mdp-live-pulse 1.4s ease-in-out infinite;
+}
+@keyframes mdp-live-pulse {
+  0%   { opacity: 1; transform: scale(1); }
+  50%  { opacity: 0.4; transform: scale(0.85); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* MatchCard — small LIVE pill in the meta row */
+.mc-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #b91c1c;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.mc-live-pill::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #ef4444;
+  animation: mdp-live-pulse 1.4s ease-in-out infinite;
+}

@@ -3,6 +3,7 @@ import { Flag } from '@/components/Flag';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMyPredictions, useUpsertPrediction } from '@/hooks/usePredictions';
 import { useResults, useUpsertResult, useDeleteResult } from '@/hooks/useResults';
+import { useLiveMatches } from '@/hooks/useLiveMatches';
 import { useNow } from '@/hooks/useNow';
 import { isLocked, parseKickoff, fmtShortDate } from '@/lib/time';
 import { scorePrediction } from '@/lib/scoring';
@@ -52,6 +53,7 @@ export function MatchCard(p: Props) {
   const adminActive = isAdmin && adminMode;
   const myPredsQ = useMyPredictions();
   const resultsQ = useResults();
+  const liveQ = useLiveMatches();
   const upsertPred = useUpsertPrediction();
   const upsertRes = useUpsertResult();
   const deleteRes = useDeleteResult();
@@ -62,6 +64,7 @@ export function MatchCard(p: Props) {
   const locked = isLocked(date, time, now);
   const myPred = myPredsQ.data?.[matchId];
   const result = resultsQ.data?.[matchId];
+  const live = liveQ.data?.[matchId];
 
   const [a, setA] = useState('');
   const [b, setB] = useState('');
@@ -251,6 +254,7 @@ export function MatchCard(p: Props) {
         <span className="mc-meta-time">
           {showDate && <>{fmtShortDate(date)} · </>}{kickoffStr} {locked && <span className="mc-lock">· 🔒</span>}
         </span>
+        {live && <span className="mc-live-pill">live</span>}
         {roundLabel && <span className="mc-meta-round">{roundLabel}</span>}
         <span className="mc-meta-ground">{ground}</span>
         {showDetails && (
