@@ -40,6 +40,9 @@ interface FdMatch {
   group?: string;
   matchday?: number;
   venue?: string | null;
+  /** ISO timestamp of FD's last edit to this match record. We use it as
+   *  a cheap change-detector for admin-row payload enrichment. */
+  lastUpdated?: string;
   homeTeam: { id: number; name: string; tla?: string; crest?: string };
   awayTeam: { id: number; name: string; tla?: string; crest?: string };
   score: FdScore;
@@ -63,6 +66,9 @@ type MatchMap = Record<string, MatchMapEntry>; // our_id → entry
 interface ExistingResultRow {
   match_id: string;
   source: 'admin' | 'api';
+  /** Last-updated timestamp from the stored payload, used to skip
+   *  no-op patches on admin rows. NULL when payload is missing. */
+  payload_last_updated: string | null;
 }
 
 interface UpsertRow {
@@ -71,6 +77,13 @@ interface UpsertRow {
   team2_score: number;
   advancer: string | null;
   source: 'api';
+  payload: FdMatch;
+}
+
+/** Update sent for admin-entered rows: enrich the payload without
+ *  touching the score or source columns. Postgrest's PATCH lets us
+ *  update a single column when filtered by primary key. */
+interface PayloadOnlyPatch {
   payload: FdMatch;
 }
 
@@ -116,9 +129,10 @@ async function fetchFdMatches(apiKey: string): Promise<FdMatch[]> {
 
 async function fetchExistingResults(env: Env): Promise<Record<string, ExistingResultRow>> {
   // service-role key bypasses RLS so we see all rows regardless of who
-  // wrote them.
+  // wrote them. Project payload->lastUpdated so we can skip patching
+  // when the API hasn't changed anything since last sync.
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/wc26_match_results?select=match_id,source`,
+    `${env.SUPABASE_URL}/rest/v1/wc26_match_results?select=match_id,source,payload`,
     {
       headers: {
         apikey: env.SUPABASE_SERVICE_ROLE_KEY,
@@ -127,9 +141,15 @@ async function fetchExistingResults(env: Env): Promise<Record<string, ExistingRe
     },
   );
   if (!res.ok) throw new Error(`supabase select failed ${res.status}: ${await res.text()}`);
-  const rows: ExistingResultRow[] = await res.json();
+  const rows: Array<{ match_id: string; source: 'admin' | 'api'; payload: { lastUpdated?: string } | null }> = await res.json();
   const out: Record<string, ExistingResultRow> = {};
-  for (const r of rows) out[r.match_id] = r;
+  for (const r of rows) {
+    out[r.match_id] = {
+      match_id: r.match_id,
+      source: r.source,
+      payload_last_updated: r.payload?.lastUpdated ?? null,
+    };
+  }
   return out;
 }
 
@@ -154,6 +174,44 @@ async function upsertResults(env: Env, rows: UpsertRow[]): Promise<{ ok: number;
     return { ok: 0, errors: [`supabase upsert ${res.status}: ${await res.text()}`] };
   }
   return { ok: rows.length, errors: [] };
+}
+
+/**
+ * Enrich an admin-entered row with the API payload, leaving every other
+ * column (scores, advancer, source) untouched. We can't include this in
+ * the bulk upsert because that would set source='api' and bump the
+ * scores. PATCH per row is fine since this only fires for the handful
+ * of matches admin has manually entered.
+ */
+async function patchPayloads(
+  env: Env,
+  patches: Array<{ match_id: string; patch: PayloadOnlyPatch }>,
+): Promise<{ ok: number; errors: string[] }> {
+  if (patches.length === 0) return { ok: 0, errors: [] };
+  const errors: string[] = [];
+  let ok = 0;
+  // Sequential to keep the code simple; admin entries are rare.
+  for (const { match_id, patch } of patches) {
+    const res = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/wc26_match_results?match_id=eq.${encodeURIComponent(match_id)}`,
+      {
+        method: 'PATCH',
+        headers: {
+          apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+          authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+          'content-type': 'application/json',
+          prefer: 'return=minimal',
+        },
+        body: JSON.stringify(patch),
+      },
+    );
+    if (!res.ok) {
+      errors.push(`supabase patch ${match_id}: ${res.status} ${await res.text()}`);
+    } else {
+      ok++;
+    }
+  }
+  return { ok, errors };
 }
 
 export const onRequestPost: PagesFunction<Env> = async (ctx) => {
@@ -202,7 +260,8 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   }
 
   const toUpsert: UpsertRow[] = [];
-  let skipped_admin = 0;
+  const toPatch: Array<{ match_id: string; patch: PayloadOnlyPatch }> = [];
+  let skipped_admin_unchanged = 0;
   let skipped_no_score = 0;
   let skipped_unmapped = 0;
 
@@ -219,8 +278,15 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     }
     const ex = existing[ourId];
     if (ex && ex.source === 'admin') {
-      // Admin always wins. Don't touch.
-      skipped_admin++;
+      // Admin owns the score — never overwrite. But enrich the payload
+      // so the detail page can still show half-time, referee, etc.
+      // Skip if the FD `lastUpdated` matches what we already have, so
+      // we don't burn writes on every poll.
+      if (ex.payload_last_updated === m.lastUpdated) {
+        skipped_admin_unchanged++;
+        continue;
+      }
+      toPatch.push({ match_id: ourId, patch: { payload: m } });
       continue;
     }
     const sameOrder = matchMap[ourId].same_order_as_fd;
@@ -236,14 +302,16 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     });
   }
 
-  const { ok, errors } = await upsertResults(ctx.env, toUpsert);
+  const upsertRes = await upsertResults(ctx.env, toUpsert);
+  const patchRes = await patchPayloads(ctx.env, toPatch);
 
   return Response.json({
-    upserted: ok,
-    skipped_admin,
+    upserted: upsertRes.ok,
+    admin_payload_enriched: patchRes.ok,
+    skipped_admin_unchanged,
     skipped_no_score,
     skipped_unmapped,
     fd_total: fdMatches.length,
-    errors,
+    errors: [...upsertRes.errors, ...patchRes.errors],
   });
 };
