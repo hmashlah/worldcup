@@ -75,11 +75,28 @@ function localDateKey(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+/**
+ * Like localDateKey, but the "day" doesn't roll over at midnight — it
+ * rolls over at 5am local. So at 00:30 on Sunday you still get
+ * Saturday's date, which is the day whose matches are actually still
+ * being played / freshly finished.
+ *
+ * Football fans mentally bucket "Saturday's matches" as the cluster
+ * starting Saturday afternoon and ending in the wee hours of Sunday;
+ * a strict midnight rollover hides the late kickoffs from view exactly
+ * when people are watching them.
+ */
+function viewerDayKey(d: Date): string {
+  const shifted = new Date(d.getTime() - 5 * 60 * 60 * 1000);
+  return localDateKey(shifted);
+}
+
 /** "Today", "Tomorrow", "Yesterday", or "Mon, Jun 11" */
 export function relativeDayLabel(date: string, now: Date = new Date()): string {
-  const today = localDateKey(now);
-  const tomorrow = localDateKey(new Date(now.getTime() + 86400000));
-  const yesterday = localDateKey(new Date(now.getTime() - 86400000));
+  // Use the 5am-rollover viewer day so labels and defaultDay agree.
+  const today = viewerDayKey(now);
+  const tomorrow = viewerDayKey(new Date(now.getTime() + 86400000));
+  const yesterday = viewerDayKey(new Date(now.getTime() - 86400000));
   if (date === today) return 'Today';
   if (date === tomorrow) return 'Tomorrow';
   if (date === yesterday) return 'Yesterday';
@@ -95,12 +112,13 @@ export function shortDayLabel(date: string): string {
 
 /**
  * Pick which day to default to.
- * - If today has matches, use today.
- * - Otherwise, the next upcoming match-day (or the most recent past one if the tournament is over).
+ * - If today (5am-rollover) has matches, use today.
+ * - Otherwise, the next upcoming match-day (or the most recent past one
+ *   if the tournament is over).
  */
 export function defaultDay(days: Array<{ date: string }>, now: Date = new Date()): string | null {
   if (!days.length) return null;
-  const today = localDateKey(now);
+  const today = viewerDayKey(now);
   if (days.some(d => d.date === today)) return today;
   const future = days.find(d => d.date > today);
   if (future) return future.date;
