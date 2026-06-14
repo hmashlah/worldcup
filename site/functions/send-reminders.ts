@@ -20,6 +20,11 @@
  *     }>;
  *   }
  *
+ * Match IDs are translated to team-vs-team labels by fetching the
+ * tournament's data.json once per invocation. KO matches whose teams
+ * are still slot tokens (1A, W74) gracefully fall back to a readable
+ * placeholder ("Winner Group A") via the prettySlot logic.
+ *
  * Response: { sent: number, failed: number, errors: string[] }
  */
 
@@ -40,25 +45,94 @@ interface RequestBody {
   reminders?: ReminderRow[];
 }
 
+interface MatchMeta {
+  team1: string;
+  team2: string;
+}
+
 const escapeHtml = (s: string) =>
   s.replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
-function renderEmail(row: ReminderRow, appUrl: string): { subject: string; html: string; text: string } {
+/** Mirrors site/src/lib/tournament.ts prettySlot — turn a slot token
+ *  ("1A", "W74", "3A/B/C/D/F") into something a human can read in an
+ *  email when the bracket hasn't filled yet. */
+function prettySlot(token: string): string {
+  if (!token) return 'TBD';
+  const direct = /^([12])([A-L])$/.exec(token);
+  if (direct) return `${direct[1] === '1' ? 'Winner' : 'Runner-up'} Group ${direct[2]}`;
+  const third = /^3([A-L/]+)$/.exec(token);
+  if (third) return `3rd-place ${third[1]}`;
+  const wm = /^W(\d+)$/.exec(token);
+  if (wm) return `Winner of M${wm[1]}`;
+  const lm = /^L(\d+)$/.exec(token);
+  if (lm) return `Loser of M${lm[1]}`;
+  return token;
+}
+
+interface DataJson {
+  group_matches: Record<string, Array<{ id: string; team1: string; team2: string }>>;
+  ko_matches: Array<{ id: string; team1: string; team2: string }>;
+}
+
+async function loadMatchMeta(host: string): Promise<Record<string, MatchMeta>> {
+  const res = await fetch(`${host}/data.json`);
+  if (!res.ok) throw new Error(`data.json fetch failed: ${res.status}`);
+  const data: DataJson = await res.json();
+  const map: Record<string, MatchMeta> = {};
+  for (const list of Object.values(data.group_matches ?? {})) {
+    for (const m of list) map[m.id] = { team1: m.team1, team2: m.team2 };
+  }
+  for (const m of data.ko_matches ?? []) {
+    map[m.id] = { team1: m.team1, team2: m.team2 };
+  }
+  return map;
+}
+
+function matchLabel(matchId: string, meta: Record<string, MatchMeta>): string {
+  const m = meta[matchId];
+  if (!m) return matchId; // Shouldn't happen, but degrade gracefully.
+  // Group rounds: team names are real. KO before bracket fills: slot
+  // tokens like "1A". prettySlot handles both — passes real names
+  // through unchanged.
+  return `${prettySlot(m.team1)} vs ${prettySlot(m.team2)}`;
+}
+
+/** Format kickoff in a friendlier way than "Sat, 14 Jun 2026 19:00:00 GMT".
+ *  We use UTC because we don't know the recipient's timezone. */
+function formatKickoff(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'UTC',
+    timeZoneName: 'short',
+  });
+}
+
+function renderEmail(
+  row: ReminderRow,
+  appUrl: string,
+  meta: Record<string, MatchMeta>,
+): { subject: string; html: string; text: string } {
   const n = row.missing.length;
   const subject = `Reminder: ${n} prediction${n === 1 ? '' : 's'} due in the next 24h`;
 
   const list = row.missing
     .map(m => {
-      const t = new Date(m.kickoff_at).toUTCString();
-      return `<li><code>${escapeHtml(m.match_id)}</code> — ${escapeHtml(t)}</li>`;
+      const label = matchLabel(m.match_id, meta);
+      const when = formatKickoff(m.kickoff_at);
+      return `<li><strong>${escapeHtml(label)}</strong> — ${escapeHtml(when)}</li>`;
     })
     .join('');
 
   const textList = row.missing
-    .map(m => `  • ${m.match_id} — ${new Date(m.kickoff_at).toUTCString()}`)
+    .map(m => `  • ${matchLabel(m.match_id, meta)} — ${formatKickoff(m.kickoff_at)}`)
     .join('\n');
 
   const html = `
@@ -82,7 +156,7 @@ function renderEmail(row: ReminderRow, appUrl: string): { subject: string; html:
 }
 
 export const onRequestPost: PagesFunction<Env> = async (ctx) => {
-  // 1. Auth — same shared-secret pattern as notify-signup.
+  // 1. Auth.
   const secret = ctx.request.headers.get('x-wc26-secret') ?? '';
   if (!ctx.env.WC26_WEBHOOK_SECRET || secret !== ctx.env.WC26_WEBHOOK_SECRET) {
     return new Response('forbidden', { status: 403 });
@@ -100,7 +174,17 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     return Response.json({ sent: 0, failed: 0, errors: [] });
   }
 
-  // 3. Send via Resend, in parallel but with a small concurrency cap so
+  // 3. Load match metadata so we can render team names instead of IDs.
+  const url = new URL(ctx.request.url);
+  const host = `${url.protocol}//${url.host}`;
+  let meta: Record<string, MatchMeta>;
+  try {
+    meta = await loadMatchMeta(host);
+  } catch (e) {
+    return Response.json({ error: `match-meta: ${(e as Error).message}` }, { status: 500 });
+  }
+
+  // 4. Send via Resend, in parallel but with a small concurrency cap so
   //    we don't get rate-limited on big days.
   const results = { sent: 0, failed: 0, errors: [] as string[] };
   const concurrency = 5;
@@ -109,7 +193,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     const slice = reminders.slice(i, i + concurrency);
     await Promise.all(
       slice.map(async (row) => {
-        const { subject, html, text } = renderEmail(row, ctx.env.APP_URL);
+        const { subject, html, text } = renderEmail(row, ctx.env.APP_URL, meta);
         try {
           const res = await fetch('https://api.resend.com/emails', {
             method: 'POST',
