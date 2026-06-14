@@ -44,7 +44,11 @@ interface UIState {
 
 export const useUI = create<UIState>(set => ({
   tab: 'today',
-  setTab: t => set({ tab: t }),
+  // Switching tabs also closes any open match-detail overlay — otherwise
+  // the detail page stays on screen even though `tab` changed, leaving
+  // tabs feeling broken when a user opens a match and then taps
+  // Leaderboard / Bracket / etc.
+  setTab: t => set({ tab: t, openMatchId: null }),
   openMatchId: null,
   openMatch: id => set({ openMatchId: id }),
   closeMatch: () => set({ openMatchId: null }),
