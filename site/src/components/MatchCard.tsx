@@ -169,44 +169,63 @@ export function MatchCard(p: Props) {
 
   return (
     <div className={`mc ${locked ? 'mc-locked' : ''}`}>
-      {/* PREDICTION row — always the user's own pick, even for admin */}
-      <div className="mc-row">
-        <div className="mc-team mc-left">
-          {team1IsResolved
-            ? <><Flag team={team1} /><span className="mc-name">{labelLeft}</span></>
-            : <span className="mc-placeholder">{labelLeft}</span>}
+      {user ? (
+        /* PREDICTION row — the user's own pick, even for admin. */
+        <div className="mc-row">
+          <div className="mc-team mc-left">
+            {team1IsResolved
+              ? <><Flag team={team1} /><span className="mc-name">{labelLeft}</span></>
+              : <span className="mc-placeholder">{labelLeft}</span>}
+          </div>
+          <div className="mc-scores">
+            <input
+              className="mc-input" type="number" min={0} max={20} inputMode="numeric"
+              disabled={locked}
+              value={a}
+              onChange={e => setA(e.target.value)}
+              onBlur={() => savePred()}
+              aria-label={`your prediction ${labelLeft}`}
+            />
+            <span className="mc-dash">–</span>
+            <input
+              className="mc-input" type="number" min={0} max={20} inputMode="numeric"
+              disabled={locked}
+              value={b}
+              onChange={e => setB(e.target.value)}
+              onBlur={() => savePred()}
+              aria-label={`your prediction ${labelRight}`}
+            />
+          </div>
+          <div className="mc-team mc-right">
+            {team2IsResolved
+              ? <><span className="mc-name">{labelRight}</span><Flag team={team2} /></>
+              : <span className="mc-placeholder">{labelRight}</span>}
+          </div>
+          {result && myPred && (
+            <span className={`mc-points pts-${earned}`}>+{earned}</span>
+          )}
         </div>
-        <div className="mc-scores">
-          <input
-            className="mc-input" type="number" min={0} max={20} inputMode="numeric"
-            disabled={!user || locked}
-            value={a}
-            onChange={e => setA(e.target.value)}
-            onBlur={() => savePred()}
-            aria-label={`your prediction ${labelLeft}`}
-          />
-          <span className="mc-dash">–</span>
-          <input
-            className="mc-input" type="number" min={0} max={20} inputMode="numeric"
-            disabled={!user || locked}
-            value={b}
-            onChange={e => setB(e.target.value)}
-            onBlur={() => savePred()}
-            aria-label={`your prediction ${labelRight}`}
-          />
+      ) : (
+        /* GUEST header — teams + a quiet 'vs' where the score inputs
+           would sit. No prediction inputs, no points chip. The score
+           reveal still happens via the LIVE / FINAL rows below. */
+        <div className="mc-row mc-row-guest">
+          <div className="mc-team mc-left">
+            {team1IsResolved
+              ? <><Flag team={team1} /><span className="mc-name">{labelLeft}</span></>
+              : <span className="mc-placeholder">{labelLeft}</span>}
+          </div>
+          <div className="mc-scores mc-scores-guest">vs</div>
+          <div className="mc-team mc-right">
+            {team2IsResolved
+              ? <><span className="mc-name">{labelRight}</span><Flag team={team2} /></>
+              : <span className="mc-placeholder">{labelRight}</span>}
+          </div>
         </div>
-        <div className="mc-team mc-right">
-          {team2IsResolved
-            ? <><span className="mc-name">{labelRight}</span><Flag team={team2} /></>
-            : <span className="mc-placeholder">{labelRight}</span>}
-        </div>
-        {result && myPred && (
-          <span className={`mc-points pts-${earned}`}>+{earned}</span>
-        )}
-      </div>
+      )}
 
-      {/* Knockout advancer for the user's prediction */}
-      {isKO && team1IsResolved && team2IsResolved && (
+      {/* Knockout advancer — only for signed-in users. */}
+      {user && isKO && team1IsResolved && team2IsResolved && (
         <div className="mc-advancer">
           <span className="mc-advancer-label">your pick advances</span>
           {[team1, team2].map(t => (
@@ -214,7 +233,7 @@ export function MatchCard(p: Props) {
               key={t}
               type="button"
               className={`mc-advancer-pill ${adv === t ? 'on' : ''}`}
-              disabled={!user || locked}
+              disabled={locked}
               onClick={() => {
                 setAdv(t);
                 savePred({ advancer: t });

@@ -2869,3 +2869,15 @@ footer {
   background: color-mix(in srgb, var(--accent) 10%, var(--surface));
   border-color: var(--accent);
 }
+
+/* MatchCard — guest variant. Teams are still on the same 4-column
+   spine as authenticated users (so the LIVE / FINAL rows below still
+   line up with the team columns), but the middle "score input" cell
+   shows a quiet "vs" instead of editable inputs. */
+.mc-scores-guest {
+  justify-content: center;
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
