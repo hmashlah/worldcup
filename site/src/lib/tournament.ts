@@ -27,6 +27,15 @@ export function computeStandings(
   group: Group,
   scores: ScoreMap,
 ): Standing[] {
+  // Track each team's position in the input `group.teams` array. This
+  // is the FIFA-ranked order produced by build-data.py — when no
+  // matches have been played (or two teams are exactly tied on every
+  // metric), we preserve that order instead of falling through to an
+  // alphabetical sort, which would put e.g. Argentina above the
+  // higher-ranked Spain in an empty group.
+  const seedOrder: Record<string, number> = {};
+  group.teams.forEach((t, i) => { seedOrder[t] = i; });
+
   const teams: Record<string, Standing> = {};
   for (const t of group.teams) {
     teams[t] = { team: t, P: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, Pts: 0 };
@@ -46,7 +55,7 @@ export function computeStandings(
   const list = Object.values(teams);
   for (const s of list) s.GD = s.GF - s.GA;
   list.sort((x, y) =>
-    y.Pts - x.Pts || y.GD - x.GD || y.GF - x.GF || x.team.localeCompare(y.team),
+    y.Pts - x.Pts || y.GD - x.GD || y.GF - x.GF || (seedOrder[x.team] - seedOrder[y.team]),
   );
   return list;
 }

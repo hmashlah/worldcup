@@ -16,6 +16,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SRC_MATCHES = ROOT / "2026" / "worldcup.json"
 SRC_GROUPS = ROOT / "2026" / "worldcup.groups.json"
+SRC_RANKS = ROOT / "site" / "public" / "data" / "fifa-rankings.json"
 OUT = ROOT / "site" / "public" / "data.json"
 
 # ISO 3166-1 alpha-2 codes (with a few flag-icons specials for sub-nations).
@@ -38,6 +39,18 @@ FLAG_MAP = {
 def main() -> int:
     matches_in = json.loads(SRC_MATCHES.read_text())["matches"]
     groups = json.loads(SRC_GROUPS.read_text())["groups"]
+
+    # Each group's `teams` array is reordered by FIFA ranking (best
+    # ranked first), so the pre-tournament Groups view shows teams in
+    # a meaningful order instead of raw draw order. Once matches start,
+    # the standings sort takes over and this initial order doesn't
+    # matter — but for an empty group it's the only signal users see.
+    ranks: dict[str, int] = json.loads(SRC_RANKS.read_text())["ranks"]
+    def rank_key(team: str):
+        # Unranked teams sort last, alphabetically among themselves.
+        return (0 if team in ranks else 1, ranks.get(team, 9999), team)
+    for g in groups:
+        g["teams"].sort(key=rank_key)
 
     # Group matches: stable id G-<letter>-<index 1..6>
     group_buckets: dict[str, list] = {}

@@ -4,18 +4,18 @@
       "name": "Group A",
       "teams": [
         "Mexico",
-        "South Africa",
         "South Korea",
-        "Czech Republic"
+        "Czech Republic",
+        "South Africa"
       ]
     },
     {
       "name": "Group B",
       "teams": [
+        "Switzerland",
         "Canada",
-        "Bosnia & Herzegovina",
         "Qatar",
-        "Switzerland"
+        "Bosnia & Herzegovina"
       ]
     },
     {
@@ -23,26 +23,26 @@
       "teams": [
         "Brazil",
         "Morocco",
-        "Haiti",
-        "Scotland"
+        "Scotland",
+        "Haiti"
       ]
     },
     {
       "name": "Group D",
       "teams": [
         "USA",
-        "Paraguay",
         "Australia",
-        "Turkey"
+        "Turkey",
+        "Paraguay"
       ]
     },
     {
       "name": "Group E",
       "teams": [
         "Germany",
-        "Curaçao",
+        "Ecuador",
         "Ivory Coast",
-        "Ecuador"
+        "Curaçao"
       ]
     },
     {
@@ -58,8 +58,8 @@
       "name": "Group G",
       "teams": [
         "Belgium",
-        "Egypt",
         "Iran",
+        "Egypt",
         "New Zealand"
       ]
     },
@@ -67,9 +67,9 @@
       "name": "Group H",
       "teams": [
         "Spain",
-        "Cape Verde",
+        "Uruguay",
         "Saudi Arabia",
-        "Uruguay"
+        "Cape Verde"
       ]
     },
     {
@@ -77,16 +77,16 @@
       "teams": [
         "France",
         "Senegal",
-        "Iraq",
-        "Norway"
+        "Norway",
+        "Iraq"
       ]
     },
     {
       "name": "Group J",
       "teams": [
         "Argentina",
-        "Algeria",
         "Austria",
+        "Algeria",
         "Jordan"
       ]
     },
@@ -94,9 +94,9 @@
       "name": "Group K",
       "teams": [
         "Portugal",
-        "DR Congo",
+        "Colombia",
         "Uzbekistan",
-        "Colombia"
+        "DR Congo"
       ]
     },
     {
@@ -104,8 +104,8 @@
       "teams": [
         "England",
         "Croatia",
-        "Ghana",
-        "Panama"
+        "Panama",
+        "Ghana"
       ]
     }
   ],
