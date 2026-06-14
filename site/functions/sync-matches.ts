@@ -66,9 +66,10 @@ type MatchMap = Record<string, MatchMapEntry>; // our_id → entry
 interface ExistingResultRow {
   match_id: string;
   source: 'admin' | 'api';
-  /** Last-updated timestamp from the stored payload, used to skip
-   *  no-op patches on admin rows. NULL when payload is missing. */
-  payload_last_updated: string | null;
+  /** True if the row already has a payload column populated. Once true,
+   *  we never re-fetch or re-write this row — finished match data is
+   *  inert. */
+  has_payload: boolean;
 }
 
 interface UpsertRow {
@@ -142,10 +143,15 @@ async function fetchFdMatches(apiKey: string): Promise<FdMatch[]> {
 
 async function fetchExistingResults(env: Env): Promise<Record<string, ExistingResultRow>> {
   // service-role key bypasses RLS so we see all rows regardless of who
-  // wrote them. Project payload->lastUpdated so we can skip patching
-  // when the API hasn't changed anything since last sync.
-  const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/wc26_match_results?select=match_id,source,payload`,
+  // wrote them. We do TWO cheap selects:
+  //   1. match_id + source (negligible bytes, ~30b/row)
+  //   2. match_ids where payload is null (admin rows still needing
+  //      enrichment) — typically a tiny subset.
+  // Avoiding the full payload column saves ~1.5 KB/row × 100+ rows on
+  // every cron tick — the dominant egress + IO cost when growing toward
+  // tournament end.
+  const baseRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/wc26_match_results?select=match_id,source`,
     {
       headers: {
         apikey: env.SUPABASE_SERVICE_ROLE_KEY,
@@ -153,14 +159,30 @@ async function fetchExistingResults(env: Env): Promise<Record<string, ExistingRe
       },
     },
   );
-  if (!res.ok) throw new Error(`supabase select failed ${res.status}: ${await res.text()}`);
-  const rows: Array<{ match_id: string; source: 'admin' | 'api'; payload: { lastUpdated?: string } | null }> = await res.json();
+  if (!baseRes.ok) throw new Error(`supabase base select ${baseRes.status}: ${await baseRes.text()}`);
+  const baseRows: Array<{ match_id: string; source: 'admin' | 'api' }> = await baseRes.json();
+
+  // Which match_ids still need their payload populated?
+  const nullPayloadRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/wc26_match_results?select=match_id&payload=is.null`,
+    {
+      headers: {
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+    },
+  );
+  if (!nullPayloadRes.ok) throw new Error(`supabase null-payload select ${nullPayloadRes.status}: ${await nullPayloadRes.text()}`);
+  const nullPayloadIds: Set<string> = new Set(
+    ((await nullPayloadRes.json()) as Array<{ match_id: string }>).map(r => r.match_id),
+  );
+
   const out: Record<string, ExistingResultRow> = {};
-  for (const r of rows) {
+  for (const r of baseRows) {
     out[r.match_id] = {
       match_id: r.match_id,
       source: r.source,
-      payload_last_updated: r.payload?.lastUpdated ?? null,
+      has_payload: !nullPayloadIds.has(r.match_id),
     };
   }
   return out;
@@ -342,7 +364,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   const toPatch: Array<{ match_id: string; patch: PayloadOnlyPatch }> = [];
   const toLiveUpsert: Array<{ match_id: string; payload: FdMatch }> = [];
   const stillLiveIds = new Set<string>();
-  let skipped_admin_unchanged = 0;
+  let skipped_already_synced = 0;
   let skipped_no_score = 0;
   let skipped_unmapped = 0;
 
@@ -367,19 +389,28 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
       skipped_no_score++;
       continue;
     }
+
     const ex = existing[ourId];
+
+    // Already-synced FINISHED match: row exists AND its payload is
+    // populated. Nothing to do — finished match data is inert. This is
+    // the dominant case across most cron ticks and the biggest source
+    // of disk IO if we don't gate it.
+    if (ex && ex.has_payload) {
+      skipped_already_synced++;
+      continue;
+    }
+
     if (ex && ex.source === 'admin') {
-      // Admin owns the score — never overwrite. But enrich the payload
-      // so the detail page can still show half-time, referee, etc.
-      // Skip if the FD `lastUpdated` matches what we already have, so
-      // we don't burn writes on every poll.
-      if (ex.payload_last_updated === m.lastUpdated) {
-        skipped_admin_unchanged++;
-        continue;
-      }
+      // Admin owns the score — never overwrite. But the row has no
+      // payload yet (otherwise we'd have skipped above), so do a
+      // one-time payload enrichment so the detail page can show
+      // half-time / referee / etc.
       toPatch.push({ match_id: ourId, patch: { payload: m } });
       continue;
     }
+
+    // No existing row — upsert the FINISHED data.
     const sameOrder = matchMap[ourId].same_order_as_fd;
     const fdHome = m.score.fullTime!.home as number;
     const fdAway = m.score.fullTime!.away as number;
@@ -407,7 +438,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     admin_payload_enriched: patchRes.ok,
     live_upserted: liveUpsertRes.ok,
     live_deleted: liveDeleteRes.ok,
-    skipped_admin_unchanged,
+    skipped_already_synced,
     skipped_no_score,
     skipped_unmapped,
     fd_total: fdMatches.length,
