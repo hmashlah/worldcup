@@ -205,16 +205,20 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
       )}
 
       {/* ─── League predictions ─────────────────────────────────────── */}
-      <PredictionsSection
-        matchId={matchId}
-        isKO={isKnockoutMatch}
-        currentUserId={user?.id ?? null}
-        predictions={predsQ.data ?? []}
-        profiles={profilesQ.data ?? {}}
-        result={result ?? null}
-        locked={locked}
-      />
-
+      {/* Guests don't see this section — RLS hides predictions/profiles
+          from anon anyway, and exposing other players' picks to anyone
+          on the internet wasn't the deal members signed up for. */}
+      {user && (
+        <PredictionsSection
+          matchId={matchId}
+          isKO={isKnockoutMatch}
+          currentUserId={user.id}
+          predictions={predsQ.data ?? []}
+          profiles={profilesQ.data ?? {}}
+          result={result ?? null}
+          locked={locked}
+        />
+      )}
       {/* ─── Head-to-Head ────────────────────────────────────────────── */}
       <H2HSection
         team1={team1Resolved}

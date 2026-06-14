@@ -46,12 +46,21 @@ export function Topbar() {
   }, [isAdmin, profilesQ.data]);
 
   const adminActive = isAdmin && adminMode;
-  // If admin turns admin mode off while sitting on the Admin tab, bounce them.
+  // If admin turns admin mode off while sitting on the Admin tab, bounce
+  // them. Same idea for guests landing on the leaderboard tab — they
+  // can't see it, so flip back to Matches.
   useEffect(() => {
     if (tab === 'admin' && !adminActive) setTab('today');
-  }, [tab, adminActive, setTab]);
+    if (tab === 'leaderboard' && !user) setTab('today');
+  }, [tab, adminActive, user, setTab]);
 
-  const tabs = adminActive ? [...TABS, { key: 'admin' as TabKey, label: 'Admin' }] : TABS;
+  // Build the visible tab list: guests don't see Leaderboard (they
+  // can't read predictions/profiles via RLS, so it'd be empty); admins
+  // get an extra Admin tab.
+  const baseTabs = user
+    ? TABS
+    : TABS.filter(t => t.key !== 'leaderboard');
+  const tabs = adminActive ? [...baseTabs, { key: 'admin' as TabKey, label: 'Admin' }] : baseTabs;
 
   return (
     <header className="topbar">

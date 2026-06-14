@@ -5,7 +5,6 @@ import { LeaderboardCard } from '@/components/LeaderboardCard';
 import { Topbar } from '@/components/Topbar';
 import { AuthModal } from '@/components/AuthModal';
 import { PendingApproval } from '@/components/PendingApproval';
-import { SignInGate } from '@/components/SignInGate';
 import { AdminPendingUsers } from '@/components/AdminPendingUsers';
 import { MatchDetailPage } from '@/pages/MatchDetailPage';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
@@ -23,24 +22,19 @@ export default function App() {
 function Shell() {
   const { tab, authOpen, setAuthOpen, adminMode, openMatchId } = useUI();
   const dataQ = useTournamentData();
-  const { user, isAdmin, isApproved, approvalLoading, loading: authLoading } = useAuth();
+  const { user, isAdmin, isApproved, approvalLoading } = useAuth();
   const adminActive = isAdmin && adminMode;
 
-  // Anonymous visitors see only a sign-in landing — no fixture data,
-  // no detail pages, no leaderboard. The previous behavior (data with
-  // a "Sign in" affordance) leaked the schedule to anyone.
-  const showGate = !authLoading && !user;
-
   // Signed-in but not yet approved by admin → show holding screen.
+  // Anonymous visitors get the full read-only browse — they just see
+  // limited tabs and no per-player predictions (gated in components).
   const showPending = !!user && !approvalLoading && !isApproved;
 
   return (
     <>
-      {!showGate && <Topbar />}
+      <Topbar />
       <main>
-        {showGate ? (
-          <SignInGate />
-        ) : showPending ? (
+        {showPending ? (
           <PendingApproval />
         ) : (
           <>
@@ -55,7 +49,7 @@ function Shell() {
                     {tab === 'today' && <TodayTab />}
                     {tab === 'groups' && <GroupsTab />}
                     {tab === 'bracket' && <BracketTab />}
-                    {tab === 'leaderboard' && <LeaderboardTab />}
+                    {tab === 'leaderboard' && user && <LeaderboardTab />}
                     {tab === 'admin' && adminActive && <AdminTab />}
                   </>
             )}
