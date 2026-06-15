@@ -2896,3 +2896,12 @@ footer {
   padding-top: 10px;
   border-top: 1px dashed color-mix(in srgb, var(--ink-soft) 30%, transparent);
 }
+
+/* H2H card head — competition tag (Euros, Copa America, etc.) */
+.mdp-h2h-comp {
+  font-weight: 700;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+}

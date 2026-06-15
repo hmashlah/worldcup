@@ -10,9 +10,14 @@ export interface H2HGoal {
 }
 
 export interface H2HMatch {
+  /** Competition name: "World Cup" | "Euros" | "Copa America" | "AFCON"
+   *  | "Asian Cup" | "Confederations Cup". Older WC archive entries use
+   *  the literal "World Cup" added at build time. */
+  competition: string;
   year: number;
-  /** Normalized round name: "Group stage" | "Round of 16" | "Quarter-finals"
-   *  | "Semi-finals" | "Third place" | "Final" | … */
+  /** Normalized round name where available. Older Wikipedia tournaments
+   *  often have an empty string here — the UI falls back to year+
+   *  competition only. */
   round: string;
   /** ISO date "YYYY-MM-DD" — may be null on the very oldest editions. */
   date: string | null;

@@ -120,6 +120,7 @@ function buildIndex() {
 
       const key = [c1, c2].sort().join('|');
       const rec = {
+        competition: 'World Cup',
         year,
         round: normalizeRound(m.round),
         date: m.date ?? null,
@@ -135,11 +136,6 @@ function buildIndex() {
     }
   }
 
-  // Sort each pair's history newest first.
-  for (const key of Object.keys(index)) {
-    index[key].sort((a, b) => b.year - a.year || (a.date || '').localeCompare(b.date || ''));
-  }
-
   return { index, totalMatches, skippedNoScore, years };
 }
 
@@ -149,22 +145,79 @@ function main() {
   mkdirSync(outDir, { recursive: true });
   const outPath = join(outDir, 'h2h.json');
 
+  // Only include H2H pairs where BOTH teams are in this tournament.
+  // Cuts the file size dramatically — Wikipedia gives us 1006 pairs but
+  // only ~48 choose 2 = 1128 are even potentially meaningful, and in
+  // practice far fewer of those have any prior tournament meetings.
+  // The frontend wouldn't render the rest anyway.
+  const tournamentTeams = readCurrentTournamentTeams();
+  const teamSet = new Set(tournamentTeams.map(canonical));
+
+  // Merge in the Wikipedia-scraped tournaments (Euros, Copa, AFCON,
+  // Asian Cup, Confederations Cup) if present. The scraper writes to
+  // wiki-h2h.json with the same per-pair shape, so merging is a flat
+  // concat per key. If the scraper hasn't been run yet, the merge is
+  // a no-op.
+  const wikiPath = join(outDir, 'wiki-h2h.json');
+  let wikiAdded = 0;
+  try {
+    const wiki = JSON.parse(readFileSync(wikiPath, 'utf8'));
+    for (const [key, list] of Object.entries(wiki.pairs ?? {})) {
+      (index[key] ??= []).push(...list);
+      wikiAdded += list.length;
+    }
+  } catch (e) {
+    if (e.code !== 'ENOENT') throw e;
+    console.log('  no wiki-h2h.json found — run scrape-wiki-tournaments.mjs to add Euros/Copa/AFCON/Asian/Confed Cup history');
+  }
+
+  // Filter pairs: keep only when both canonical teams are competing.
+  let droppedPairs = 0;
+  let droppedMatches = 0;
+  for (const key of Object.keys(index)) {
+    const [a, b] = key.split('|');
+    if (!teamSet.has(a) || !teamSet.has(b)) {
+      droppedMatches += index[key].length;
+      droppedPairs++;
+      delete index[key];
+    }
+  }
+
+  // Sort each remaining pair newest first across all sources.
+  for (const key of Object.keys(index)) {
+    index[key].sort((a, b) =>
+      (b.year - a.year) || (a.date ?? '').localeCompare(b.date ?? '')
+    );
+  }
+
   const payload = {
-    generated_at: new Date(0).toISOString().replace('1970-01-01T00:00:00.000Z', 'build-time'),
     source_years: years,
     aliases: ALIASES,
     pairs: index,
   };
-  // Don't bake a real timestamp — keeps the file content-addressable so
-  // CDN caching stays effective across rebuilds with no data change.
-  delete payload.generated_at;
 
   writeFileSync(outPath, JSON.stringify(payload));
   const pairs = Object.keys(index).length;
+  const keptMatches = Object.values(index).reduce((sum, list) => sum + list.length, 0);
   console.log(`wrote ${outPath}`);
-  console.log(`  ${totalMatches} matches across ${pairs} pairs`);
-  console.log(`  source years: ${years[0]}-${years[years.length - 1]} (${years.length} editions)`);
+  console.log(`  ${totalMatches} WC matches + ${wikiAdded} Wikipedia matches collected`);
+  console.log(`  filtered to ${tournamentTeams.length} participating teams: ${pairs} pairs / ${keptMatches} matches kept`);
+  console.log(`  dropped ${droppedPairs} pairs / ${droppedMatches} matches not involving 2026 teams`);
+  console.log(`  WC source years: ${years[0]}-${years[years.length - 1]} (${years.length} editions)`);
   if (skippedNoScore) console.log(`  skipped ${skippedNoScore} matches with no final-time score`);
+}
+
+/** Read the 48 teams competing in WC 2026 from data.json (already
+ *  produced by build-data.py from the upstream openfootball source). */
+function readCurrentTournamentTeams() {
+  const dataPath = join(REPO_ROOT, 'site', 'public', 'data.json');
+  const data = JSON.parse(readFileSync(dataPath, 'utf8'));
+  const teams = new Set();
+  for (const m of (data.group_matches ? Object.values(data.group_matches).flat() : [])) {
+    if (m.team1) teams.add(m.team1);
+    if (m.team2) teams.add(m.team2);
+  }
+  return [...teams];
 }
 
 main();

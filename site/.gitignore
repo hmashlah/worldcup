@@ -27,3 +27,6 @@ npm-debug.log*
 
 # Supabase CLI runtime cache
 supabase/.temp/
+
+# Wiki scrape cache (regenerated on demand)
+.cache/

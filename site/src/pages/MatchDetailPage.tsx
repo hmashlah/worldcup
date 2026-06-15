@@ -348,7 +348,7 @@ function H2HSection({ team1, team2 }: { team1: string | null; team2: string | nu
   if (!team1 || !team2) {
     return (
       <section className="mdp-section">
-        <h3 className="mdp-h3">Previous World Cup meetings</h3>
+        <h3 className="mdp-h3">Previous meetings</h3>
         <p className="mdp-empty">Both teams must be confirmed before history is available.</p>
       </section>
     );
@@ -356,7 +356,7 @@ function H2HSection({ team1, team2 }: { team1: string | null; team2: string | nu
   if (h2hQ.isLoading || !h2hQ.data) {
     return (
       <section className="mdp-section">
-        <h3 className="mdp-h3">Previous World Cup meetings</h3>
+        <h3 className="mdp-h3">Previous meetings</h3>
         <p className="mdp-empty">loading…</p>
       </section>
     );
@@ -368,9 +368,9 @@ function H2HSection({ team1, team2 }: { team1: string | null; team2: string | nu
   if (matches.length === 0) {
     return (
       <section className="mdp-section">
-        <h3 className="mdp-h3">Previous World Cup meetings</h3>
+        <h3 className="mdp-h3">Previous meetings</h3>
         <p className="mdp-empty">
-          No previous World Cup meetings between these teams. This is their first.
+          No previous tournament meetings between these teams. This is their first.
         </p>
       </section>
     );
@@ -398,7 +398,7 @@ function H2HSection({ team1, team2 }: { team1: string | null; team2: string | nu
 
   return (
     <section className="mdp-section">
-      <h3 className="mdp-h3">Previous World Cup meetings</h3>
+      <h3 className="mdp-h3">Previous meetings</h3>
       <div className="mdp-h2h-summary">
         <span><strong>{summary.w}</strong> W</span>
         <span><strong>{summary.d}</strong> D</span>
@@ -422,7 +422,8 @@ function H2HMatchCard({ match }: { match: H2HMatch }) {
     <li className="mdp-h2h-card">
       <div className="mdp-h2h-card-head">
         <span className="mdp-h2h-year">{match.year}</span>
-        <span className="mdp-h2h-round">{match.round}</span>
+        <span className="mdp-h2h-comp">{match.competition}</span>
+        {match.round && <span className="mdp-h2h-round">{match.round}</span>}
         {match.date && <span className="mdp-h2h-date">{match.date}</span>}
       </div>
       <div className="mdp-h2h-score">
