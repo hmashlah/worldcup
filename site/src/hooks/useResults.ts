@@ -17,6 +17,21 @@ export interface ResultRow {
 /** Full row including FD payload — only used by MatchDetailPage. */
 export interface FullResultRow extends ResultRow {
   payload?: FdMatchPayload | null;
+  /** Goal scorers scraped from Wikipedia (post-match, populated daily).
+   *  Independent of `payload` — football-data.org's free tier strips
+   *  goal events, so this fills the gap. NULL for matches that haven't
+   *  been scraped yet. */
+  wiki_scorers?: WikiGoal[] | null;
+}
+
+/** A single goal as parsed from the Wikipedia tournament article. */
+export interface WikiGoal {
+  team: 'home' | 'away';
+  name: string;
+  minute: number;
+  /** Stoppage-time minutes (the "+3" in 90+3'). */
+  extraTime?: number;
+  kind: 'goal' | 'penalty' | 'own-goal';
 }
 
 /** Subset of football-data.org match record we actually display. */
@@ -95,7 +110,7 @@ export function useMatchResult(matchId: string | null) {
       if (!matchId) return null;
       const { data, error } = await supabase
         .from('wc26_match_results')
-        .select('match_id, team1_score, team2_score, advancer, source, payload')
+        .select('match_id, team1_score, team2_score, advancer, source, payload, wiki_scorers')
         .eq('match_id', matchId)
         .maybeSingle();
       if (error) throw error;

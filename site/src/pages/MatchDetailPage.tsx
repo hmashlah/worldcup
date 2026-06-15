@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Flag } from '@/components/Flag';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTournamentData } from '@/hooks/useTournamentData';
-import { useResults, useMatchResult, type FullResultRow } from '@/hooks/useResults';
+import { useResults, useMatchResult, type FullResultRow, type WikiGoal } from '@/hooks/useResults';
 import { useLiveMatches } from '@/hooks/useLiveMatches';
 import { useAllPredictions } from '@/hooks/usePredictions';
 import { useProfiles } from '@/hooks/useProfiles';
@@ -181,6 +181,12 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
                 ? 'after extra time'
                 : 'on penalties'}
             </div>
+          )}
+          {/* Per-match goal scorers, scraped daily from Wikipedia.
+              Hidden when wiki_scorers is null (match not yet scraped
+              or 0-0). Two-column layout mirrors the H2H card. */}
+          {result.wiki_scorers && result.wiki_scorers.length > 0 && (
+            <ScorersBlock scorers={result.wiki_scorers} />
           )}
           {isKnockoutMatch && result.advancer && (
             <div className="mdp-advanced">
@@ -451,6 +457,37 @@ function H2HMatchCard({ match }: { match: H2HMatch }) {
 function ScorerLine({ g, side }: { g: H2HGoal; side: 'left' | 'right' }) {
   const minute = g.offset ? `90+${g.offset}` : `${g.minute}`;
   const tag = g.penalty ? ' (pen)' : g.owngoal ? ' (OG)' : '';
+  return (
+    <li className={`mdp-h2h-goal ${side}`}>
+      ⚽ {g.name} {minute}'{tag}
+    </li>
+  );
+}
+
+/**
+ * Per-match scorers block on the Result section. Two columns: home
+ * team scorers (left) and away team scorers (right). Reuses the
+ * .mdp-h2h-scorers styles so the look matches the head-to-head
+ * scorer columns lower on the page.
+ */
+function ScorersBlock({ scorers }: { scorers: WikiGoal[] }) {
+  const homeGoals = scorers.filter(g => g.team === 'home');
+  const awayGoals = scorers.filter(g => g.team === 'away');
+  return (
+    <div className="mdp-h2h-scorers mdp-result-scorers">
+      <ul>
+        {homeGoals.map((g, i) => <WikiScorerLine key={`h${i}`} g={g} side="left" />)}
+      </ul>
+      <ul>
+        {awayGoals.map((g, i) => <WikiScorerLine key={`a${i}`} g={g} side="right" />)}
+      </ul>
+    </div>
+  );
+}
+
+function WikiScorerLine({ g, side }: { g: WikiGoal; side: 'left' | 'right' }) {
+  const minute = g.extraTime ? `${g.minute}+${g.extraTime}` : `${g.minute}`;
+  const tag = g.kind === 'penalty' ? ' (pen)' : g.kind === 'own-goal' ? ' (OG)' : '';
   return (
     <li className={`mdp-h2h-goal ${side}`}>
       ⚽ {g.name} {minute}'{tag}

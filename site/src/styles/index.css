@@ -2881,3 +2881,12 @@ footer {
   font-weight: 600;
   letter-spacing: 0.02em;
 }
+
+/* Result section's scorers block — reuses h2h-scorers grid for the
+   2-col layout, with a touch more breathing room above so it sits
+   below the half-time / duration lines. */
+.mdp-result-scorers {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px dashed color-mix(in srgb, var(--ink-soft) 30%, transparent);
+}
