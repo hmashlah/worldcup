@@ -60,18 +60,21 @@ interface OurMatchInfo {
 
 /** Wikipedia uses the team's full national-team article title which
  *  always ends with " national football team" or " national soccer
- *  team". This trims the suffix and applies our usual aliases so
- *  "USA" / "United States" land on the same key. */
+ *  team" — sometimes prefixed with " men's" (e.g. Canada/USA/Australia).
+ *  This trims the suffix and applies our usual aliases so e.g. "USA"
+ *  / "United States" land on the same key. */
 function canonicalizeTeam(wikiTitle: string): string {
   const ALIASES: Record<string, string> = {
     'United States': 'USA',
     'Czechia': 'Czech Republic',
     'Bosnia-Herzegovina': 'Bosnia & Herzegovina',
+    'Bosnia and Herzegovina': 'Bosnia & Herzegovina',
     'Cape Verde Islands': 'Cape Verde',
     'Congo DR': 'DR Congo',
   };
   let name = wikiTitle
-    .replace(/\s+national\s+(football|soccer)\s+team$/i, '')
+    // Drop optional "men's" / "men&#39;s" prefix to "national".
+    .replace(/\s+(?:men[''’]s\s+)?national\s+(football|soccer)\s+team$/i, '')
     .trim();
   return ALIASES[name] ?? name;
 }
