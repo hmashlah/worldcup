@@ -1270,6 +1270,12 @@ footer {
 }
 
 .kb-card { position: relative; }
+/* Reserve a sliver of top padding inside KO-card MatchCards so the
+   small "M73" badge in the top-left corner doesn't overlap the
+   prediction row's team name. Chrome doesn't otherwise add space
+   for the absolutely-positioned badge; Safari sometimes does via a
+   slightly different baseline. Force consistent layout in both. */
+.kb-card .mc { padding-top: 22px; }
 .kb-card-final .mc {
   border: 1.5px solid var(--accent);
 }
