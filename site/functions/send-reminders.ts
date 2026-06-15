@@ -100,8 +100,10 @@ function matchLabel(matchId: string, meta: Record<string, MatchMeta>): string {
   return `${prettySlot(m.team1)} vs ${prettySlot(m.team2)}`;
 }
 
-/** Format kickoff in a friendlier way than "Sat, 14 Jun 2026 19:00:00 GMT".
- *  We use UTC because we don't know the recipient's timezone. */
+/** Format kickoff in Berlin local time. The whole league is based
+ *  there, so showing "Sat, 14 Jun, 21:00 CEST" reads more naturally
+ *  than UTC and members don't have to do mental conversion. The IANA
+ *  zone handles CET/CEST switchover automatically. */
 function formatKickoff(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleString('en-GB', {
@@ -110,7 +112,7 @@ function formatKickoff(iso: string): string {
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'UTC',
+    timeZone: 'Europe/Berlin',
     timeZoneName: 'short',
   });
 }
