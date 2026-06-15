@@ -193,11 +193,6 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
               <strong>{result.advancer}</strong> advanced
             </div>
           )}
-          {result.source === 'api' && (
-            <p className="mdp-source-note">
-              Auto-filled from football-data.org. Admin can correct in the match card.
-            </p>
-          )}
           {result.payload?.referees && result.payload.referees.length > 0 && (
             <div className="mdp-referees">
               <span className="mdp-referees-label">Referee:</span>{' '}
