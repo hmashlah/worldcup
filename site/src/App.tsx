@@ -2,6 +2,7 @@ import { DayView } from '@/components/DayView';
 import { GroupsGridView } from '@/components/GroupsGridView';
 import { Bracket } from '@/components/Bracket';
 import { LeaderboardCard } from '@/components/LeaderboardCard';
+import { PointsTrendChart } from '@/components/PointsTrendChart';
 import { Topbar } from '@/components/Topbar';
 import { AuthModal } from '@/components/AuthModal';
 import { PendingApproval } from '@/components/PendingApproval';
@@ -104,6 +105,7 @@ function LeaderboardTab() {
         <p>3 pts for an exact score · 1 pt for the right outcome · +1 in knockouts for the right advancer.</p>
       </div>
       <LeaderboardCard />
+      <PointsTrendChart />
     </section>
   );
 }

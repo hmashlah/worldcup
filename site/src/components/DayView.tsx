@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { MatchCard } from '@/components/MatchCard';
+import { DayLeaderboard } from '@/components/DayLeaderboard';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useResults } from '@/hooks/useResults';
+import { useAuth } from '@/contexts/AuthContext';
 import { resolveSlot, prettySlot, isKnockoutRound } from '@/lib/tournament';
 import { matchesByDay, defaultDay, relativeDayLabel, shortDayLabel } from '@/lib/days';
 import type { AdvancerMap, ScoreMap } from '@/lib/types';
@@ -9,6 +11,7 @@ import type { AdvancerMap, ScoreMap } from '@/lib/types';
 export function DayView() {
   const dataQ = useTournamentData();
   const resultsQ = useResults();
+  const { user } = useAuth();
   const stripRef = useRef<HTMLDivElement>(null);
 
   const days = useMemo(() => dataQ.data ? matchesByDay(dataQ.data) : [], [dataQ.data]);
@@ -97,6 +100,9 @@ export function DayView() {
           );
         })}
       </div>
+
+      {/* Day leaderboard (only visible for authenticated users, only when results exist) */}
+      {user && <DayLeaderboard matchIds={activeDay.matches.map(m => m.id)} />}
     </div>
   );
 }
