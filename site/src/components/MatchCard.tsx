@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Flag } from '@/components/Flag';
+import { ConsensusPick } from '@/components/ConsensusPick';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMyPredictions, useUpsertPrediction } from '@/hooks/usePredictions';
 import { useResults, useUpsertResult, useDeleteResult } from '@/hooks/useResults';
@@ -317,6 +318,11 @@ export function MatchCard(p: Props) {
             <span className="mc-actual-score">{result.team1_score} – {result.team2_score}</span>
           </div>
         )
+      )}
+
+      {/* Consensus pick — visible on locked matches for signed-in users */}
+      {user && locked && team1IsResolved && team2IsResolved && (
+        <ConsensusPick matchId={matchId} team1={team1} team2={team2} />
       )}
 
       <div className="mc-meta">

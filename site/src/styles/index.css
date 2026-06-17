@@ -2897,6 +2897,99 @@ footer {
   border-top: 1px dashed color-mix(in srgb, var(--ink-soft) 30%, transparent);
 }
 
+/* ── Consensus Pick (inline prediction distribution) ─────────────── */
+
+.consensus {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+}
+.consensus-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.consensus-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+}
+.consensus-avg {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.consensus-bar {
+  display: flex;
+  height: 18px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  gap: 1px;
+}
+.consensus-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 800;
+  color: white;
+  min-width: 0;
+  transition: width .3s ease;
+}
+.consensus-seg-t1 {
+  background: var(--ink);
+}
+.consensus-seg-draw {
+  background: var(--ink-soft);
+}
+.consensus-seg-t2 {
+  background: var(--accent);
+}
+.consensus-legend {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.consensus-legend-t1 { color: var(--ink); }
+.consensus-legend-draw { color: var(--ink-faint); }
+.consensus-legend-t2 { color: var(--accent); }
+
+/* Funky overrides */
+[data-theme='funky'] .consensus-bar {
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  height: 20px;
+  overflow: hidden;
+}
+[data-theme='funky'] .consensus-seg-t1 {
+  background: linear-gradient(120deg, #2563eb 0%, #6366f1 100%);
+}
+[data-theme='funky'] .consensus-seg-draw {
+  background: linear-gradient(120deg, #6b7280 0%, #9ca3af 100%);
+}
+[data-theme='funky'] .consensus-seg-t2 {
+  background: linear-gradient(120deg, #ec4899 0%, #f59e0b 100%);
+}
+[data-theme='funky'] .consensus-seg {
+  font-size: 10px;
+  font-family: var(--score-font);
+}
+
+/* Mobile */
+@media (max-width: 720px) {
+  .consensus { margin-top: 8px; padding-top: 6px; }
+  .consensus-bar { height: 16px; }
+  .consensus-seg { font-size: 8px; }
+  .consensus-legend { font-size: 9px; }
+}
+
 /* ── Points Trend Chart ──────────────────────────────────────────── */
 
 .trend-chart {
