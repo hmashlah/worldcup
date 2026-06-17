@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { usePointsTrend, type PlayerTrend } from '@/hooks/usePointsTrend';
+import { usePointsTrend } from '@/hooks/usePointsTrend';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Distinct colors for player lines
