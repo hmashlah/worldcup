@@ -152,6 +152,7 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
           team1Display={team1Display}
           team2Display={team2Display}
           team1Resolved={team1Resolved}
+          now={now}
         />
       )}
 
@@ -500,11 +501,13 @@ function LiveSection({
   team1Display,
   team2Display,
   team1Resolved,
+  now,
 }: {
   payload: import('@/hooks/useResults').FdMatchPayload;
   team1Display: string;
   team2Display: string;
   team1Resolved: string | null;
+  now: number;
 }) {
   const ft = payload.score?.fullTime;
   const ht = payload.score?.halfTime;
@@ -518,8 +521,19 @@ function LiveSection({
   const htLeft = ht ? (sameOrder ? ht.home : ht.away) : null;
   const htRight = ht ? (sameOrder ? ht.away : ht.home) : null;
 
-  // PAUSED is half-time. IN_PLAY/LIVE is "running".
-  const phaseLabel = payload.status === 'PAUSED' ? 'half-time' : 'in play';
+  // Compute approximate match minute from kickoff time.
+  const phaseLabel = (() => {
+    if (payload.status === 'PAUSED') return 'half-time';
+    const kickoffMs = new Date(payload.utcDate).getTime();
+    const elapsedMin = Math.floor((now - kickoffMs) / 60_000);
+    const inSecondHalf = ht && ht.home !== null && ht.away !== null;
+    if (inSecondHalf) {
+      const matchMin = Math.max(46, elapsedMin - 17);
+      return matchMin >= 90 ? '90+\'' : `≈${matchMin}'`;
+    }
+    const matchMin = Math.min(elapsedMin, 45);
+    return matchMin >= 45 ? '45+\'' : `≈${Math.max(1, matchMin)}'`;
+  })();
   const refs = (payload.referees ?? []).filter(r => r.type === 'REFEREE');
 
   return (

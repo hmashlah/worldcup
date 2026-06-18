@@ -132,10 +132,29 @@ export function MatchCard(p: Props) {
     // mapping-build time anyway.
     const sameOrder = fdHomeName === ourTeam1
       || normalizeNation(fdHomeName) === normalizeNation(ourTeam1);
+
+    // Compute approximate match minute from kickoff time.
+    // FD free tier doesn't provide the minute field, so we derive it.
+    const phase = (() => {
+      if (live.payload.status === 'PAUSED') return 'HT';
+      const kickoffMs = new Date(live.payload.utcDate).getTime();
+      const elapsedMin = Math.floor((now - kickoffMs) / 60_000);
+      const ht = live.payload.score?.halfTime;
+      const inSecondHalf = ht && ht.home !== null && ht.away !== null;
+      if (inSecondHalf) {
+        // Subtract ~17 min for half-time break (15 min + buffer)
+        const matchMin = Math.max(46, elapsedMin - 17);
+        return matchMin >= 90 ? '90+' : `${matchMin}'`;
+      }
+      // First half
+      const matchMin = Math.min(elapsedMin, 45);
+      return matchMin >= 45 ? '45+' : `${Math.max(1, matchMin)}'`;
+    })();
+
     return {
       left: sameOrder ? ft.home : ft.away,
       right: sameOrder ? ft.away : ft.home,
-      phase: live.payload.status === 'PAUSED' ? 'HT' : 'live',
+      phase,
     };
   })();
 
