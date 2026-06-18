@@ -3,6 +3,7 @@ import { GroupsGridView } from '@/components/GroupsGridView';
 import { Bracket } from '@/components/Bracket';
 import { LeaderboardCard } from '@/components/LeaderboardCard';
 import { PointsTrendChart } from '@/components/PointsTrendChart';
+import { MyPicksView } from '@/components/MyPicksView';
 import { Topbar } from '@/components/Topbar';
 import { AuthModal } from '@/components/AuthModal';
 import { PendingApproval } from '@/components/PendingApproval';
@@ -51,6 +52,7 @@ function Shell() {
                     {tab === 'groups' && <GroupsTab />}
                     {tab === 'bracket' && <BracketTab />}
                     {tab === 'leaderboard' && user && <LeaderboardTab />}
+                    {tab === 'picks' && user && <MyPicksTab />}
                     {tab === 'admin' && adminActive && <AdminTab />}
                   </>
             )}
@@ -121,6 +123,18 @@ function AdminTab() {
       <div className="leaderboard-empty">
         Switch to Today, Groups, or Bracket and enter actual scores. As admin, every match's score input writes to <code>wc26_match_results</code>.
       </div>
+    </section>
+  );
+}
+
+function MyPicksTab() {
+  return (
+    <section className="tab-panel active">
+      <div className="section-intro">
+        <h2>My Picks</h2>
+        <p>Your predictions vs. actual results. 3 pts exact · 1 pt right outcome · +1 correct advancer in knockouts.</p>
+      </div>
+      <MyPicksView />
     </section>
   );
 }

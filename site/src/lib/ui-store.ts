@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type TabKey = 'today' | 'groups' | 'bracket' | 'leaderboard' | 'admin';
+export type TabKey = 'today' | 'groups' | 'bracket' | 'leaderboard' | 'picks' | 'admin';
 export type ThemeKey = 'minimal' | 'funky';
 
 const THEME_STORAGE_KEY = 'wc26-theme';

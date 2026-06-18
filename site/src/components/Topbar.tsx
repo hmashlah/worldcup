@@ -11,6 +11,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
   { key: 'groups',      label: 'Groups' },
   { key: 'bracket',     label: 'Bracket' },
   { key: 'leaderboard', label: 'Leaderboard' },
+  { key: 'picks',       label: 'My Picks' },
 ];
 
 export function Topbar() {
@@ -52,6 +53,7 @@ export function Topbar() {
   useEffect(() => {
     if (tab === 'admin' && !adminActive) setTab('today');
     if (tab === 'leaderboard' && !user) setTab('today');
+    if (tab === 'picks' && !user) setTab('today');
   }, [tab, adminActive, user, setTab]);
 
   // Build the visible tab list: guests don't see Leaderboard (they
@@ -59,7 +61,7 @@ export function Topbar() {
   // get an extra Admin tab.
   const baseTabs = user
     ? TABS
-    : TABS.filter(t => t.key !== 'leaderboard');
+    : TABS.filter(t => t.key !== 'leaderboard' && t.key !== 'picks');
   const tabs = adminActive ? [...baseTabs, { key: 'admin' as TabKey, label: 'Admin' }] : baseTabs;
 
   return (
