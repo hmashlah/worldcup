@@ -26,10 +26,11 @@ export function DayView() {
     el?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
   }, [activeDate]);
 
+  const activeDay = (days.find(d => d.date === activeDate) ?? days[0]) || null;
+  const dayMatchIds = useMemo(() => activeDay ? activeDay.matches.map(m => m.id) : [], [activeDay]);
+
   if (!dataQ.data) return null;
   if (!days.length) return <div className="day-empty">No matches scheduled.</div>;
-
-  const activeDay = days.find(d => d.date === activeDate) ?? days[0];
 
   // Build score & advancer maps for slot resolution (knockouts).
   const scores: ScoreMap = {};
@@ -45,6 +46,7 @@ export function DayView() {
       <div className="day-strip" ref={stripRef}>
         {days.map(d => {
           const isActive = d.date === activeDay.date;
+          const [dayLabel, dayNum] = shortDayLabel(d.date).split(' ');
           return (
             <button
               key={d.date}
@@ -52,8 +54,8 @@ export function DayView() {
               className={`day-pill ${isActive ? 'active' : ''}`}
               onClick={() => setActiveDate(d.date)}
             >
-              <span className="day-pill-day">{shortDayLabel(d.date).split(' ')[0]}</span>
-              <span className="day-pill-num">{shortDayLabel(d.date).split(' ')[1]}</span>
+              <span className="day-pill-day">{dayLabel}</span>
+              <span className="day-pill-num">{dayNum}</span>
               <span className="day-pill-count">{d.matches.length}</span>
             </button>
           );
@@ -102,7 +104,7 @@ export function DayView() {
       </div>
 
       {/* Day leaderboard (only visible for authenticated users, only when results exist) */}
-      {user && <DayLeaderboard matchIds={activeDay.matches.map(m => m.id)} />}
+      {user && <DayLeaderboard matchIds={dayMatchIds} />}
     </div>
   );
 }

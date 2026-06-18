@@ -800,13 +800,22 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
 
     // No existing row — upsert the FINISHED data.
     const sameOrder = matchMap[ourId].same_order_as_fd;
+    const entry = matchMap[ourId];
     const fdHome = m.score.fullTime!.home as number;
     const fdAway = m.score.fullTime!.away as number;
+    // Map FD advancer name to our canonical team name.
+    const fdAdvancer = deriveAdvancer(m);
+    let advancer: string | null = null;
+    if (fdAdvancer === m.homeTeam.name) {
+      advancer = sameOrder ? entry.home : entry.away;
+    } else if (fdAdvancer === m.awayTeam.name) {
+      advancer = sameOrder ? entry.away : entry.home;
+    }
     toUpsert.push({
       match_id: ourId,
       team1_score: sameOrder ? fdHome : fdAway,
       team2_score: sameOrder ? fdAway : fdHome,
-      advancer: deriveAdvancer(m),
+      advancer,
       source: 'api',
       payload: m,
     });

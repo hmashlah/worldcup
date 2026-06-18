@@ -8,6 +8,8 @@
     "build": "npm run build:h2h && tsc -b && vite build",
     "build:h2h": "node scripts/build-h2h.mjs",
     "type-check": "tsc -b --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -25,6 +27,7 @@
     "@vitejs/plugin-react": "^5.1.1",
     "typescript": "~5.9.3",
     "vite": "^7.3.1",
-    "vite-plugin-checker": "^0.12.0"
+    "vite-plugin-checker": "^0.12.0",
+    "vitest": "^4.1.9"
   }
 }

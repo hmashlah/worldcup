@@ -21,6 +21,8 @@ export function useProfiles() {
       for (const p of (data ?? []) as ProfileRow[]) map[p.user_id] = p;
       return map;
     },
+    refetchInterval: 5 * 60_000, // 5 min
+    refetchOnWindowFocus: true,
   });
 }
 

@@ -109,7 +109,7 @@ export function useDayLeaderboard(matchIds: string[]): {
     );
 
     return { entries: sorted, hasResults: true };
-  }, [dataQ.data, predsQ.data, resultsQ.data, profilesQ.data, matchIdSet, matchIds]);
+  }, [dataQ.data, predsQ.data, resultsQ.data, profilesQ.data, matchIdSet]);
 
   return {
     loading: dataQ.isLoading || predsQ.isLoading || resultsQ.isLoading || profilesQ.isLoading,

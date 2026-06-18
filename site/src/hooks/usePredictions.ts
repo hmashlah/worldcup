@@ -45,6 +45,8 @@ export function useAllPredictions() {
       if (error) throw error;
       return (data ?? []) as PredictionRow[];
     },
+    refetchInterval: 60_000, // 1 min — keeps leaderboard fresh during active play
+    refetchOnWindowFocus: true,
   });
 }
 
