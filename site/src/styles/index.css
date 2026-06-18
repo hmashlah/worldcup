@@ -2981,15 +2981,20 @@ footer {
 }
 .consensus-legend {
   display: flex;
-  justify-content: space-between;
   margin-top: 4px;
   font-size: 10px;
   font-weight: 700;
   color: var(--ink-soft);
+  gap: 1px;
 }
-.consensus-legend-t1 { color: var(--ink); }
-.consensus-legend-draw { color: var(--ink-faint); }
-.consensus-legend-t2 { color: var(--accent); }
+.consensus-legend-item {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.consensus-legend-t1 { color: var(--ink); text-align: left; }
+.consensus-legend-draw { color: var(--ink-faint); text-align: center; }
+.consensus-legend-t2 { color: var(--accent); text-align: right; }
 
 /* Funky overrides */
 [data-theme='funky'] .consensus-bar {

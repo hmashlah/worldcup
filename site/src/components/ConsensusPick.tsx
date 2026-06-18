@@ -104,13 +104,13 @@ export function ConsensusPick({ matchId, team1, team2 }: Props) {
       </div>
       <div className="consensus-legend">
         {dist.team1WinPct > 0 && (
-          <span className="consensus-legend-item consensus-legend-t1">{team1}</span>
+          <span className="consensus-legend-item consensus-legend-t1" style={{ width: `${dist.team1WinPct}%` }}>{team1}</span>
         )}
         {dist.drawPct > 0 && (
-          <span className="consensus-legend-item consensus-legend-draw">Draw</span>
+          <span className="consensus-legend-item consensus-legend-draw" style={{ width: `${dist.drawPct}%` }}>Draw</span>
         )}
         {dist.team2WinPct > 0 && (
-          <span className="consensus-legend-item consensus-legend-t2">{team2}</span>
+          <span className="consensus-legend-item consensus-legend-t2" style={{ width: `${dist.team2WinPct}%` }}>{team2}</span>
         )}
       </div>
     </div>
