@@ -353,7 +353,7 @@ const WIKI_TEAM_ALIASES: Record<string, string> = {
 };
 
 function canonicalizeTeam(wikiTitle: string): string {
-  let name = wikiTitle
+  const name = wikiTitle
     .replace(/\s+(?:men[''']s\s+)?national\s+(football|soccer)\s+team$/i, '')
     .trim();
   return WIKI_TEAM_ALIASES[name] ?? name;

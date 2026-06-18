@@ -7,9 +7,12 @@
     "dev": "vite",
     "build": "npm run build:h2h && tsc -b && vite build",
     "build:h2h": "node scripts/build-h2h.mjs",
-    "type-check": "tsc -b --noEmit",
+    "type-check": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/ functions/",
+    "prepush": "npm run lint && npm run type-check && npm run test:coverage",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -21,11 +24,15 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/coverage-v8": "^4.1.9",
+    "eslint": "^10.5.0",
     "typescript": "~5.9.3",
+    "typescript-eslint": "^8.61.1",
     "vite": "^7.3.1",
     "vite-plugin-checker": "^0.12.0",
     "vitest": "^4.1.9"
