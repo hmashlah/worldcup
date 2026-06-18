@@ -1,7 +1,7 @@
 /**
  * Cloudflare Pages Function: scrape per-match goal scorers from the
  * live Wikipedia article for the tournament, write into the
- * wiki_scorers JSONB column on wc26_match_results. Runs daily.
+ * wiki_scorers JSONB column on wc26_match_results. Runs hourly.
  *
  * Endpoint: POST https://<host>/sync-wiki-scorers
  * Auth:     x-wc26-secret header (shared with pg_cron)
@@ -13,9 +13,13 @@
  *
  * Optional request body: { force?: boolean } — if true, re-scrape every
  * match even if it already has wiki_scorers populated. Default false:
- * once a match's scorer list is in the DB, we don't fetch / write again.
+ * once a FINISHED match's scorer list is in the DB, we don't re-write.
  *
- * Response: { matched, updated, skipped_already_synced, errors }
+ * In-progress handling: matches that have a result row but are NOT yet
+ * confirmed FINISHED (payload.status !== 'FINISHED') are always
+ * re-scraped on each run, so new goals are picked up as they're scored.
+ *
+ * Response: { matched, updated, skipped_already_final, errors }
  */
 
 interface Env {
@@ -219,10 +223,12 @@ async function fetchOurMatches(_env: Env): Promise<OurMatchInfo[]> {
 }
 
 async function fetchAlreadySynced(env: Env): Promise<Set<string>> {
-  // Return the set of match_ids that already have a non-null
-  // wiki_scorers value, so we can skip re-writing them.
+  // Return the set of match_ids that are FINISHED and have wiki_scorers
+  // where the goal count matches the actual score. These are truly
+  // finalized — no need to re-scrape. Matches in-progress or with a
+  // goal-count mismatch (Wikipedia not yet updated) will be re-scraped.
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/wc26_match_results?select=match_id&wiki_scorers=not.is.null`,
+    `${env.SUPABASE_URL}/rest/v1/wc26_match_results?select=match_id,team1_score,team2_score,wiki_scorers,payload`,
     {
       headers: {
         apikey: env.SUPABASE_SERVICE_ROLE_KEY,
@@ -231,8 +237,34 @@ async function fetchAlreadySynced(env: Env): Promise<Set<string>> {
     },
   );
   if (!res.ok) throw new Error(`supabase already-synced ${res.status}: ${await res.text()}`);
-  const rows: Array<{ match_id: string }> = await res.json();
-  return new Set(rows.map(r => r.match_id));
+  const rows: Array<{
+    match_id: string;
+    team1_score: number;
+    team2_score: number;
+    wiki_scorers: WikiGoal[] | null;
+    payload: { status?: string } | null;
+  }> = await res.json();
+
+  const finalized = new Set<string>();
+  for (const r of rows) {
+    // Only consider a match fully synced if:
+    // 1. It has a FINISHED status in the FD payload
+    // 2. It already has wiki_scorers populated
+    // 3. The number of goals in wiki_scorers matches the actual score
+    //    (guards against Wikipedia being stale / partially updated)
+    const isFinished = r.payload?.status === 'FINISHED';
+    const hasScorers = Array.isArray(r.wiki_scorers) && r.wiki_scorers.length > 0;
+    if (!isFinished || !hasScorers) continue;
+
+    const totalGoals = r.team1_score + r.team2_score;
+    const scorerGoals = r.wiki_scorers!.length;
+    if (scorerGoals === totalGoals) {
+      finalized.add(r.match_id);
+    }
+    // If goal count doesn't match (e.g. wiki hasn't updated with all
+    // goals yet), we re-scrape on next run.
+  }
+  return finalized;
 }
 
 async function patchScorers(
@@ -271,9 +303,9 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   const force = body.force === true;
 
   // 2. Fetch sources.
-  let html: string, ours: OurMatchInfo[], alreadySynced: Set<string>;
+  let html: string, ours: OurMatchInfo[], alreadyFinalized: Set<string>;
   try {
-    [html, ours, alreadySynced] = await Promise.all([
+    [html, ours, alreadyFinalized] = await Promise.all([
       fetchWikiHtml(),
       fetchOurMatches(ctx.env),
       fetchAlreadySynced(ctx.env),
@@ -293,13 +325,15 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   }
 
   // 4. For each of our matches, look up the corresponding wiki record
-  //    and patch wiki_scorers. Skip already-synced unless force=true.
+  //    and patch wiki_scorers. Skip finalized matches (FINISHED + scorers
+  //    matching actual score) unless force=true. In-progress or mismatched
+  //    matches are always re-scraped.
   const errors: string[] = [];
-  let matched = 0, updated = 0, skipped_already_synced = 0;
+  let matched = 0, updated = 0, skipped_already_final = 0;
 
   for (const our of ours) {
-    if (!force && alreadySynced.has(our.match_id)) {
-      skipped_already_synced++;
+    if (!force && alreadyFinalized.has(our.match_id)) {
+      skipped_already_final++;
       continue;
     }
     const pair = [canonicalizeTeam(our.team1), canonicalizeTeam(our.team2)].sort().join('|');
@@ -340,7 +374,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   return Response.json({
     matched,
     updated,
-    skipped_already_synced,
+    skipped_already_final,
     wiki_total: wikiMatches.length,
     errors,
   });
