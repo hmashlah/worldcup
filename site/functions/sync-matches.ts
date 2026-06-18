@@ -484,6 +484,45 @@ async function patchWikiScorers(
   return { ok: true };
 }
 
+/**
+ * For live matches: upsert a result row with the current score and
+ * wiki scorers. The row has NO payload (or a minimal one with status
+ * IN_PLAY), so the system knows it's not finalized. When the match
+ * finishes, the normal FINISHED upsert overwrites this with the full
+ * payload, correct final score, and source='api'.
+ */
+async function upsertLiveWikiScorers(
+  env: Env,
+  match_id: string,
+  team1_score: number,
+  team2_score: number,
+  goals: WikiGoal[],
+): Promise<{ ok: boolean; error?: string }> {
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/wc26_match_results?on_conflict=match_id`,
+    {
+      method: 'POST',
+      headers: {
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'content-type': 'application/json',
+        prefer: 'resolution=merge-duplicates,return=minimal',
+      },
+      body: JSON.stringify({
+        match_id,
+        team1_score,
+        team2_score,
+        source: 'api',
+        wiki_scorers: goals,
+        // No `payload` field — signals this is not yet final.
+        // The FINISHED upsert later will add the full payload.
+      }),
+    },
+  );
+  if (!res.ok) return { ok: false, error: `${res.status}: ${await res.text()}` };
+  return { ok: true };
+}
+
 function shiftDate(yyyyMmDd: string, days: number): string {
   const [y, m, d] = yyyyMmDd.split('-').map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d));
@@ -595,6 +634,20 @@ async function syncWikiScorers(
   const errors: string[] = [];
   let updated = 0;
 
+  // Build a lookup of live match scores for upsert
+  const liveScoreByMatch = new Map<string, { team1: number; team2: number }>();
+  for (const lm of liveMatches) {
+    const ft = lm.payload.score?.fullTime;
+    if (!ft || ft.home === null || ft.away === null) continue;
+    const sameOrder = matchMap[lm.match_id]?.same_order_as_fd ?? true;
+    liveScoreByMatch.set(lm.match_id, {
+      team1: sameOrder ? ft.home! : ft.away!,
+      team2: sameOrder ? ft.away! : ft.home!,
+    });
+  }
+
+  const liveNeedSyncSet = new Set(liveNeedSync);
+
   for (const our of ourMatches) {
     if (!allNeedSync.has(our.match_id)) continue;
 
@@ -621,6 +674,19 @@ async function syncWikiScorers(
 
     // Don't write empty arrays
     if (goals.length === 0) continue;
+
+    // For live matches, upsert a result row with current score + scorers.
+    // This ensures the UI can show scorers during play. The row will be
+    // overwritten with the full FINISHED payload once the match ends.
+    if (liveNeedSyncSet.has(our.match_id)) {
+      const liveScore = liveScoreByMatch.get(our.match_id);
+      if (liveScore) {
+        const r = await upsertLiveWikiScorers(env, our.match_id, liveScore.team1, liveScore.team2, goals);
+        if (r.ok) updated++;
+        else errors.push(`wiki ${our.match_id}: ${r.error}`);
+        continue;
+      }
+    }
 
     const r = await patchWikiScorers(env, our.match_id, goals);
     if (r.ok) updated++;

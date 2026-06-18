@@ -553,7 +553,7 @@ function LiveSection({
         </div>
       )}
       <p className="mdp-source-note">
-        Live scores from football-data.org · refreshes every ~2 minutes
+        Live scores · synced every minute, updates within ~15s
       </p>
     </section>
   );

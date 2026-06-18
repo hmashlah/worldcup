@@ -312,7 +312,7 @@ export function MatchCard(p: Props) {
           )}
         </div>
       ) : (
-        result && (
+        result && !live && (
           <div className="mc-actual">
             <span className="mc-actual-label">final</span>
             <span className="mc-actual-score">{result.team1_score} – {result.team2_score}</span>
