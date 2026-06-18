@@ -420,6 +420,22 @@ footer {
   font-weight: 800;
   background: var(--accent);
   color: var(--surface);
+  animation: pts-pop .35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes pts-pop {
+  0%   { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .mc-actual-score,
+  .mc-live-score,
+  .mc-points,
+  .lb-total {
+    animation: none;
+  }
 }
 .mc-points.pts-0 { background: var(--line); color: var(--ink-soft); }
 .mc-points.pts-1 { background: var(--accent-soft); color: var(--accent); }
@@ -452,6 +468,13 @@ footer {
   font-weight: 800;
   font-size: 15px;
   color: var(--ink);
+  animation: score-appear .4s ease-out;
+}
+
+@keyframes score-appear {
+  0%   { opacity: 0; transform: scale(0.7); }
+  60%  { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 .mc-advancer {
@@ -783,6 +806,7 @@ footer {
   font-size: 18px;
   color: var(--ink);
   letter-spacing: -0.01em;
+  animation: score-appear .4s ease-out;
 }
 .leaderboard-key {
   font-size: 11px;
@@ -2776,6 +2800,12 @@ footer {
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: #b91c1c; /* match the live pill instead of muted ink */
+  animation: live-score-flash .5s ease-out;
+}
+
+@keyframes live-score-flash {
+  0%   { opacity: 0.4; transform: scale(1.2); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 /* ── Funky mode — Match Detail Page readability fixes ──────────────
