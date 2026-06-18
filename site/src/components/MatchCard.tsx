@@ -135,6 +135,9 @@ export function MatchCard(p: Props) {
 
     // Compute approximate match minute from kickoff time.
     // FD free tier doesn't provide the minute field, so we derive it.
+    // Real-time stoppages: 3 min drink break per half + 15 min HT break.
+    // Total real time for 90 match minutes:
+    //   1H: 48 min (45 play + 3 drink) + HT: 15 min + 2H: 48 min (45 play + 3 drink) = 111 min
     const phase = (() => {
       if (live.payload.status === 'PAUSED') return 'HT';
       const kickoffMs = new Date(live.payload.utcDate).getTime();
@@ -142,13 +145,20 @@ export function MatchCard(p: Props) {
       const ht = live.payload.score?.halfTime;
       const inSecondHalf = ht && ht.home !== null && ht.away !== null;
       if (inSecondHalf) {
-        // Subtract ~17 min for half-time break (15 min + buffer)
-        const matchMin = Math.max(46, elapsedMin - 17);
-        return matchMin >= 90 ? '90+' : `${matchMin}'`;
+        // 2H starts at real elapsed ~63 min (48 min 1H + 15 min HT)
+        // Match minute = 45 + (elapsed - 63) adjusted for 2H drink break at ~30 min into 2H
+        const secondHalfElapsed = elapsedMin - 63;
+        let matchMin = 45 + secondHalfElapsed;
+        // Subtract drink break after ~30 real min into 2H (i.e. around 75')
+        if (secondHalfElapsed > 33) matchMin -= 3;
+        matchMin = Math.max(46, matchMin);
+        return matchMin > 90 ? `90+${matchMin - 90}'` : `${matchMin}'`;
       }
-      // First half
-      const matchMin = Math.min(elapsedMin, 45);
-      return matchMin >= 45 ? '45+' : `${Math.max(1, matchMin)}'`;
+      // First half: subtract drink break after ~30 real min
+      let matchMin = elapsedMin;
+      if (matchMin > 33) matchMin -= 3;
+      matchMin = Math.max(1, Math.min(matchMin, 45));
+      return matchMin >= 45 ? '45+' : `${matchMin}'`;
     })();
 
     return {

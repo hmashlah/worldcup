@@ -528,11 +528,16 @@ function LiveSection({
     const elapsedMin = Math.floor((now - kickoffMs) / 60_000);
     const inSecondHalf = ht && ht.home !== null && ht.away !== null;
     if (inSecondHalf) {
-      const matchMin = Math.max(46, elapsedMin - 17);
-      return matchMin >= 90 ? '90+\'' : `≈${matchMin}'`;
+      const secondHalfElapsed = elapsedMin - 63;
+      let matchMin = 45 + secondHalfElapsed;
+      if (secondHalfElapsed > 33) matchMin -= 3;
+      matchMin = Math.max(46, matchMin);
+      return matchMin > 90 ? `90+${matchMin - 90}'` : `≈${matchMin}'`;
     }
-    const matchMin = Math.min(elapsedMin, 45);
-    return matchMin >= 45 ? '45+\'' : `≈${Math.max(1, matchMin)}'`;
+    let matchMin = elapsedMin;
+    if (matchMin > 33) matchMin -= 3;
+    matchMin = Math.max(1, Math.min(matchMin, 45));
+    return matchMin >= 45 ? '45+\'' : `≈${matchMin}'`;
   })();
   const refs = (payload.referees ?? []).filter(r => r.type === 'REFEREE');
 
