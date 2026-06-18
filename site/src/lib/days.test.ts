@@ -118,6 +118,16 @@ describe('relativeDayLabel', () => {
   });
 });
 
+describe('shortDayLabel', () => {
+  it('returns a string with weekday and day number', () => {
+    const label = shortDayLabel('2026-06-11');
+    const parts = label.split(' ');
+    expect(parts.length).toBeGreaterThanOrEqual(2);
+    // Day number should be present
+    expect(parts.some(p => /\d+/.test(p))).toBe(true);
+  });
+});
+
 describe('countUnsubmitted', () => {
   it('counts matches with no prediction that are before cutoff', () => {
     const futureKickoff = Date.now() + 3600000; // 1 hour from now
