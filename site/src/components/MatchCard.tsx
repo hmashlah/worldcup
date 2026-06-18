@@ -3,7 +3,7 @@ import { Flag } from '@/components/Flag';
 import { ConsensusPick } from '@/components/ConsensusPick';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMyPredictions, useUpsertPrediction } from '@/hooks/usePredictions';
-import { useResults, useUpsertResult, useDeleteResult } from '@/hooks/useResults';
+import { useResults } from '@/hooks/useResults';
 import { useLiveMatches } from '@/hooks/useLiveMatches';
 import { useNow } from '@/hooks/useNow';
 import { isLocked, parseKickoff, fmtShortDate } from '@/lib/time';
@@ -62,17 +62,11 @@ export function MatchCard(p: Props) {
     team1Placeholder, team2Placeholder, date, time, ground,
     isKO = false, roundLabel, showDate = false,
   } = p;
-  const { user, isAdmin } = useAuth();
-  const adminMode = useUI(s => s.adminMode);
-  // The admin can toggle out of admin mode to see the site as a regular user
-  // (no actual-result inputs, no admin tab). Effective admin = both true.
-  const adminActive = isAdmin && adminMode;
+  const { user } = useAuth();
   const myPredsQ = useMyPredictions();
   const resultsQ = useResults();
   const liveQ = useLiveMatches();
   const upsertPred = useUpsertPrediction();
-  const upsertRes = useUpsertResult();
-  const deleteRes = useDeleteResult();
 
   // Re-render every 30s so a card open at 12:59 visibly locks at kickoff
   // without needing user interaction.
@@ -85,20 +79,12 @@ export function MatchCard(p: Props) {
   const [a, setA] = useState('');
   const [b, setB] = useState('');
   const [adv, setAdv] = useState('');
-  const [actA, setActA] = useState('');
-  const [actB, setActB] = useState('');
-  const [actAdv, setActAdv] = useState('');
 
   useEffect(() => {
     setA(myPred ? String(myPred.team1_score) : '');
     setB(myPred ? String(myPred.team2_score) : '');
     setAdv(myPred?.advancer ?? '');
   }, [myPred?.team1_score, myPred?.team2_score, myPred?.advancer]);
-  useEffect(() => {
-    setActA(result ? String(result.team1_score) : '');
-    setActB(result ? String(result.team2_score) : '');
-    setActAdv(result?.advancer ?? '');
-  }, [result?.team1_score, result?.team2_score, result?.advancer]);
 
   const savePred = useCallback((overrides?: { advancer?: string }) => {
     if (!user) return;
@@ -112,21 +98,6 @@ export function MatchCard(p: Props) {
     if (myPred && myPred.team1_score === x && myPred.team2_score === y && (myPred.advancer ?? '') === finalAdv) return;
     upsertPred.mutate({ match_id: matchId, team1_score: x, team2_score: y, advancer: finalAdv || null });
   }, [user, date, time, a, b, adv, myPred, matchId, upsertPred]);
-
-  const saveResult = useCallback((overrides?: { advancer?: string }) => {
-    if (!adminActive) return;
-    const x = parseInt(actA, 10), y = parseInt(actB, 10);
-    if (Number.isNaN(x) || Number.isNaN(y)) return;
-    const finalAdv = overrides?.advancer ?? actAdv;
-    if (result && result.team1_score === x && result.team2_score === y && (result.advancer ?? '') === finalAdv) return;
-    upsertRes.mutate({ match_id: matchId, team1_score: x, team2_score: y, advancer: finalAdv || null });
-  }, [adminActive, actA, actB, actAdv, result, matchId, upsertRes]);
-
-  const clearResult = useCallback(() => {
-    if (!adminActive || !result) return;
-    setActA(''); setActB(''); setActAdv('');
-    deleteRes.mutate(matchId);
-  }, [adminActive, result, matchId, deleteRes]);
 
   const earned = scorePrediction(
     myPred ? { team1: myPred.team1_score, team2: myPred.team2_score } : null,
@@ -259,65 +230,12 @@ export function MatchCard(p: Props) {
         </div>
       )}
 
-      {/* ACTUAL row — admin gets inputs (when admin mode is on), others see read-only result */}
-      {adminActive ? (
-        <div className="mc-actual mc-actual-admin">
-          <span className="mc-actual-label">actual</span>
-          <div className="mc-scores">
-            <input
-              className="mc-input mc-input-actual" type="number" min={0} max={20} inputMode="numeric"
-              value={actA}
-              onChange={e => setActA(e.target.value)}
-              onBlur={() => saveResult()}
-              aria-label={`actual ${labelLeft}`}
-            />
-            <span className="mc-dash">–</span>
-            <input
-              className="mc-input mc-input-actual" type="number" min={0} max={20} inputMode="numeric"
-              value={actB}
-              onChange={e => setActB(e.target.value)}
-              onBlur={() => saveResult()}
-              aria-label={`actual ${labelRight}`}
-            />
-          </div>
-          {result && (
-            <button
-              type="button"
-              className="mc-actual-clear"
-              onClick={clearResult}
-              disabled={deleteRes.isPending}
-              title="Remove this actual result"
-              aria-label="Clear actual result"
-            >
-              clear
-            </button>
-          )}
-          {isKO && team1IsResolved && team2IsResolved && (
-            <div className="mc-advancer mc-advancer-admin">
-              <span className="mc-advancer-label">advanced</span>
-              {[team1, team2].map(t => (
-                <button
-                  key={t}
-                  type="button"
-                  className={`mc-advancer-pill ${actAdv === t ? 'on' : ''}`}
-                  onClick={() => {
-                    setActAdv(t);
-                    saveResult({ advancer: t });
-                  }}
-                >
-                  <Flag team={t} /> {t}
-                </button>
-              ))}
-            </div>
-          )}
+      {/* Result row — read-only display of the final score */}
+      {result && !live && (
+        <div className="mc-actual">
+          <span className="mc-actual-label">final</span>
+          <span className="mc-actual-score">{result.team1_score} – {result.team2_score}</span>
         </div>
-      ) : (
-        result && !live && (
-          <div className="mc-actual">
-            <span className="mc-actual-label">final</span>
-            <span className="mc-actual-score">{result.team1_score} – {result.team2_score}</span>
-          </div>
-        )
       )}
 
       {/* Consensus pick — visible on locked matches for signed-in users */}
