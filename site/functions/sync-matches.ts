@@ -5,6 +5,12 @@
  * overwritten — the league's official scoreboard stays under admin
  * control.
  *
+ * Also handles wiki scorer syncing: after processing FD matches, if
+ * there are any matches that need scorers (newly finished or stale
+ * goal-count mismatch), it fetches the Wikipedia article and patches
+ * wiki_scorers. This avoids a separate cron job and only hits Wikipedia
+ * when there's actual work to do.
+ *
  * Endpoint: POST https://<host>/sync-matches
  * Auth:     x-wc26-secret header (shared with pg_cron, same secret as
  *           /notify-signup and /send-reminders)
@@ -15,7 +21,7 @@
  *   SUPABASE_SERVICE_ROLE_KEY   — bypasses RLS (encrypted, secret)
  *   WC26_WEBHOOK_SECRET         — shared with pg_cron
  *
- * Response: { upserted, skipped_admin, skipped_no_score, errors }
+ * Response: { upserted, skipped_admin, skipped_no_score, errors, wiki: {...} }
  */
 
 interface Env {
@@ -70,6 +76,33 @@ interface ExistingResultRow {
    *  we never re-fetch or re-write this row — finished match data is
    *  inert. */
   has_payload: boolean;
+}
+
+// ── Wiki scorer types & helpers ──────────────────────────────────────
+
+interface WikiGoal {
+  team: 'home' | 'away';
+  name: string;
+  minute: number;
+  extraTime?: number;
+  kind: 'goal' | 'penalty' | 'own-goal';
+}
+
+interface WikiMatch {
+  date: string;
+  home: string;
+  away: string;
+  home_score: number;
+  away_score: number;
+  goals: WikiGoal[];
+}
+
+interface WikiSyncState {
+  match_id: string;
+  team1_score: number;
+  team2_score: number;
+  wiki_scorer_count: number; // -1 if null
+  is_finished: boolean;
 }
 
 interface UpsertRow {
@@ -308,6 +341,295 @@ async function fetchExistingLiveIds(env: Env): Promise<string[]> {
   return rows.map(r => r.match_id);
 }
 
+// ── Wiki scorer sync helpers ─────────────────────────────────────────
+
+const WIKI_TEAM_ALIASES: Record<string, string> = {
+  'United States': 'USA',
+  'Czechia': 'Czech Republic',
+  'Bosnia-Herzegovina': 'Bosnia & Herzegovina',
+  'Bosnia and Herzegovina': 'Bosnia & Herzegovina',
+  'Cape Verde Islands': 'Cape Verde',
+  'Congo DR': 'DR Congo',
+};
+
+function canonicalizeTeam(wikiTitle: string): string {
+  let name = wikiTitle
+    .replace(/\s+(?:men[''']s\s+)?national\s+(football|soccer)\s+team$/i, '')
+    .trim();
+  return WIKI_TEAM_ALIASES[name] ?? name;
+}
+
+const htmlDecode = (s: string): string =>
+  s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/&#160;/g, ' ').replace(/&nbsp;/g, ' ');
+
+function parseFootballboxes(html: string): WikiMatch[] {
+  const boxes = html.match(/<div [^>]*class="footballbox"[^>]*>[\s\S]*?<\/table>/g) ?? [];
+  const out: WikiMatch[] = [];
+  for (const b of boxes) {
+    const dateM = b.match(/class="bday[^"]*">(\d{4}-\d{2}-\d{2})/);
+    if (!dateM) continue;
+    const date = dateM[1];
+    const homeM = b.match(/class="fhome"[\s\S]*?title="([^"]+)"/);
+    const awayM = b.match(/class="faway"[\s\S]*?title="([^"]+)"/);
+    if (!homeM || !awayM) continue;
+    const home = canonicalizeTeam(htmlDecode(homeM[1]));
+    const away = canonicalizeTeam(htmlDecode(awayM[1]));
+    const scoreM = b.match(/class="fscore"[^>]*>(?:<a[^>]*>)?\s*(\d+)\s*[–-]\s*(\d+)/);
+    if (!scoreM) continue;
+    const home_score = parseInt(scoreM[1], 10);
+    const away_score = parseInt(scoreM[2], 10);
+    const homeGoalsBlock = b.match(/class="fhgoal"[\s\S]*?<\/td>/)?.[0] ?? '';
+    const awayGoalsBlock = b.match(/class="fagoal"[\s\S]*?<\/td>/)?.[0] ?? '';
+    const goals: WikiGoal[] = [
+      ...parseGoalsBlock(homeGoalsBlock, 'home'),
+      ...parseGoalsBlock(awayGoalsBlock, 'away'),
+    ];
+    goals.sort((a, b) => {
+      const am = a.minute + (a.extraTime ?? 0) / 100;
+      const bm = b.minute + (b.extraTime ?? 0) / 100;
+      return am - bm;
+    });
+    out.push({ date, home, away, home_score, away_score, goals });
+  }
+  return out;
+}
+
+function parseGoalsBlock(block: string, team: 'home' | 'away'): WikiGoal[] {
+  const out: WikiGoal[] = [];
+  const liMatches = block.matchAll(/<li>([\s\S]*?)<\/li>/g);
+  for (const m of liMatches) {
+    const li = m[1];
+    const nameM = li.match(/<a[^>]*title="([^"]+)"/);
+    const displayM = li.match(/<a[^>]*>([^<]+)</);
+    const rawName = htmlDecode((nameM?.[1] ?? displayM?.[1] ?? '').trim());
+    if (!rawName) continue;
+    const name = rawName.replace(/\s*\([^)]*\)\s*$/, '');
+    const minuteHits = [...li.matchAll(/(\d+)(?:\+(\d+))?\s*'/g)];
+    if (minuteHits.length === 0) continue;
+    const isPen = /\(\s*pen\.?\s*\)/i.test(li);
+    const isOG = /\(\s*o\.?\s*g\.?\s*\)/i.test(li);
+    const kind: WikiGoal['kind'] = isPen ? 'penalty' : isOG ? 'own-goal' : 'goal';
+    for (const h of minuteHits) {
+      const minute = parseInt(h[1], 10);
+      const extraTime = h[2] ? parseInt(h[2], 10) : undefined;
+      if (minute < 1 || minute > 130) continue;
+      const g: WikiGoal = { team, name, minute, kind };
+      if (extraTime !== undefined) g.extraTime = extraTime;
+      out.push(g);
+    }
+  }
+  return out;
+}
+
+async function fetchWikiHtml(): Promise<string> {
+  const res = await fetch('https://en.wikipedia.org/wiki/2026_FIFA_World_Cup', {
+    headers: {
+      'User-Agent': 'wc26-prediction-league/1.0 (https://worldcup-1jo.pages.dev; admin@simple-courses.com) scorer-sync',
+    },
+  });
+  if (!res.ok) throw new Error(`wikipedia ${res.status}: ${await res.text()}`);
+  return res.text();
+}
+
+/** Fetch the wiki_scorers state for all matches that have results. */
+async function fetchWikiSyncState(env: Env): Promise<WikiSyncState[]> {
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/wc26_match_results?select=match_id,team1_score,team2_score,wiki_scorers,payload`,
+    {
+      headers: {
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+    },
+  );
+  if (!res.ok) throw new Error(`supabase wiki-state ${res.status}: ${await res.text()}`);
+  const rows: Array<{
+    match_id: string;
+    team1_score: number;
+    team2_score: number;
+    wiki_scorers: WikiGoal[] | null;
+    payload: { status?: string } | null;
+  }> = await res.json();
+
+  return rows.map(r => ({
+    match_id: r.match_id,
+    team1_score: r.team1_score,
+    team2_score: r.team2_score,
+    wiki_scorer_count: Array.isArray(r.wiki_scorers) ? r.wiki_scorers.length : -1,
+    is_finished: r.payload?.status === 'FINISHED',
+  }));
+}
+
+async function patchWikiScorers(
+  env: Env,
+  match_id: string,
+  goals: WikiGoal[],
+): Promise<{ ok: boolean; error?: string }> {
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/wc26_match_results?match_id=eq.${encodeURIComponent(match_id)}`,
+    {
+      method: 'PATCH',
+      headers: {
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'content-type': 'application/json',
+        prefer: 'return=minimal',
+      },
+      body: JSON.stringify({ wiki_scorers: goals }),
+    },
+  );
+  if (!res.ok) return { ok: false, error: `${res.status}: ${await res.text()}` };
+  return { ok: true };
+}
+
+function shiftDate(yyyyMmDd: string, days: number): string {
+  const [y, m, d] = yyyyMmDd.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0, 10);
+}
+
+interface OurMatchInfo {
+  match_id: string;
+  date: string;
+  team1: string;
+  team2: string;
+}
+
+async function fetchOurMatches(host: string): Promise<OurMatchInfo[]> {
+  const res = await fetch(`${host}/data.json`);
+  if (!res.ok) throw new Error(`data.json ${res.status}`);
+  type DJMatch = { id: string; team1: string; team2: string; date: string };
+  const data: {
+    group_matches: Record<string, DJMatch[]>;
+    ko_matches: DJMatch[];
+  } = await res.json();
+  const out: OurMatchInfo[] = [];
+  for (const list of Object.values(data.group_matches)) {
+    for (const m of list) out.push({ match_id: m.id, date: m.date, team1: m.team1, team2: m.team2 });
+  }
+  for (const m of data.ko_matches) out.push({ match_id: m.id, date: m.date, team1: m.team1, team2: m.team2 });
+  return out;
+}
+
+/**
+ * Determine which matches need wiki scorer syncing and perform it.
+ * Only fetches Wikipedia if there's actual work to do.
+ *
+ * Triggers for wiki sync:
+ * 1. Live match: current score (team1+team2) > stored wiki_scorer_count
+ *    (a new goal was scored and wikipedia might have it)
+ * 2. Finished match: no wiki_scorers yet (newly finished)
+ * 3. Finished match: wiki_scorer_count != actual total goals (stale data)
+ */
+async function syncWikiScorers(
+  env: Env,
+  host: string,
+  liveMatches: Array<{ match_id: string; payload: FdMatch }>,
+  matchMap: MatchMap,
+): Promise<{ needed: boolean; fetched: boolean; updated: number; errors: string[] }> {
+  // Fetch current state from DB
+  let syncState: WikiSyncState[];
+  try {
+    syncState = await fetchWikiSyncState(env);
+  } catch (e) {
+    return { needed: false, fetched: false, updated: 0, errors: [(e as Error).message] };
+  }
+
+  const stateByMatch = new Map(syncState.map(s => [s.match_id, s]));
+
+  // Check live matches — do any have a score mismatch with stored scorers?
+  const liveNeedSync: string[] = [];
+  for (const lm of liveMatches) {
+    const ourId = lm.match_id;
+    const state = stateByMatch.get(ourId);
+    // For live matches, we compare against the live score from FD
+    const ft = lm.payload.score?.fullTime;
+    if (!ft || ft.home === null || ft.away === null) continue;
+    const liveTotal = (ft.home ?? 0) + (ft.away ?? 0);
+    const storedCount = state?.wiki_scorer_count ?? -1;
+    // Need sync if: has goals but scorers are missing or don't match
+    if (liveTotal > 0 && storedCount !== liveTotal) {
+      liveNeedSync.push(ourId);
+    }
+  }
+
+  // Check finished matches — any missing or mismatched scorers?
+  const finishedNeedSync: string[] = [];
+  for (const s of syncState) {
+    if (!s.is_finished) continue;
+    const totalGoals = s.team1_score + s.team2_score;
+    if (totalGoals === 0) continue; // 0-0 draws have nothing to scrape
+    if (s.wiki_scorer_count === totalGoals) continue; // already correct
+    finishedNeedSync.push(s.match_id);
+  }
+
+  const allNeedSync = new Set([...liveNeedSync, ...finishedNeedSync]);
+  if (allNeedSync.size === 0) {
+    return { needed: false, fetched: false, updated: 0, errors: [] };
+  }
+
+  // There's work to do — fetch Wikipedia and our match list
+  let html: string;
+  let ourMatches: OurMatchInfo[];
+  try {
+    [html, ourMatches] = await Promise.all([
+      fetchWikiHtml(),
+      fetchOurMatches(host),
+    ]);
+  } catch (e) {
+    return { needed: true, fetched: false, updated: 0, errors: [(e as Error).message] };
+  }
+
+  // Parse Wikipedia
+  const wikiMatches = parseFootballboxes(html);
+  const wikiByKey = new Map<string, WikiMatch>();
+  for (const w of wikiMatches) {
+    const pair = [w.home, w.away].sort().join('|');
+    wikiByKey.set(`${w.date}|${pair}`, w);
+  }
+
+  // Match and patch
+  const errors: string[] = [];
+  let updated = 0;
+
+  for (const our of ourMatches) {
+    if (!allNeedSync.has(our.match_id)) continue;
+
+    const pair = [canonicalizeTeam(our.team1), canonicalizeTeam(our.team2)].sort().join('|');
+    const candidates = [
+      `${our.date}|${pair}`,
+      `${shiftDate(our.date, +1)}|${pair}`,
+      `${shiftDate(our.date, -1)}|${pair}`,
+    ];
+    let w: WikiMatch | undefined;
+    for (const k of candidates) {
+      const hit = wikiByKey.get(k);
+      if (hit) { w = hit; break; }
+    }
+    if (!w) continue;
+
+    // Flip home/away if needed
+    const ourTeam1 = canonicalizeTeam(our.team1);
+    const flipped = w.home !== ourTeam1;
+    const goals: WikiGoal[] = w.goals.map(g => ({
+      ...g,
+      team: flipped ? (g.team === 'home' ? 'away' : 'home') : g.team,
+    }));
+
+    // Don't write empty arrays
+    if (goals.length === 0) continue;
+
+    const r = await patchWikiScorers(env, our.match_id, goals);
+    if (r.ok) updated++;
+    else errors.push(`wiki ${our.match_id}: ${r.error}`);
+  }
+
+  return { needed: true, fetched: true, updated, errors };
+}
+
 export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   // Auth.
   const secret = ctx.request.headers.get('x-wc26-secret') ?? '';
@@ -433,6 +755,11 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   const liveUpsertRes = await upsertLive(ctx.env, toLiveUpsert);
   const liveDeleteRes = await deleteLiveRows(ctx.env, toLiveDelete);
 
+  // ── Wiki scorer sync ──────────────────────────────────────────────
+  // Piggybacks on this same cron tick. Only fetches Wikipedia if there
+  // are live matches with new goals or finished matches needing scorers.
+  const wikiRes = await syncWikiScorers(ctx.env, host, toLiveUpsert, matchMap);
+
   return Response.json({
     upserted: upsertRes.ok,
     admin_payload_enriched: patchRes.ok,
@@ -442,11 +769,17 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     skipped_no_score,
     skipped_unmapped,
     fd_total: fdMatches.length,
+    wiki: {
+      needed: wikiRes.needed,
+      fetched: wikiRes.fetched,
+      updated: wikiRes.updated,
+    },
     errors: [
       ...upsertRes.errors,
       ...patchRes.errors,
       ...liveUpsertRes.errors,
       ...liveDeleteRes.errors,
+      ...wikiRes.errors,
     ],
   });
 };
