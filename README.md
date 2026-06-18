@@ -20,6 +20,7 @@ cd site
 cp .env.example .env.local            # fill VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_ADMIN_EMAIL
 npm install
 npm run dev                            # http://localhost:8000
+npm test                               # run unit tests (vitest)
 ```
 
 ### Supabase setup
@@ -28,9 +29,10 @@ npm run dev                            # http://localhost:8000
    edit the email inside `wc26_is_admin()` to your admin email, run it.
    All tables / functions / triggers are namespaced with `wc26_` so they
    coexist with anything else in the same Supabase project.
-3. Auth → Providers → Email — leave signup enabled (open league) or
+3. SQL editor → set up cron jobs per [`site/database/cron.sql`](./site/database/cron.sql).
+4. Auth → Providers → Email — leave signup enabled (open league) or
    disable it later if you want a closed league.
-4. Copy `Project URL` and `anon public` key into `site/.env.local`.
+5. Copy `Project URL` and `anon public` key into `site/.env.local`.
 
 ### Deploy to Cloudflare Pages
 1. Cloudflare dashboard → Workers & Pages → **Create** → **Pages** →
@@ -54,6 +56,19 @@ npm run dev                            # http://localhost:8000
    confirmation links and password resets will misfire.
 
 Every `git push origin master` triggers a redeploy automatically.
+
+### Serverless functions (Cloudflare Pages Functions)
+
+The `site/functions/` directory contains backend endpoints called by pg_cron:
+
+| Endpoint | Trigger | What it does |
+|----------|---------|--------------|
+| `POST /sync-matches` | Every minute (pg_cron) | Syncs live scores + finished results from football-data.org, updates wiki scorers when goals change |
+| `POST /send-reminders` | Daily 09:00 UTC (pg_cron) | Emails users who haven't submitted predictions for upcoming matches |
+| `POST /send-announcement` | Manual (curl) | Sends a one-shot email to all approved users |
+| `POST /notify-signup` | Supabase trigger | Notifies admin via Telegram when a new user signs up |
+
+All endpoints are authenticated via the `x-wc26-secret` header.
 
 ### Refresh tournament data after upstream updates
 ```sh
