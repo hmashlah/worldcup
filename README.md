@@ -1,18 +1,66 @@
 
-## ♡ Our World Cup 2026 prediction league
+## World Cup 2026 Prediction League
 
-This fork includes a small web app in [`site/`](./site) — a cute,
-romantic prediction-league tracker for me and a few friends. Sign in,
-predict every match score, and the leaderboard ranks everyone by accuracy
-once results come in. Built with **Vite + React + TypeScript +
-Supabase** (auth + database).
+A private prediction-league web app for the 2026 FIFA World Cup. Users predict match scores before kickoff, and the leaderboard ranks everyone by accuracy as results come in. Built for a small group of friends to compete during the tournament.
 
-Scoring (classic):
-- 🎯 **3 pts** for an exact score
-- ✓ **1 pt** for the right outcome (W / D / L)
-- → **+1 pt** in knockouts for picking the right advancer
+**Live at:** [worldcup-1jo.pages.dev](https://worldcup-1jo.pages.dev)
 
-Predictions lock at each match's kickoff time.
+### Features
+
+- **Match predictions** — predict every group and knockout match score before kickoff (auto-locks at kickoff, enforced server-side via RLS)
+- **Live scores** — real-time score updates during matches with pulsing live indicator (synced every minute from football-data.org)
+- **Live goal scorers** — scorer names update during the match via Wikipedia scraping (triggered only when scores change)
+- **Leaderboard** — ranked standings with dense ranking, exact/outcome/advancer breakdowns
+- **Points race chart** — SVG line chart showing cumulative points over time per player
+- **Day standings** — mini-leaderboard per matchday showing who scored the most that day
+- **Consensus picks** — after kickoff, each match card shows the league's prediction distribution (% per outcome + average predicted score)
+- **Match detail page** — head-to-head history from all major tournaments (WC, Euros, Copa, AFCON, Asian Cup), venue, referee, all players' predictions
+- **Knockout bracket** — round-by-round navigation with cascading slot resolution (winners flow through automatically)
+- **Group standings** — live tables with qualification indicators (top 2 + best 8 third-placed teams)
+- **Two themes** — minimal (editorial monochrome) and funky (arcade neo-brutalist with gradients)
+- **Guest browsing** — unauthenticated visitors can browse matches, groups, bracket (no predictions or leaderboard)
+- **Admin approval** — new signups require admin approval before they can submit predictions
+- **Email reminders** — daily reminder for users with unpicked matches in the next 24h
+- **Telegram notifications** — admin gets notified on new signups
+
+### Scoring
+
+- **3 pts** — exact score prediction
+- **1 pt** — correct outcome (Win / Draw / Loss)
+- **+1 pt** — correct advancer in knockout matches (when score is a draw and goes to ET/pens)
+
+### Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19, TypeScript 5.9, Vite 7 |
+| State | Zustand (UI), TanStack React Query (server state) |
+| Styling | Custom CSS with CSS variables, two themes |
+| Backend | Supabase (PostgreSQL + Auth + Row Level Security) |
+| Hosting | Cloudflare Pages |
+| Functions | Cloudflare Pages Functions (TypeScript) |
+| External APIs | football-data.org (live scores), Wikipedia (scorers), Resend (emails), Telegram Bot API |
+| Data pipeline | Python (build-data.py), Node.js scripts (h2h, kickoffs, match-map, wiki scraper) |
+| Tests | Vitest |
+
+### Project Structure
+
+```
+site/
+  src/
+    components/     # React components (MatchCard, DayView, Bracket, etc.)
+    hooks/          # React Query hooks (predictions, results, profiles, live)
+    lib/            # Pure utilities (scoring, time, days, tournament logic)
+    contexts/       # Auth context
+    pages/          # Full-page views (MatchDetailPage)
+    styles/         # CSS (index.css + theme.css)
+  functions/        # Cloudflare Pages Functions (sync, reminders, announcements)
+  database/         # SQL schema + cron job definitions
+  scripts/          # Build scripts (h2h, kickoffs, match-map, wiki scraper)
+  public/           # Static data (data.json, h2h.json, fd-match-map.json)
+```
+
+---
 
 ### Local dev
 ```sh
