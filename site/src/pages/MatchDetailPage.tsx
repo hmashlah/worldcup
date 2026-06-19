@@ -55,7 +55,6 @@ function CollapsibleHeader({ label, defaultOpen = false, children }: {
  */
 export function MatchDetailPage({ matchId }: { matchId: string }) {
   const closeMatch = useUI(s => s.closeMatch);
-  const spectatorMode = useUI(s => s.spectatorMode);
   const dataQ = useTournamentData();
   // Slim list of all results — used to resolve KO slots ("W74" → team).
   const resultsQ = useResults();
@@ -163,7 +162,7 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
           <span>{roundLabel}</span>
           <span>·</span>
           <span>{kickoffStr}</span>
-          {locked && !spectatorMode && <span className="mdp-meta-locked">· 🔒 locked</span>}
+          {locked && <span className="mdp-meta-locked">· 🔒 locked</span>}
         </div>
         <div className="mdp-venue">{match.ground}</div>
       </header>
@@ -230,13 +229,15 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
       )}
 
       {/* ─── League consensus + predictions ────────────────────────── */}
-      {/* Hidden in spectator mode and for guests. */}
-      {user && !spectatorMode && locked && team1Resolved && team2Resolved && (
+      {/* Hidden for guests. */}
+      {user && locked && team1Resolved && team2Resolved && (
         <section className="mdp-section">
-          <ConsensusPick matchId={matchId} team1={team1Resolved} team2={team2Resolved} />
+          <CollapsibleHeader label="League consensus" defaultOpen={false}>
+            <ConsensusPick matchId={matchId} team1={team1Resolved} team2={team2Resolved} />
+          </CollapsibleHeader>
         </section>
       )}
-      {user && !spectatorMode && (
+      {user && (
         <PredictionsSection
           matchId={matchId}
           isKO={isKnockoutMatch}

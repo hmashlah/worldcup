@@ -16,7 +16,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
 
 export function Topbar() {
   const { user, isAdmin, signOut } = useAuth();
-  const { tab, setTab, setAuthOpen, theme, toggleTheme, spectatorMode, toggleSpectator } = useUI();
+  const { tab, setTab, setAuthOpen, theme, toggleTheme } = useUI();
   const dataQ = useTournamentData();
   const predsQ = useMyPredictions();
   const profilesQ = useProfiles();
@@ -44,17 +44,16 @@ export function Topbar() {
   }, [isAdmin, profilesQ.data]);
 
   useEffect(() => {
-    if (tab === 'admin' && (!isAdmin || spectatorMode)) setTab('today');
-    if (tab === 'leaderboard' && (!user || spectatorMode)) setTab('today');
-    if (tab === 'picks' && (!user || spectatorMode)) setTab('today');
-  }, [tab, isAdmin, user, spectatorMode, setTab]);
+    if (tab === 'admin' && !isAdmin) setTab('today');
+    if (tab === 'leaderboard' && !user) setTab('today');
+    if (tab === 'picks' && !user) setTab('today');
+  }, [tab, isAdmin, user, setTab]);
 
-  // Build the visible tab list: guests and spectator mode don't see
-  // prediction-related tabs (Leaderboard, My Picks).
-  const baseTabs = (user && !spectatorMode)
+  // Build the visible tab list: guests don't see prediction-related tabs (Leaderboard, My Picks).
+  const baseTabs = user
     ? TABS
     : TABS.filter(t => t.key !== 'leaderboard' && t.key !== 'picks');
-  const tabs = (isAdmin && !spectatorMode) ? [...baseTabs, { key: 'admin' as TabKey, label: 'Admin' }] : baseTabs;
+  const tabs = isAdmin ? [...baseTabs, { key: 'admin' as TabKey, label: 'Admin' }] : baseTabs;
 
   return (
     <header className="topbar">
@@ -95,21 +94,6 @@ export function Topbar() {
             <span className="topbar-hello">{user.displayName ?? user.email.split('@')[0]}</span>
             <button className="btn btn-ghost" onClick={handleSignOut} disabled={signingOut}>
               {signingOut ? '...' : 'Sign out'}
-            </button>
-            {/* Spectator toggle — hides prediction UI, shows only scores/schedule */}
-            <button
-              className={'spectator-toggle' + (spectatorMode ? ' is-on' : '')}
-              onClick={toggleSpectator}
-              title={spectatorMode ? 'Spectator mode ON — tap to show predictions' : 'Tap for clean schedule view (hide predictions)'}
-              aria-label={spectatorMode ? 'Exit spectator mode' : 'Enter spectator mode'}
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                {spectatorMode ? (
-                  <><path d="M2 8s2.5-5 6-5 6 5 6 5-2.5 5-6 5-6-5-6-5" /><circle cx="8" cy="8" r="2" /><line x1="2" y1="2" x2="14" y2="14" /></>
-                ) : (
-                  <><path d="M2 8s2.5-5 6-5 6 5 6 5-2.5 5-6 5-6-5-6-5" /><circle cx="8" cy="8" r="2" /></>
-                )}
-              </svg>
             </button>
           </>
         ) : (

@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Flag } from '@/components/Flag';
-import { ConsensusPick } from '@/components/ConsensusPick';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMyPredictions, useUpsertPrediction } from '@/hooks/usePredictions';
 import { useResults } from '@/hooks/useResults';
@@ -63,14 +62,13 @@ export function MatchCard(p: Props) {
     isKO = false, roundLabel, showDate = false,
   } = p;
   const { user } = useAuth();
-  const spectatorMode = useUI(s => s.spectatorMode);
   const myPredsQ = useMyPredictions();
   const resultsQ = useResults();
   const liveQ = useLiveMatches();
   const upsertPred = useUpsertPrediction();
 
   // In spectator mode, treat as if not logged in for prediction UI
-  const showPredictions = !!user && !spectatorMode;
+  const showPredictions = !!user;
 
   // Re-render every 30s so a card open at 12:59 visibly locks at kickoff
   // without needing user interaction.
@@ -265,11 +263,6 @@ export function MatchCard(p: Props) {
             <span className={`mc-points pts-${earned}`}>+{earned}</span>
           )}
         </div>
-      )}
-
-      {/* Consensus pick — visible on locked matches in prediction mode */}
-      {showPredictions && locked && team1IsResolved && team2IsResolved && (
-        <ConsensusPick matchId={matchId} team1={team1} team2={team2} />
       )}
 
       <div className="mc-ground"><span /><span>{ground}</span><span /></div>

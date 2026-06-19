@@ -4,7 +4,6 @@ export type TabKey = 'today' | 'groups' | 'bracket' | 'leaderboard' | 'picks' | 
 export type ThemeKey = 'minimal' | 'dark' | 'funky';
 
 const THEME_STORAGE_KEY = 'wc26-theme';
-const SPECTATOR_MODE_KEY = 'wc26-spectator';
 
 function readInitialTheme(): ThemeKey {
   if (typeof window === 'undefined') return 'minimal';
@@ -12,11 +11,6 @@ function readInitialTheme(): ThemeKey {
   if (v === 'dark') return 'dark';
   if (v === 'funky') return 'funky';
   return 'minimal';
-}
-
-function readInitialSpectator(): boolean {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem(SPECTATOR_MODE_KEY) === '1';
 }
 
 function applyThemeToDom(theme: ThemeKey) {
@@ -35,11 +29,6 @@ interface UIState {
   theme: ThemeKey;
   toggleTheme: () => void;
   setTheme: (t: ThemeKey) => void;
-  /** Spectator mode: hides predictions, consensus, points — shows only
-   *  matches, scores, and schedule. Like a logged-out view but while
-   *  staying signed in. */
-  spectatorMode: boolean;
-  toggleSpectator: () => void;
 }
 
 export const useUI = create<UIState>(set => ({
@@ -64,16 +53,6 @@ export const useUI = create<UIState>(set => ({
     applyThemeToDom(t);
     set({ theme: t });
   },
-  spectatorMode: readInitialSpectator(),
-  toggleSpectator: () => set(s => {
-    const next = !s.spectatorMode;
-    localStorage.setItem(SPECTATOR_MODE_KEY, next ? '1' : '0');
-    // If switching to spectator while on a prediction-only tab, bounce to Matches
-    if (next && (s.tab === 'leaderboard' || s.tab === 'picks')) {
-      return { spectatorMode: next, tab: 'today' };
-    }
-    return { spectatorMode: next };
-  }),
 }));
 
 if (typeof document !== 'undefined') {
