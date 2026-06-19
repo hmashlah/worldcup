@@ -395,31 +395,33 @@ function convertGoals(olMatch: OLMatch, ourTeam1: string): WikiGoal[] {
   // Determine if our team1 matches OL's team1
   const sameOrder = olTeam1Name === ourTeam1;
 
-  return olMatch.goals.map(g => {
-    // Determine which team scored by comparing running score changes
-    const prevScore1 = g.scoreTeam1 - (g.isOwnGoal ? 0 : 1);
-    const scoredByTeam1 = g.scoreTeam1 > prevScore1 && !g.isOwnGoal;
-    // For own goals: the team that conceded is the one whose score increased
-    const olTeamSide: 'home' | 'away' = g.isOwnGoal
-      ? (g.scoreTeam1 > (g.scoreTeam1 - 1) ? 'away' : 'home') // OG by away increases team1 score
-      : (scoredByTeam1 ? 'home' : 'away');
+  return olMatch.goals
+    .filter(g => g.goalGetterName && g.goalGetterName.trim() !== '' && g.matchMinute > 0)
+    .map(g => {
+      // Determine which team scored by comparing running score changes
+      const prevScore1 = g.scoreTeam1 - (g.isOwnGoal ? 0 : 1);
+      const scoredByTeam1 = g.scoreTeam1 > prevScore1 && !g.isOwnGoal;
+      // For own goals: the team that conceded is the one whose score increased
+      const olTeamSide: 'home' | 'away' = g.isOwnGoal
+        ? (g.scoreTeam1 > (g.scoreTeam1 - 1) ? 'away' : 'home') // OG by away increases team1 score
+        : (scoredByTeam1 ? 'home' : 'away');
 
-    // Map to our team orientation
-    let team: 'home' | 'away';
-    if (sameOrder) {
-      team = olTeamSide;
-    } else {
-      team = olTeamSide === 'home' ? 'away' : 'home';
-    }
+      // Map to our team orientation
+      let team: 'home' | 'away';
+      if (sameOrder) {
+        team = olTeamSide;
+      } else {
+        team = olTeamSide === 'home' ? 'away' : 'home';
+      }
 
-    const goal: WikiGoal = {
-      team,
-      name: g.goalGetterName.trim(),
-      minute: g.matchMinute,
-      kind: g.isPenalty ? 'penalty' : g.isOwnGoal ? 'own-goal' : 'goal',
-    };
-    return goal;
-  }).sort((a, b) => a.minute - b.minute);
+      const goal: WikiGoal = {
+        team,
+        name: g.goalGetterName.trim(),
+        minute: g.matchMinute,
+        kind: g.isPenalty ? 'penalty' : g.isOwnGoal ? 'own-goal' : 'goal',
+      };
+      return goal;
+    }).sort((a, b) => a.minute - b.minute);
 }
 
 /** Fetch the wiki_scorers state for all matches that have results. */

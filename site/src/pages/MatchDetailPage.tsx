@@ -185,12 +185,12 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
                 : 'on penalties'}
             </div>
           )}
-          {/* Per-match goal scorers, scraped daily from Wikipedia.
-              Hidden when wiki_scorers is null (match not yet scraped
-              or 0-0). Two-column layout mirrors the H2H card. */}
-          {result.wiki_scorers && result.wiki_scorers.length > 0 && (
-            <ScorersBlock scorers={result.wiki_scorers} />
-          )}
+          {/* Per-match goal scorers. Prefer match_detail.goals, fall back to wiki_scorers.
+              Auto-updates once scorer names become available from OpenLigaDB/Wikipedia. */}
+          {(() => {
+            const goals = result.match_detail?.goals ?? result.wiki_scorers;
+            return goals && goals.length > 0 && <ScorersBlock scorers={goals} />;
+          })()}
           {isKnockoutMatch && result.advancer && (
             <div className="mdp-advanced">
               <strong>{result.advancer}</strong> advanced
@@ -488,11 +488,12 @@ function ScorersBlock({ scorers }: { scorers: WikiGoal[] }) {
 }
 
 function WikiScorerLine({ g, side }: { g: WikiGoal; side: 'left' | 'right' }) {
-  const minute = g.extraTime ? `${g.minute}+${g.extraTime}` : `${g.minute}`;
+  const minute = g.extraTime ? `${g.minute}+${g.extraTime}` : g.minute ? `${g.minute}` : '?';
   const tag = g.kind === 'penalty' ? ' (pen)' : g.kind === 'own-goal' ? ' (OG)' : '';
+  const name = g.name || 'scorer not available yet';
   return (
     <li className={`mdp-h2h-goal ${side}`}>
-      ⚽ {g.name} {minute}'{tag}
+      ⚽ {name} {minute}'{tag}
     </li>
   );
 }
