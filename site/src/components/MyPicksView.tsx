@@ -23,9 +23,13 @@ export function MyPicksView() {
   const predsQ = useMyPredictions();
   const resultsQ = useResults();
 
-  const { dayGroups, totals } = useMemo(() => {
+  const { dayGroups, totals, stats } = useMemo(() => {
     if (!dataQ.data || !predsQ.data || !resultsQ.data) {
-      return { dayGroups: [], totals: { pts: 0, exact: 0, outcome: 0, advancer: 0, picks: 0 } };
+      return {
+        dayGroups: [],
+        totals: { pts: 0, exact: 0, outcome: 0, advancer: 0, picks: 0 },
+        stats: { currentStreak: 0, longestStreak: 0, exactRate: 0, hitRate: 0, bestDay: null as { date: string; pts: number } | null },
+      };
     }
 
     const matches = allMatches(dataQ.data);
@@ -74,6 +78,43 @@ export function MyPicksView() {
       picks: scored.length,
     };
 
+    // Streak and rate calculations (chronological order by kickoff)
+    const chronological = [...scored].sort((a, b) => a.match.kickoff - b.match.kickoff);
+
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let streak = 0;
+    for (const s of chronological) {
+      if (s.points > 0) {
+        streak++;
+        if (streak > longestStreak) longestStreak = streak;
+      } else {
+        streak = 0;
+      }
+    }
+    // Current streak: count backwards from most recent scored match
+    for (let i = chronological.length - 1; i >= 0; i--) {
+      if (chronological[i].points > 0) currentStreak++;
+      else break;
+    }
+
+    const totalScored = scored.length;
+    const exactRate = totalScored > 0 ? Math.round((totals.exact / totalScored) * 100) : 0;
+    const hitCount = scored.filter(s => s.points > 0).length;
+    const hitRate = totalScored > 0 ? Math.round((hitCount / totalScored) * 100) : 0;
+
+    // Best day: group by date, sum points, find max
+    const ptsByDate: Record<string, number> = {};
+    for (const s of scored) {
+      ptsByDate[s.match.date] = (ptsByDate[s.match.date] || 0) + s.points;
+    }
+    let bestDay: { date: string; pts: number } | null = null;
+    for (const [date, pts] of Object.entries(ptsByDate)) {
+      if (!bestDay || pts > bestDay.pts) bestDay = { date, pts };
+    }
+
+    const stats = { currentStreak, longestStreak, exactRate, hitRate, bestDay };
+
     // Group by date
     const byDate: Record<string, ScoredPick[]> = {};
     for (const s of scored) {
@@ -89,7 +130,7 @@ export function MyPicksView() {
         picks: picks.sort((a, b) => a.match.kickoff - b.match.kickoff),
       }));
 
-    return { dayGroups, totals };
+    return { dayGroups, totals, stats };
   }, [dataQ.data, predsQ.data, resultsQ.data]);
 
   if (dataQ.isLoading || predsQ.isLoading || resultsQ.isLoading) {
@@ -112,6 +153,31 @@ export function MyPicksView() {
         <span className="my-picks-stat">{totals.outcome} outcome</span>
         <span className="my-picks-stat">{totals.advancer} advancer</span>
         <span className="my-picks-stat">{totals.picks} picks</span>
+      </div>
+
+      <div className="my-picks-stats">
+        <div className="my-picks-stats-item">
+          <span className="my-picks-stats-value">{stats.currentStreak > 0 ? `🔥 ${stats.currentStreak}` : '0'}</span>
+          <span className="my-picks-stats-label">Streak</span>
+        </div>
+        <div className="my-picks-stats-item">
+          <span className="my-picks-stats-value">{stats.longestStreak}</span>
+          <span className="my-picks-stats-label">Best streak</span>
+        </div>
+        <div className="my-picks-stats-item">
+          <span className="my-picks-stats-value">{stats.exactRate}%</span>
+          <span className="my-picks-stats-label">Exact rate</span>
+        </div>
+        <div className="my-picks-stats-item">
+          <span className="my-picks-stats-value">{stats.hitRate}%</span>
+          <span className="my-picks-stats-label">Hit rate</span>
+        </div>
+        {stats.bestDay && (
+          <div className="my-picks-stats-item">
+            <span className="my-picks-stats-value">{formatShortDate(stats.bestDay.date)} · {stats.bestDay.pts} pts</span>
+            <span className="my-picks-stats-label">Best day</span>
+          </div>
+        )}
       </div>
 
       {dayGroups.map(({ date, picks }) => (
@@ -155,4 +221,9 @@ function ptsClass(pts: number): string {
 function formatDateHeader(date: string): string {
   const d = new Date(date + 'T00:00:00');
   return d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+function formatShortDate(date: string): string {
+  const d = new Date(date + 'T00:00:00');
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }

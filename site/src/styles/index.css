@@ -3433,6 +3433,38 @@ footer {
   letter-spacing: -0.01em;
 }
 
+.my-picks-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 12px 20px;
+  margin-bottom: 24px;
+}
+.my-picks-stats-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.my-picks-stats-value {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.my-picks-stats-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .my-picks-day {
   margin-bottom: 20px;
 }
@@ -3527,6 +3559,16 @@ footer {
   background-clip: text;
   color: transparent;
 }
+[data-theme='funky'] .my-picks-stats {
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 3px 3px 0 0 var(--ink), 0 6px 18px rgba(24, 18, 38, 0.12);
+}
+[data-theme='funky'] .my-picks-stats-value {
+  font-family: var(--score-font);
+  font-size: 16px;
+}
 [data-theme='funky'] .my-picks-day-header {
   font-family: var(--display);
   letter-spacing: 0.04em;
@@ -3572,6 +3614,9 @@ footer {
   .my-picks-summary { padding: 10px 14px; gap: 6px 12px; }
   .my-picks-stat { font-size: 12px; }
   .my-picks-stat-pts { font-size: 17px; }
+  .my-picks-stats { padding: 10px 14px; gap: 8px 14px; }
+  .my-picks-stats-value { font-size: 13px; }
+  .my-picks-stats-label { font-size: 10px; }
   .my-picks-row {
     grid-template-columns: 1fr auto 1fr 28px;
     gap: 6px;
@@ -3583,6 +3628,9 @@ footer {
   .my-picks-team .fi { font-size: 13px; }
 
   [data-theme='funky'] .my-picks-summary {
+    box-shadow: 2px 2px 0 0 var(--ink), 0 4px 14px rgba(24, 18, 38, 0.10);
+  }
+  [data-theme='funky'] .my-picks-stats {
     box-shadow: 2px 2px 0 0 var(--ink), 0 4px 14px rgba(24, 18, 38, 0.10);
   }
   [data-theme='funky'] .my-picks-row {
