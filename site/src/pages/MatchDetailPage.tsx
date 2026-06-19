@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Flag } from '@/components/Flag';
+import { ConsensusPick } from '@/components/ConsensusPick';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useResults, useMatchResult, type FullResultRow, type WikiGoal } from '@/hooks/useResults';
@@ -228,8 +229,13 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
         </section>
       )}
 
-      {/* ─── League predictions ─────────────────────────────────────── */}
+      {/* ─── League consensus + predictions ────────────────────────── */}
       {/* Hidden in spectator mode and for guests. */}
+      {user && !spectatorMode && locked && team1Resolved && team2Resolved && (
+        <section className="mdp-section">
+          <ConsensusPick matchId={matchId} team1={team1Resolved} team2={team2Resolved} />
+        </section>
+      )}
       {user && !spectatorMode && (
         <PredictionsSection
           matchId={matchId}
