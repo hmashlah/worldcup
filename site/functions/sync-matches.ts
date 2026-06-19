@@ -332,98 +332,6 @@ async function fetchExistingLiveIds(env: Env): Promise<string[]> {
   return rows.map(r => r.match_id);
 }
 
-// ── Goal scorer sync via OpenLigaDB ──────────────────────────────────
-// Replaces Wikipedia scraping with structured API data from openligadb.de.
-// Free, no auth required, provides goal scorers with minute + penalty/OG flags.
-
-const OPENLIGA_BASE = 'https://api.openligadb.de';
-const OPENLIGA_LEAGUE = 'wm26';
-const OPENLIGA_SEASON = '2026';
-
-/** Map OpenLigaDB German short names to our canonical team names. */
-const OL_TO_CANONICAL: Record<string, string> = {
-  'DZA': 'Algeria', 'ARG': 'Argentina', 'AUS': 'Australia', 'AUT': 'Austria',
-  'BEL': 'Belgium', 'BIH': 'Bosnia & Herzegovina', 'BRA': 'Brazil',
-  'CAN': 'Canada', 'CPV': 'Cape Verde', 'COL': 'Colombia', 'HRV': 'Croatia',
-  'CUW': 'Curaçao', 'CZE': 'Czech Republic', 'COD': 'DR Congo',
-  'ECU': 'Ecuador', 'EGY': 'Egypt', 'ENG': 'England', 'FRA': 'France',
-  'GER': 'Germany', 'GHA': 'Ghana', 'HTI': 'Haiti', 'IRN': 'Iran',
-  'IRQ': 'Iraq', 'CIV': 'Ivory Coast', 'JPN': 'Japan', 'JOR': 'Jordan',
-  'MEX': 'Mexico', 'MAR': 'Morocco', 'NLD': 'Netherlands', 'NZL': 'New Zealand',
-  'NOR': 'Norway', 'PAN': 'Panama', 'PAR': 'Paraguay', 'PRT': 'Portugal',
-  'QAT': 'Qatar', 'SAU': 'Saudi Arabia', 'SCT': 'Scotland', 'SEN': 'Senegal',
-  'RSA': 'South Africa', 'KOR': 'South Korea', 'ESP': 'Spain', 'SWE': 'Sweden',
-  'CHE': 'Switzerland', 'TUN': 'Tunisia', 'TUR': 'Turkey', 'USA': 'USA',
-  'URY': 'Uruguay', 'UZB': 'Uzbekistan',
-};
-
-interface OLGoal {
-  goalID: number;
-  scoreTeam1: number;
-  scoreTeam2: number;
-  matchMinute: number;
-  goalGetterID: number | null;
-  goalGetterName: string;
-  isPenalty: boolean;
-  isOwnGoal: boolean;
-  isOvertime: boolean;
-  comment: string | null;
-}
-
-interface OLMatch {
-  matchID: number;
-  matchDateTimeUTC: string;
-  matchIsFinished: boolean;
-  team1: { shortName: string; teamName: string };
-  team2: { shortName: string; teamName: string };
-  goals: OLGoal[];
-  matchResults: Array<{ resultTypeID: number; pointsTeam1: number; pointsTeam2: number }>;
-}
-
-/** Fetch all WC2026 matches from OpenLigaDB. */
-async function fetchOpenLigaMatches(): Promise<OLMatch[]> {
-  const res = await fetch(
-    `${OPENLIGA_BASE}/getmatchdata/${OPENLIGA_LEAGUE}/${OPENLIGA_SEASON}`,
-  );
-  if (!res.ok) throw new Error(`openligadb ${res.status}: ${await res.text()}`);
-  return res.json();
-}
-
-/** Convert OpenLigaDB goals to our WikiGoal format for a given match. */
-function convertGoals(olMatch: OLMatch, ourTeam1: string): WikiGoal[] {
-  const olTeam1Name = OL_TO_CANONICAL[olMatch.team1.shortName] ?? olMatch.team1.shortName;
-  // Determine if our team1 matches OL's team1
-  const sameOrder = olTeam1Name === ourTeam1;
-
-  return olMatch.goals
-    .filter(g => g.goalGetterName && g.goalGetterName.trim() !== '' && g.matchMinute > 0)
-    .map(g => {
-      // Determine which team scored by comparing running score changes
-      const prevScore1 = g.scoreTeam1 - (g.isOwnGoal ? 0 : 1);
-      const scoredByTeam1 = g.scoreTeam1 > prevScore1 && !g.isOwnGoal;
-      // For own goals: the team that conceded is the one whose score increased
-      const olTeamSide: 'home' | 'away' = g.isOwnGoal
-        ? (g.scoreTeam1 > (g.scoreTeam1 - 1) ? 'away' : 'home') // OG by away increases team1 score
-        : (scoredByTeam1 ? 'home' : 'away');
-
-      // Map to our team orientation
-      let team: 'home' | 'away';
-      if (sameOrder) {
-        team = olTeamSide;
-      } else {
-        team = olTeamSide === 'home' ? 'away' : 'home';
-      }
-
-      const goal: WikiGoal = {
-        team,
-        name: g.goalGetterName.trim(),
-        minute: g.matchMinute,
-        kind: g.isPenalty ? 'penalty' : g.isOwnGoal ? 'own-goal' : 'goal',
-      };
-      return goal;
-    }).sort((a, b) => a.minute - b.minute);
-}
-
 /** Fetch the wiki_scorers state for all matches that have results. */
 async function fetchScorerSyncState(env: Env): Promise<WikiSyncState[]> {
   const res = await fetch(
@@ -475,41 +383,6 @@ async function patchScorers(
   return { ok: true };
 }
 
-/**
- * For live matches: upsert a result row with the current score and
- * scorers so the UI can display them during play. Overwritten by the
- * FINISHED upsert once the match ends.
- */
-async function upsertLiveScorers(
-  env: Env,
-  match_id: string,
-  team1_score: number,
-  team2_score: number,
-  goals: WikiGoal[],
-): Promise<{ ok: boolean; error?: string }> {
-  const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/wc26_match_results?on_conflict=match_id`,
-    {
-      method: 'POST',
-      headers: {
-        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-        authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-        'content-type': 'application/json',
-        prefer: 'resolution=merge-duplicates,return=minimal',
-      },
-      body: JSON.stringify({
-        match_id,
-        team1_score,
-        team2_score,
-        source: 'api',
-        wiki_scorers: goals,
-      }),
-    },
-  );
-  if (!res.ok) return { ok: false, error: `${res.status}: ${await res.text()}` };
-  return { ok: true };
-}
-
 interface OurMatchInfo {
   match_id: string;
   date: string;
@@ -534,19 +407,19 @@ async function fetchOurMatches(host: string): Promise<OurMatchInfo[]> {
 }
 
 /**
- * Sync goal scorers from OpenLigaDB. Only fetches when there are matches
- * with missing or stale scorer data.
+ * Sync goal scorers from Wikipedia. Only fetches when there are finished
+ * matches with missing or stale scorer data.
  *
  * Triggers:
- * 1. Live match: current score > stored scorer count (new goal)
- * 2. Finished match: no scorers yet
- * 3. Finished match: scorer count != actual total goals
+ * 1. Finished match: no scorers yet
+ * 2. Finished match: scorer count != actual total goals
+ *
+ * Live matches are NOT handled here — the live score comes from
+ * wc26_match_live (FD). Scorers only get written once Wikipedia has them.
  */
 async function syncGoalScorers(
   env: Env,
   host: string,
-  liveMatches: Array<{ match_id: string; payload: FdMatch }>,
-  matchMap: MatchMap,
 ): Promise<{ needed: boolean; fetched: boolean; updated: number; errors: string[] }> {
   // Fetch current state from DB
   let syncState: WikiSyncState[];
@@ -554,22 +427,6 @@ async function syncGoalScorers(
     syncState = await fetchScorerSyncState(env);
   } catch (e) {
     return { needed: false, fetched: false, updated: 0, errors: [(e as Error).message] };
-  }
-
-  const stateByMatch = new Map(syncState.map(s => [s.match_id, s]));
-
-  // Check live matches — do any have a score mismatch with stored scorers?
-  const liveNeedSync: string[] = [];
-  for (const lm of liveMatches) {
-    const ourId = lm.match_id;
-    const state = stateByMatch.get(ourId);
-    const ft = lm.payload.score?.fullTime;
-    if (!ft || ft.home === null || ft.away === null) continue;
-    const liveTotal = (ft.home ?? 0) + (ft.away ?? 0);
-    const storedCount = state?.wiki_scorer_count ?? -1;
-    if (liveTotal > 0 && storedCount !== liveTotal) {
-      liveNeedSync.push(ourId);
-    }
   }
 
   // Check finished matches — any missing or mismatched scorers?
@@ -582,117 +439,69 @@ async function syncGoalScorers(
     finishedNeedSync.push(s.match_id);
   }
 
-  const allNeedSync = new Set([...liveNeedSync, ...finishedNeedSync]);
-  if (allNeedSync.size === 0) {
+  if (finishedNeedSync.length === 0) {
     return { needed: false, fetched: false, updated: 0, errors: [] };
   }
 
-  // Fetch from OpenLigaDB, Wikipedia, and our match list — all in parallel.
-  // OL is preferred (structured data), Wikipedia is fallback.
-  let olMatches: OLMatch[] = [];
+  // Fetch Wikipedia HTML and our match list in parallel
   let wikiHtml = '';
   let ourMatches: OurMatchInfo[];
   const fetchErrors: string[] = [];
   try {
     const results = await Promise.allSettled([
-      fetchOpenLigaMatches(),
       fetchWikiHtml(),
       fetchOurMatches(host),
     ]);
-    if (results[0].status === 'fulfilled') olMatches = results[0].value;
-    else fetchErrors.push(`openligadb: ${(results[0].reason as Error).message}`);
-    if (results[1].status === 'fulfilled') wikiHtml = results[1].value;
-    else fetchErrors.push(`wikipedia: ${(results[1].reason as Error).message}`);
-    if (results[2].status === 'rejected') {
-      return { needed: true, fetched: false, updated: 0, errors: [`data.json: ${(results[2].reason as Error).message}`] };
+    if (results[0].status === 'fulfilled') wikiHtml = results[0].value;
+    else fetchErrors.push(`wikipedia: ${(results[0].reason as Error).message}`);
+    if (results[1].status === 'rejected') {
+      return { needed: true, fetched: false, updated: 0, errors: [`data.json: ${(results[1].reason as Error).message}`] };
     }
-    ourMatches = results[2].value;
+    ourMatches = results[1].value;
   } catch (e) {
     return { needed: true, fetched: false, updated: 0, errors: [(e as Error).message] };
   }
 
-  // Build OL lookup: (date|sorted team pair) → OL match
-  const olByPair = new Map<string, OLMatch>();
-  for (const m of olMatches) {
-    const t1 = OL_TO_CANONICAL[m.team1.shortName] ?? m.team1.shortName;
-    const t2 = OL_TO_CANONICAL[m.team2.shortName] ?? m.team2.shortName;
-    const pair = [t1, t2].sort().join('|');
-    const dateKey = m.matchDateTimeUTC.slice(0, 10);
-    olByPair.set(`${dateKey}|${pair}`, m);
+  if (!wikiHtml) {
+    return { needed: true, fetched: false, updated: 0, errors: fetchErrors };
   }
 
   // Build Wikipedia lookup: (date|sorted team pair) → parsed goals
   const wikiByPair = new Map<string, WikiGoal[]>();
-  if (wikiHtml) {
-    const wikiMatches = parseFootballboxes(wikiHtml);
-    for (const w of wikiMatches) {
-      if (w.goals.length === 0) continue;
-      const pair = [w.home, w.away].sort().join('|');
-      wikiByPair.set(`${w.date}|${pair}`, w.goals);
-    }
+  const wikiMatches = parseFootballboxes(wikiHtml);
+  for (const w of wikiMatches) {
+    if (w.goals.length === 0) continue;
+    const pair = [w.home, w.away].sort().join('|');
+    wikiByPair.set(`${w.date}|${pair}`, w.goals);
   }
 
-  // Match and patch — try OL first, fall back to Wikipedia
+  // Match and patch
   const errors: string[] = [...fetchErrors];
   let updated = 0;
-
-  const liveNeedSyncSet = new Set(liveNeedSync);
-  const liveScoreByMatch = new Map<string, { team1: number; team2: number }>();
-  for (const lm of liveMatches) {
-    const ft = lm.payload.score?.fullTime;
-    if (!ft || ft.home === null || ft.away === null) continue;
-    const sameOrder = matchMap[lm.match_id]?.same_order_as_fd ?? true;
-    liveScoreByMatch.set(lm.match_id, {
-      team1: sameOrder ? ft.home! : ft.away!,
-      team2: sameOrder ? ft.away! : ft.home!,
-    });
-  }
+  const needSyncSet = new Set(finishedNeedSync);
 
   for (const our of ourMatches) {
-    if (!allNeedSync.has(our.match_id)) continue;
+    if (!needSyncSet.has(our.match_id)) continue;
 
     const pair = [our.team1, our.team2].sort().join('|');
     const dateShifts = [our.date, shiftDate(our.date, +1), shiftDate(our.date, -1)];
 
-    // Try OpenLigaDB first (structured, reliable)
     let goals: WikiGoal[] | null = null;
     for (const d of dateShifts) {
-      const olMatch = olByPair.get(`${d}|${pair}`);
-      if (olMatch && olMatch.goals.length > 0) {
-        goals = convertGoals(olMatch, our.team1);
+      const wikiGoals = wikiByPair.get(`${d}|${pair}`);
+      if (wikiGoals && wikiGoals.length > 0) {
+        // Wiki goals need home/away flipping based on our team order
+        const wikiHome = wikiGoals[0]?.team === 'home' ? our.team1 : our.team2;
+        const flipped = wikiHome !== our.team1;
+        goals = wikiGoals.map(g => ({
+          ...g,
+          team: flipped ? (g.team === 'home' ? 'away' : 'home') : g.team,
+        }));
         break;
       }
     }
 
-    // Fall back to Wikipedia if OL had nothing
-    if (!goals || goals.length === 0) {
-      for (const d of dateShifts) {
-        const wikiGoals = wikiByPair.get(`${d}|${pair}`);
-        if (wikiGoals && wikiGoals.length > 0) {
-          // Wiki goals need home/away flipping based on our team order
-          const wikiHome = wikiGoals[0]?.team === 'home' ? our.team1 : our.team2;
-          const flipped = wikiHome !== our.team1;
-          goals = wikiGoals.map(g => ({
-            ...g,
-            team: flipped ? (g.team === 'home' ? 'away' : 'home') : g.team,
-          }));
-          break;
-        }
-      }
-    }
-
-    if (!goals || goals.length === 0) continue;
-
-    // For live matches, upsert a result row with current score + scorers
-    if (liveNeedSyncSet.has(our.match_id)) {
-      const liveScore = liveScoreByMatch.get(our.match_id);
-      if (liveScore) {
-        const r = await upsertLiveScorers(env, our.match_id, liveScore.team1, liveScore.team2, goals);
-        if (r.ok) updated++;
-        else errors.push(`scorers ${our.match_id}: ${r.error}`);
-        continue;
-      }
-    }
+    if (!goals || goals.length === 0) continue; // Will retry next tick
 
     const r = await patchScorers(env, our.match_id, goals);
     if (r.ok) updated++;
@@ -709,7 +518,7 @@ function shiftDate(yyyyMmDd: string, days: number): string {
   return dt.toISOString().slice(0, 10);
 }
 
-// ── Wikipedia fallback (scorer parsing) ──────────────────────────────
+// ── Wikipedia scorer parsing ─────────────────────────────────────────
 
 interface WikiParsedMatch {
   date: string;
@@ -1540,8 +1349,8 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
 
   // ── Wiki scorer sync ──────────────────────────────────────────────
   // Piggybacks on this same cron tick. Only fetches Wikipedia if there
-  // are live matches with new goals or finished matches needing scorers.
-  const wikiRes = await syncGoalScorers(ctx.env, host, toLiveUpsert, matchMap);
+  // are finished matches needing scorers.
+  const wikiRes = await syncGoalScorers(ctx.env, host);
 
   // ── Post-match enrichment (lineups, cards, subs, MOTM, etc.) ─────
   // Only runs for finished group-stage matches missing match_detail.
