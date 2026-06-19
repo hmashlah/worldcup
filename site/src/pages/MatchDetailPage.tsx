@@ -178,20 +178,6 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
         />
       )}
 
-      {/* ─── League predictions ─────────────────────────────────────── */}
-      {/* Hidden in spectator mode and for guests. */}
-      {user && !spectatorMode && (
-        <PredictionsSection
-          matchId={matchId}
-          isKO={isKnockoutMatch}
-          currentUserId={user.id}
-          predictions={predsQ.data ?? []}
-          profiles={profilesQ.data ?? {}}
-          result={result ?? null}
-          locked={locked}
-        />
-      )}
-
       {/* ─── Result + scorers (if played) ───────────────────────────── */}
       {result && (
         <section className="mdp-section">
@@ -240,6 +226,20 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
             </div>
           )}
         </section>
+      )}
+
+      {/* ─── League predictions ─────────────────────────────────────── */}
+      {/* Hidden in spectator mode and for guests. */}
+      {user && !spectatorMode && (
+        <PredictionsSection
+          matchId={matchId}
+          isKO={isKnockoutMatch}
+          currentUserId={user.id}
+          predictions={predsQ.data ?? []}
+          profiles={profilesQ.data ?? {}}
+          result={result ?? null}
+          locked={locked}
+        />
       )}
 
       {/* ─── Match Detail (lineups, bookings, officials) ─────────── */}
