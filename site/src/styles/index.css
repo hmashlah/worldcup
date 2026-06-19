@@ -708,9 +708,77 @@ footer {
   margin-right: auto;
 }
 
-/* When expanded, span full grid width for more room */
-.gc-expanded {
-  grid-column: 1 / -1;
+/* Group matches modal */
+.gc-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(42, 37, 48, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+.gc-modal {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  width: min(600px, 100%);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 40px rgba(42, 37, 48, 0.16);
+}
+.gc-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.gc-modal-header h3 {
+  margin: 0;
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 16px;
+}
+.gc-modal-close {
+  background: transparent;
+  border: 0;
+  font-size: 22px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+}
+.gc-modal-close:hover { color: var(--ink); background: var(--bg); }
+.gc-modal-body {
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Funky modal */
+[data-theme='funky'] .gc-modal {
+  border: 2px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 6px 6px 0 0 var(--ink), 0 12px 40px rgba(24, 18, 38, 0.18);
+}
+
+/* Dark modal */
+[data-theme='dark'] .gc-modal-overlay {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+@media (max-width: 720px) {
+  .gc-modal {
+    width: 100%;
+    max-height: 90vh;
+    border-radius: var(--r-md);
+  }
+  .gc-modal-body { padding: 12px; }
 }
 
 /* ── Bracket (kept simple) ───────────────────────────────────────── */
