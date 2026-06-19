@@ -702,7 +702,15 @@ footer {
   border-top: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  max-width: 560px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* When expanded, span full grid width for more room */
+.gc-expanded {
+  grid-column: 1 / -1;
 }
 
 /* ── Bracket (kept simple) ───────────────────────────────────────── */
