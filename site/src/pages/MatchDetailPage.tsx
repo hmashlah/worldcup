@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Flag } from '@/components/Flag';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTournamentData } from '@/hooks/useTournamentData';
@@ -23,6 +23,7 @@ import type {
   ScoreMap,
   AdvancerMap,
 } from '@/lib/types';
+import type { MatchDetail } from '@/lib/match-detail';
 
 /**
  * Per-match deep dive: result + scorers, league predictions, head-to-head
@@ -205,6 +206,11 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
             </div>
           )}
         </section>
+      )}
+
+      {/* ─── Match Detail (lineups, bookings, officials) ─────────── */}
+      {result?.match_detail && (
+        <MatchDetailBlock detail={result.match_detail} />
       )}
 
       {/* ─── League predictions ─────────────────────────────────────── */}
@@ -488,6 +494,199 @@ function WikiScorerLine({ g, side }: { g: WikiGoal; side: 'left' | 'right' }) {
     <li className={`mdp-h2h-goal ${side}`}>
       ⚽ {g.name} {minute}'{tag}
     </li>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// Match Detail sections (lineups, bookings, officials)
+// ──────────────────────────────────────────────────────────────────────
+
+function MatchDetailBlock({ detail }: { detail: MatchDetail }) {
+  const [lineupsOpen, setLineupsOpen] = useState(false);
+  const [bookingsOpen, setBookingsOpen] = useState(false);
+  const [officialsOpen, setOfficialsOpen] = useState(false);
+
+  const hasInfo = detail.attendance || detail.motm || detail.venue;
+  const hasLineups = detail.lineups && (detail.lineups.home.starting.length > 0 || detail.lineups.away.starting.length > 0);
+  const hasCards = detail.cards && detail.cards.length > 0;
+  const hasOfficials = detail.referee;
+
+  if (!hasInfo && !hasLineups && !hasCards && !hasOfficials) return null;
+
+  return (
+    <>
+      {/* ─── Match Info (always visible) ─────────────────────────── */}
+      {hasInfo && (
+        <section className="mdp-section mdp-detail-section">
+          <h3 className="mdp-h3">Match Info</h3>
+          <div className="mdp-info-grid">
+            {detail.attendance != null && (
+              <div className="mdp-info-item">
+                <label>Attendance</label>
+                <span>{detail.attendance.toLocaleString()}</span>
+              </div>
+            )}
+            {detail.motm && (
+              <div className="mdp-info-item">
+                <label>Man of the Match</label>
+                <span>{detail.motm.name}</span>
+              </div>
+            )}
+            {detail.venue && (
+              <div className="mdp-info-item">
+                <label>Venue</label>
+                <span>{detail.venue.stadium}, {detail.venue.city}</span>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ─── Lineups (collapsible) ───────────────────────────────── */}
+      {hasLineups && (
+        <section className="mdp-section mdp-detail-section">
+          <div
+            className="mdp-detail-toggle"
+            onClick={() => setLineupsOpen(o => !o)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setLineupsOpen(o => !o); }}
+          >
+            <span>Lineups</span>
+            <span className="mdp-detail-chevron">{lineupsOpen ? '▾' : '▸'}</span>
+          </div>
+          {lineupsOpen && (
+            <div className="mdp-detail-body">
+              <div className="mdp-lineups">
+                {/* Home */}
+                <div>
+                  <div className="mdp-lineup-title">Home</div>
+                  {detail.lineups!.home.starting.map((p, i) => (
+                    <div className="mdp-lineup-row" key={`hs${i}`}>
+                      <span className="mdp-lineup-pos">{p.position ?? ''}</span>
+                      <span className="mdp-lineup-num">{p.number ?? ''}</span>
+                      <span className="mdp-lineup-name">
+                        {p.name}
+                        {p.captain && <span className="mdp-lineup-captain"> (c)</span>}
+                      </span>
+                    </div>
+                  ))}
+                  {detail.lineups!.home.subs.length > 0 && (
+                    <>
+                      <div className="mdp-lineup-subs-title">Subs</div>
+                      {detail.lineups!.home.subs.map((s, i) => (
+                        <div className="mdp-lineup-sub" key={`hsb${i}`}>
+                          {s.name} <span className="mdp-lineup-sub-min">{s.minuteIn}'</span>
+                          {s.replaced && ` (for ${s.replaced})`}
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+                {/* Away */}
+                <div>
+                  <div className="mdp-lineup-title">Away</div>
+                  {detail.lineups!.away.starting.map((p, i) => (
+                    <div className="mdp-lineup-row" key={`as${i}`}>
+                      <span className="mdp-lineup-pos">{p.position ?? ''}</span>
+                      <span className="mdp-lineup-num">{p.number ?? ''}</span>
+                      <span className="mdp-lineup-name">
+                        {p.name}
+                        {p.captain && <span className="mdp-lineup-captain"> (c)</span>}
+                      </span>
+                    </div>
+                  ))}
+                  {detail.lineups!.away.subs.length > 0 && (
+                    <>
+                      <div className="mdp-lineup-subs-title">Subs</div>
+                      {detail.lineups!.away.subs.map((s, i) => (
+                        <div className="mdp-lineup-sub" key={`asb${i}`}>
+                          {s.name} <span className="mdp-lineup-sub-min">{s.minuteIn}'</span>
+                          {s.replaced && ` (for ${s.replaced})`}
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ─── Bookings (collapsible) ──────────────────────────────── */}
+      {hasCards && (
+        <section className="mdp-section mdp-detail-section">
+          <div
+            className="mdp-detail-toggle"
+            onClick={() => setBookingsOpen(o => !o)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setBookingsOpen(o => !o); }}
+          >
+            <span>Bookings</span>
+            <span className="mdp-detail-chevron">{bookingsOpen ? '▾' : '▸'}</span>
+          </div>
+          {bookingsOpen && (
+            <div className="mdp-detail-body">
+              {detail.cards!.map((c, i) => (
+                <div className="mdp-card-row" key={`card${i}`}>
+                  <span className="mdp-card-min">{c.minute}'</span>
+                  <span
+                    className={`mdp-card-icon ${
+                      c.type === 'yellow' ? 'mdp-card-yellow' :
+                      c.type === 'red' ? 'mdp-card-red' :
+                      'mdp-card-yellow'
+                    }`}
+                    title={c.type === 'second-yellow' ? '2nd yellow' : c.type}
+                  />
+                  {c.type === 'second-yellow' && (
+                    <span className="mdp-card-icon mdp-card-red" title="red (2nd yellow)" />
+                  )}
+                  <span>{c.name}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ─── Officials (collapsible) ─────────────────────────────── */}
+      {hasOfficials && (
+        <section className="mdp-section mdp-detail-section">
+          <div
+            className="mdp-detail-toggle"
+            onClick={() => setOfficialsOpen(o => !o)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setOfficialsOpen(o => !o); }}
+          >
+            <span>Officials</span>
+            <span className="mdp-detail-chevron">{officialsOpen ? '▾' : '▸'}</span>
+          </div>
+          {officialsOpen && (
+            <div className="mdp-detail-body">
+              <div className="mdp-officials-list">
+                <div>
+                  <strong>Referee:</strong> {detail.referee!.name}
+                  {detail.referee!.nationality && ` (${detail.referee!.nationality})`}
+                </div>
+                {detail.referee!.assistants && detail.referee!.assistants.length > 0 && (
+                  <div>
+                    <strong>Assistants:</strong> {detail.referee!.assistants.join(', ')}
+                  </div>
+                )}
+                {detail.referee!.var && (
+                  <div>
+                    <strong>VAR:</strong> {detail.referee!.var}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+    </>
   );
 }
 

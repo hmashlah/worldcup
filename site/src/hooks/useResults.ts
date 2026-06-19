@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import type { MatchDetail } from '@/lib/match-detail';
 
 /** Slim row used by every list view (leaderboard, match cards, bracket).
  *  Excludes the FD payload (which can be ~1.5 KB per row) — that's
@@ -17,10 +18,11 @@ export interface ResultRow {
 /** Full row including FD payload — only used by MatchDetailPage. */
 export interface FullResultRow extends ResultRow {
   payload?: FdMatchPayload | null;
-  /** Goal scorers scraped from Wikipedia (post-match, populated daily).
-   *  Independent of `payload` — football-data.org's free tier strips
-   *  goal events, so this fills the gap. NULL for matches that haven't
-   *  been scraped yet. */
+  /** Consolidated match enrichment (goals, lineups, cards, etc).
+   *  Primary source. Falls back to wiki_scorers if not yet populated. */
+  match_detail?: MatchDetail | null;
+  /** @deprecated — legacy goal scorers column. Use match_detail.goals instead.
+   *  Kept for backwards compatibility during migration. */
   wiki_scorers?: WikiGoal[] | null;
 }
 
@@ -110,7 +112,7 @@ export function useMatchResult(matchId: string | null) {
       if (!matchId) return null;
       const { data, error } = await supabase
         .from('wc26_match_results')
-        .select('match_id, team1_score, team2_score, advancer, source, payload, wiki_scorers')
+        .select('match_id, team1_score, team2_score, advancer, source, payload, match_detail, wiki_scorers')
         .eq('match_id', matchId)
         .maybeSingle();
       if (error) throw error;
