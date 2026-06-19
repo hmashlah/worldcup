@@ -33,6 +33,7 @@ import type {
  */
 export function MatchDetailPage({ matchId }: { matchId: string }) {
   const closeMatch = useUI(s => s.closeMatch);
+  const spectatorMode = useUI(s => s.spectatorMode);
   const dataQ = useTournamentData();
   // Slim list of all results — used to resolve KO slots ("W74" → team).
   const resultsQ = useResults();
@@ -140,7 +141,7 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
           <span>{roundLabel}</span>
           <span>·</span>
           <span>{kickoffStr}</span>
-          {locked && <span className="mdp-meta-locked">· 🔒 locked</span>}
+          {locked && !spectatorMode && <span className="mdp-meta-locked">· 🔒 locked</span>}
         </div>
         <div className="mdp-venue">{match.ground}</div>
       </header>
@@ -207,10 +208,8 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
       )}
 
       {/* ─── League predictions ─────────────────────────────────────── */}
-      {/* Guests don't see this section — RLS hides predictions/profiles
-          from anon anyway, and exposing other players' picks to anyone
-          on the internet wasn't the deal members signed up for. */}
-      {user && (
+      {/* Hidden in spectator mode and for guests. */}
+      {user && !spectatorMode && (
         <PredictionsSection
           matchId={matchId}
           isKO={isKnockoutMatch}

@@ -278,21 +278,22 @@ export function MatchCard(p: Props) {
       <div className="mc-meta">
         <span className="mc-meta-time">
           {showDate && <>{fmtShortDate(date)} · </>}{kickoffStr}
-          {locked
-            ? <span className="mc-lock"> · 🔒</span>
-            : (() => {
-                const diff = kickoffDate.getTime() - now;
-                if (diff <= 0) return null;
-                const d = Math.floor(diff / 86_400_000);
-                const h = Math.floor((diff % 86_400_000) / 3_600_000);
-                const m = Math.floor((diff % 3_600_000) / 60_000);
-                let label: string;
-                if (d > 0) label = `${d}d ${h}h`;
-                else if (h > 0) label = `${h}h ${m}m`;
-                else label = `${m}m`;
-                return <span className="mc-countdown"> · locks in {label}</span>;
-              })()
-          }
+          {showPredictions && (
+            locked
+              ? <span className="mc-lock"> · 🔒</span>
+              : (() => {
+                  const diff = kickoffDate.getTime() - now;
+                  if (diff <= 0) return null;
+                  const d = Math.floor(diff / 86_400_000);
+                  const h = Math.floor((diff % 86_400_000) / 3_600_000);
+                  const m = Math.floor((diff % 3_600_000) / 60_000);
+                  let label: string;
+                  if (d > 0) label = `${d}d ${h}h`;
+                  else if (h > 0) label = `${h}h ${m}m`;
+                  else label = `${m}m`;
+                  return <span className="mc-countdown"> · locks in {label}</span>;
+                })()
+          )}
         </span>
         {live && <span className="mc-live-pill">live</span>}
         {roundLabel && <span className="mc-meta-round">{roundLabel}</span>}
