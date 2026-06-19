@@ -493,7 +493,7 @@ function WikiScorerLine({ g, side }: { g: WikiGoal; side: 'left' | 'right' }) {
   if (!g.name) {
     return (
       <li className={`mdp-h2h-goal ${side}`} style={{ color: 'var(--ink-faint)', fontStyle: 'italic' }}>
-        ⚽ {minute}' — awaiting confirmation
+        ⚽ {minute}' — scorer updating
       </li>
     );
   }
