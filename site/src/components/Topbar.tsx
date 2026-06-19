@@ -16,7 +16,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
 
 export function Topbar() {
   const { user, isAdmin, signOut } = useAuth();
-  const { tab, setTab, setAuthOpen, theme, toggleTheme, adminMode, toggleAdminMode } = useUI();
+  const { tab, setTab, setAuthOpen, theme, toggleTheme } = useUI();
   const dataQ = useTournamentData();
   const predsQ = useMyPredictions();
   const profilesQ = useProfiles();
@@ -28,9 +28,6 @@ export function Topbar() {
   };
 
   const pendingToday = useMemo(() => {
-    // Wait for both tournament data AND the user's predictions to load
-    // before computing the count, otherwise the badge flashes "N to pick"
-    // for a frame while predictions are still in flight.
     if (!user || !dataQ.data || !predsQ.data) return 0;
     const days = matchesByDay(dataQ.data);
     const target = defaultDay(days);
@@ -46,23 +43,18 @@ export function Topbar() {
     return Object.values(profilesQ.data).filter(p => !p.approved).length;
   }, [isAdmin, profilesQ.data]);
 
-  const adminActive = isAdmin && adminMode;
-  // If admin turns admin mode off while sitting on the Admin tab, bounce
-  // them. Same idea for guests landing on the leaderboard tab — they
-  // can't see it, so flip back to Matches.
   useEffect(() => {
-    if (tab === 'admin' && !adminActive) setTab('today');
+    if (tab === 'admin' && !isAdmin) setTab('today');
     if (tab === 'leaderboard' && !user) setTab('today');
     if (tab === 'picks' && !user) setTab('today');
-  }, [tab, adminActive, user, setTab]);
+  }, [tab, isAdmin, user, setTab]);
 
-  // Build the visible tab list: guests don't see Leaderboard (they
-  // can't read predictions/profiles via RLS, so it'd be empty); admins
-  // get an extra Admin tab.
+  // Build the visible tab list: guests don't see Leaderboard/Picks;
+  // admins get an extra Admin tab (always visible, no toggle).
   const baseTabs = user
     ? TABS
     : TABS.filter(t => t.key !== 'leaderboard' && t.key !== 'picks');
-  const tabs = adminActive ? [...baseTabs, { key: 'admin' as TabKey, label: 'Admin' }] : baseTabs;
+  const tabs = isAdmin ? [...baseTabs, { key: 'admin' as TabKey, label: 'Admin' }] : baseTabs;
 
   return (
     <header className="topbar">
@@ -101,21 +93,6 @@ export function Topbar() {
               </button>
             )}
             <span className="topbar-hello">{user.displayName ?? user.email.split('@')[0]}</span>
-            {isAdmin && (
-              <button
-                type="button"
-                className={'admin-pill admin-pill-toggle' + (adminMode ? ' is-on' : ' is-off')}
-                onClick={toggleAdminMode}
-                title={adminMode
-                  ? 'Admin mode ON · tap to view as a regular user'
-                  : 'Admin mode OFF · tap to enable admin tools'}
-                aria-pressed={adminMode}
-                aria-label={adminMode ? 'Admin mode on' : 'Admin mode off'}
-              >
-                <span className="admin-pill-dot" aria-hidden />
-                admin
-              </button>
-            )}
             <button className="btn btn-ghost" onClick={handleSignOut} disabled={signingOut}>
               {signingOut ? '...' : 'Sign out'}
             </button>
@@ -132,12 +109,10 @@ export function Topbar() {
           aria-label="Toggle theme"
         >
           {theme === 'minimal' ? (
-            // Sparkle icon for "tap to go funky"
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M8 1.5v3M8 11.5v3M1.5 8h3M11.5 8h3M3.4 3.4l2.1 2.1M10.5 10.5l2.1 2.1M3.4 12.6l2.1-2.1M10.5 5.5l2.1-2.1" />
             </svg>
           ) : (
-            // Half-moon for "tap to go minimal"
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
               <path d="M10.6 12.5a5.5 5.5 0 0 1-5.1-7.7 5.5 5.5 0 1 0 7.4 7.4 5.5 5.5 0 0 1-2.3.3z" />
             </svg>

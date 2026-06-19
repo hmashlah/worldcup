@@ -22,10 +22,9 @@ export default function App() {
 }
 
 function Shell() {
-  const { tab, authOpen, setAuthOpen, adminMode, openMatchId } = useUI();
+  const { tab, authOpen, setAuthOpen, openMatchId } = useUI();
   const dataQ = useTournamentData();
   const { user, isAdmin, isApproved, approvalLoading } = useAuth();
-  const adminActive = isAdmin && adminMode;
 
   // Signed-in but not yet approved by admin → show holding screen.
   // Anonymous visitors get the full read-only browse — they just see
@@ -53,7 +52,7 @@ function Shell() {
                     {tab === 'bracket' && <BracketTab />}
                     {tab === 'leaderboard' && user && <LeaderboardTab />}
                     {tab === 'picks' && user && <MyPicksTab />}
-                    {tab === 'admin' && adminActive && <AdminTab />}
+                    {tab === 'admin' && isAdmin && <AdminTab />}
                   </>
             )}
           </>
@@ -116,13 +115,10 @@ function AdminTab() {
   return (
     <section className="tab-panel active">
       <div className="section-intro">
-        <h2>Admin · Enter Results</h2>
-        <p>You're the source of truth. Enter actual results in the Today, Groups, or Bracket tabs — the leaderboard recomputes automatically.</p>
+        <h2>Admin</h2>
+        <p>Approve or decline pending signups.</p>
       </div>
       <AdminPendingUsers />
-      <div className="leaderboard-empty">
-        Switch to Today, Groups, or Bracket and enter actual scores. As admin, every match's score input writes to <code>wc26_match_results</code>.
-      </div>
     </section>
   );
 }
