@@ -26,6 +26,26 @@ import type {
 import type { MatchDetail } from '@/lib/match-detail';
 
 /**
+ * Reusable collapsible section with toggle header.
+ */
+function CollapsibleHeader({ label, defaultOpen = false, children }: {
+  label: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <>
+      <div className="mdp-collapse-toggle" onClick={() => setOpen(!open)}>
+        <span className="mdp-collapse-label">{label}</span>
+        <span className="mdp-collapse-chevron">{open ? '▾' : '▸'}</span>
+      </div>
+      {open && <div className="mdp-collapse-body">{children}</div>}
+    </>
+  );
+}
+
+/**
  * Per-match deep dive: result + scorers, league predictions, head-to-head
  * history from previous World Cups, and venue info.
  *
@@ -315,28 +335,29 @@ function PredictionsSection({
 
   return (
     <section className="mdp-section">
-      <h3 className="mdp-h3">League predictions</h3>
-      {rows.length === 0 ? (
-        <p className="mdp-empty">No predictions for this match.</p>
-      ) : (
-        <ul className="mdp-pred-list">
-          {rows.map(r => (
-            <li
-              key={r.user_id}
-              className={`mdp-pred-row ${r.user_id === currentUserId ? 'mdp-pred-self' : ''}`}
-            >
-              <span className="mdp-pred-name">
-                {r.user_id === currentUserId ? 'You' : r.name}
-              </span>
-              <span className="mdp-pred-score">{r.team1_score} – {r.team2_score}</span>
-              {isKO && r.advancer && <span className="mdp-pred-adv">→ {r.advancer}</span>}
-              {r.pts !== null && (
-                <span className={`mdp-pred-pts pts-${r.pts}`}>+{r.pts}</span>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+      <CollapsibleHeader label="League predictions" defaultOpen={true}>
+        {rows.length === 0 ? (
+          <p className="mdp-empty">No predictions for this match.</p>
+        ) : (
+          <ul className="mdp-pred-list">
+            {rows.map(r => (
+              <li
+                key={r.user_id}
+                className={`mdp-pred-row ${r.user_id === currentUserId ? 'mdp-pred-self' : ''}`}
+              >
+                <span className="mdp-pred-name">
+                  {r.user_id === currentUserId ? 'You' : r.name}
+                </span>
+                <span className="mdp-pred-score">{r.team1_score} – {r.team2_score}</span>
+                {isKO && r.advancer && <span className="mdp-pred-adv">→ {r.advancer}</span>}
+                {r.pts !== null && (
+                  <span className={`mdp-pred-pts pts-${r.pts}`}>+{r.pts}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </CollapsibleHeader>
     </section>
   );
 }
@@ -404,20 +425,21 @@ function H2HSection({ team1, team2 }: { team1: string | null; team2: string | nu
 
   return (
     <section className="mdp-section">
-      <h3 className="mdp-h3">Previous meetings</h3>
-      <div className="mdp-h2h-summary">
-        <span><strong>{summary.w}</strong> W</span>
-        <span><strong>{summary.d}</strong> D</span>
-        <span><strong>{summary.l}</strong> L</span>
-        <span className="mdp-h2h-goals">
-          ({summary.gf}–{summary.ga} goals, from {team1}'s view)
-        </span>
-      </div>
-      <ul className="mdp-h2h-list">
-        {matches.map((m, i) => (
-          <H2HMatchCard key={`${m.year}-${i}`} match={m} />
-        ))}
-      </ul>
+      <CollapsibleHeader label={`Previous meetings (${matches.length})`} defaultOpen={false}>
+        <div className="mdp-h2h-summary">
+          <span><strong>{summary.w}</strong> W</span>
+          <span><strong>{summary.d}</strong> D</span>
+          <span><strong>{summary.l}</strong> L</span>
+          <span className="mdp-h2h-goals">
+            ({summary.gf}–{summary.ga} goals, from {team1}'s view)
+          </span>
+        </div>
+        <ul className="mdp-h2h-list">
+          {matches.map((m, i) => (
+            <H2HMatchCard key={`${m.year}-${i}`} match={m} />
+          ))}
+        </ul>
+      </CollapsibleHeader>
     </section>
   );
 }
