@@ -279,7 +279,7 @@ export function MatchCard(p: Props) {
             ? <span className="mc-lock"> · 🔒</span>
             : (() => {
                 const diff = kickoffDate.getTime() - now;
-                if (diff <= 0) return null;
+                if (diff <= 0 || diff > 24 * 3_600_000) return null;
                 const h = Math.floor(diff / 3_600_000);
                 const m = Math.floor((diff % 3_600_000) / 60_000);
                 const label = h > 0 ? `${h}h ${m}m` : `${m}m`;
