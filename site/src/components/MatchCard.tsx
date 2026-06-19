@@ -274,7 +274,18 @@ export function MatchCard(p: Props) {
 
       <div className="mc-meta">
         <span className="mc-meta-time">
-          {showDate && <>{fmtShortDate(date)} · </>}{kickoffStr} {locked && <span className="mc-lock">· 🔒</span>}
+          {showDate && <>{fmtShortDate(date)} · </>}{kickoffStr}
+          {locked
+            ? <span className="mc-lock"> · 🔒</span>
+            : (() => {
+                const diff = kickoffDate.getTime() - now;
+                if (diff <= 0) return null;
+                const h = Math.floor(diff / 3_600_000);
+                const m = Math.floor((diff % 3_600_000) / 60_000);
+                const label = h > 0 ? `${h}h ${m}m` : `${m}m`;
+                return <span className="mc-countdown"> · locks in {label}</span>;
+              })()
+          }
         </span>
         {live && <span className="mc-live-pill">live</span>}
         {roundLabel && <span className="mc-meta-round">{roundLabel}</span>}

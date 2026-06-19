@@ -532,6 +532,11 @@ footer {
 }
 .mc-meta-ground { margin-left: auto; }
 .mc-lock { color: var(--accent); font-weight: 800; }
+.mc-countdown {
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 11px;
+}
 
 /* ── Groups grid ─────────────────────────────────────────────────── */
 
