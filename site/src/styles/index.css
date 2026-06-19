@@ -2312,6 +2312,218 @@ footer {
 }
 
 /* ─────────────────────────────────────────────────────────────────
+   DARK THEME — minimal layout, inverted colors
+   ───────────────────────────────────────────────────────────────── */
+
+/* Topbar */
+[data-theme='dark'] .topbar {
+  background: var(--surface);
+  border-bottom-color: var(--line);
+}
+
+/* Auth card */
+[data-theme='dark'] .auth-card {
+  background: var(--surface);
+  border-color: var(--line);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+[data-theme='dark'] .auth-error {
+  background: #3d1c1c;
+  color: #f87171;
+}
+
+/* Score inputs */
+[data-theme='dark'] .mc-input {
+  background: var(--bg);
+  border-color: var(--line);
+  color: var(--ink);
+}
+[data-theme='dark'] .mc-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+[data-theme='dark'] .mc-input:disabled {
+  background: var(--line-soft);
+  color: var(--ink-faint);
+}
+
+/* Locked match card */
+[data-theme='dark'] .mc-locked {
+  background: var(--line-soft);
+}
+
+/* Points chips — ensure contrast */
+[data-theme='dark'] .mc-points.pts-0 {
+  background: var(--line);
+  color: var(--ink-soft);
+}
+[data-theme='dark'] .mc-points.pts-1 {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+[data-theme='dark'] .mc-points.pts-3 {
+  background: var(--accent);
+  color: #1a1a2e;
+}
+[data-theme='dark'] .mc-points.pts-4 {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+/* Auth field inputs */
+[data-theme='dark'] .auth-field input {
+  background: var(--bg);
+  border-color: var(--line);
+  color: var(--ink);
+}
+[data-theme='dark'] .auth-field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+/* Buttons */
+[data-theme='dark'] .btn-primary {
+  background: var(--accent);
+  color: #1a1a2e;
+  border-color: var(--accent);
+}
+[data-theme='dark'] .btn-primary:hover {
+  background: #f9a8d4;
+}
+[data-theme='dark'] .btn-ghost {
+  color: var(--ink);
+  border-color: var(--line);
+}
+[data-theme='dark'] .btn-ghost:hover {
+  border-color: var(--ink-soft);
+}
+
+/* Auth overlay backdrop */
+[data-theme='dark'] .auth-overlay {
+  background: rgba(10, 10, 20, 0.6);
+}
+
+/* Compare overlay */
+[data-theme='dark'] .compare-overlay {
+  background: rgba(10, 10, 20, 0.6);
+}
+
+/* Theme toggle button in dark mode — shows a subtle moonlit pill */
+:root[data-theme='dark'] .theme-toggle {
+  background: var(--line);
+  border: 1px solid var(--ink-faint);
+  color: var(--ink);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+:root[data-theme='dark'] .theme-toggle:hover {
+  box-shadow: 0 2px 8px rgba(244, 114, 182, 0.3);
+  border-color: var(--accent);
+}
+
+/* Pending pill */
+[data-theme='dark'] .pending-pill:hover {
+  background: #f9a8d4;
+}
+
+/* Tab badge */
+[data-theme='dark'] .tab-badge {
+  background: var(--accent);
+  color: #1a1a2e;
+}
+
+/* Admin actual inputs */
+[data-theme='dark'] .mc-input-actual {
+  border-color: var(--accent-soft);
+  background: var(--accent-soft);
+}
+[data-theme='dark'] .mc-input-actual:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+/* Day pill active indicator uses accent already via var, no override needed */
+
+/* Bracket final card border */
+[data-theme='dark'] .kb-card-final .mc {
+  border-color: var(--accent);
+}
+
+/* Trophy banner when set */
+[data-theme='dark'] .kb-trophy.is-set {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* Leaderboard is-me row */
+[data-theme='dark'] .leaderboard-row.is-me {
+  background: var(--accent-soft);
+}
+
+/* Day leaderboard is-me row */
+[data-theme='dark'] .day-lb-row.is-me {
+  background: var(--accent-soft);
+}
+
+/* Pending approval card */
+[data-theme='dark'] .pending-card {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+/* Admin pending row */
+[data-theme='dark'] .admin-pending-row {
+  background: var(--bg);
+}
+
+/* Spectator toggle */
+[data-theme='dark'] .spectator-toggle {
+  border-color: var(--line);
+  color: var(--ink-soft);
+}
+[data-theme='dark'] .spectator-toggle:hover {
+  border-color: var(--ink-soft);
+  color: var(--ink);
+}
+[data-theme='dark'] .spectator-toggle.is-on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Trend chart */
+[data-theme='dark'] .trend-chart {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+/* My picks rows */
+[data-theme='dark'] .my-picks-row {
+  background: var(--surface);
+  border-color: var(--line);
+}
+[data-theme='dark'] .my-picks-summary,
+[data-theme='dark'] .my-picks-stats {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+/* Compare card */
+[data-theme='dark'] .compare-card {
+  background: var(--surface);
+  border-color: var(--line);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+[data-theme='dark'] .compare-winner {
+  background: var(--accent-soft);
+}
+
+/* Admin section */
+[data-theme='dark'] .admin-pending {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+/* ─────────────────────────────────────────────────────────────────
    Admin approval — pending screen (user) + admin list
    ───────────────────────────────────────────────────────────────── */
 

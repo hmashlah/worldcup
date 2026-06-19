@@ -92,6 +92,51 @@
 }
 
 
+/* ── Dark theme ──────────────────────────────────────────────────
+   Deep navy, high-contrast light text, rose accent.
+   Activated via `<html data-theme="dark">`. */
+
+:root[data-theme='dark'] {
+  --bg:        #1a1a2e;
+  --surface:   #242438;
+  --ink:       #e8e6f0;
+  --ink-soft:  #a8a4b4;
+  --ink-faint: #6e6880;
+  --line:      #3a3650;
+  --line-soft: #2e2a42;
+  --accent:    #f472b6;
+  --accent-soft: #3d2040;
+  --good:      #6ee7b7;
+  --warn:      #fbbf24;
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+
+  --r-sm:  6px;
+  --r-md:  10px;
+  --r-lg:  14px;
+
+  --serif: "Fraunces", Georgia, serif;
+  --sans:  "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --display: var(--sans);
+  --score-font: var(--sans);
+
+  /* Round accents — monochrome like minimal */
+  --rnd-r32:   var(--accent);
+  --rnd-r16:   var(--accent);
+  --rnd-qf:    var(--accent);
+  --rnd-sf:    var(--accent);
+  --rnd-final: var(--accent);
+
+  /* Group accents — monochrome */
+  --grp-A: var(--line); --grp-B: var(--line); --grp-C: var(--line);
+  --grp-D: var(--line); --grp-E: var(--line); --grp-F: var(--line);
+  --grp-G: var(--line); --grp-H: var(--line); --grp-I: var(--line);
+  --grp-J: var(--line); --grp-K: var(--line); --grp-L: var(--line);
+
+  --trophy: var(--accent);
+}
+
+
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 body {

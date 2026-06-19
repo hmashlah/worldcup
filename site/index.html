@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#faf8f5" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#fef9f0" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#1a1a2e" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <title>Our World Cup 2026 ♡</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%99%A1%3C/text%3E%3C/svg%3E" />
@@ -18,7 +18,8 @@
       // Apply saved theme before first paint to avoid a flash of the wrong theme.
       try {
         var t = localStorage.getItem('wc26-theme');
-        document.documentElement.setAttribute('data-theme', t === 'funky' ? 'funky' : 'minimal');
+        var valid = t === 'dark' || t === 'funky' ? t : 'minimal';
+        document.documentElement.setAttribute('data-theme', valid);
       } catch (e) {}
     </script>
     <div id="root"></div>

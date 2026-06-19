@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 export type TabKey = 'today' | 'groups' | 'bracket' | 'leaderboard' | 'picks' | 'admin';
-export type ThemeKey = 'minimal' | 'funky';
+export type ThemeKey = 'minimal' | 'dark' | 'funky';
 
 const THEME_STORAGE_KEY = 'wc26-theme';
 const SPECTATOR_MODE_KEY = 'wc26-spectator';
@@ -9,7 +9,9 @@ const SPECTATOR_MODE_KEY = 'wc26-spectator';
 function readInitialTheme(): ThemeKey {
   if (typeof window === 'undefined') return 'minimal';
   const v = localStorage.getItem(THEME_STORAGE_KEY);
-  return v === 'funky' ? 'funky' : 'minimal';
+  if (v === 'dark') return 'dark';
+  if (v === 'funky') return 'funky';
+  return 'minimal';
 }
 
 function readInitialSpectator(): boolean {
@@ -50,7 +52,9 @@ export const useUI = create<UIState>(set => ({
   setAuthOpen: open => set({ authOpen: open }),
   theme: readInitialTheme(),
   toggleTheme: () => set(s => {
-    const next: ThemeKey = s.theme === 'minimal' ? 'funky' : 'minimal';
+    const order: ThemeKey[] = ['minimal', 'dark', 'funky'];
+    const idx = order.indexOf(s.theme);
+    const next = order[(idx + 1) % order.length];
     localStorage.setItem(THEME_STORAGE_KEY, next);
     applyThemeToDom(next);
     return { theme: next };
