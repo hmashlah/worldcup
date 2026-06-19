@@ -279,10 +279,14 @@ export function MatchCard(p: Props) {
             ? <span className="mc-lock"> · 🔒</span>
             : (() => {
                 const diff = kickoffDate.getTime() - now;
-                if (diff <= 0 || diff > 24 * 3_600_000) return null;
-                const h = Math.floor(diff / 3_600_000);
+                if (diff <= 0) return null;
+                const d = Math.floor(diff / 86_400_000);
+                const h = Math.floor((diff % 86_400_000) / 3_600_000);
                 const m = Math.floor((diff % 3_600_000) / 60_000);
-                const label = h > 0 ? `${h}h ${m}m` : `${m}m`;
+                let label: string;
+                if (d > 0) label = `${d}d ${h}h`;
+                else if (h > 0) label = `${h}h ${m}m`;
+                else label = `${m}m`;
                 return <span className="mc-countdown"> · locks in {label}</span>;
               })()
           }
