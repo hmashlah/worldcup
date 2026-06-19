@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useAllPredictions, type PredictionRow } from '@/hooks/usePredictions';
 import { useResults } from '@/hooks/useResults';
+import { useLiveMatches } from '@/hooks/useLiveMatches';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { scorePrediction } from '@/lib/scoring';
@@ -29,10 +30,14 @@ export function useLeaderboard(): {
   const dataQ = useTournamentData();
   const predsQ = useAllPredictions();
   const resultsQ = useResults();
+  const liveQ = useLiveMatches();
   const profilesQ = useProfiles();
 
   const entries = useMemo<LeaderboardEntry[]>(() => {
     if (!dataQ.data || !predsQ.data || !resultsQ.data || !profilesQ.data) return [];
+
+    // Exclude live (in-progress) matches — only count finished ones
+    const liveIds = new Set(Object.keys(liveQ.data ?? {}));
 
     // Only include approved users on the leaderboard.
     const approvedIds = new Set(
@@ -57,6 +62,7 @@ export function useLeaderboard(): {
 
     for (const p of predsQ.data as PredictionRow[]) {
       if (!approvedIds.has(p.user_id)) continue;
+      if (liveIds.has(p.match_id)) continue; // skip in-progress matches
       const result = resultsQ.data[p.match_id];
       if (!result) continue;
       const isKO = isMatchKO(dataQ.data, p.match_id);
@@ -93,7 +99,7 @@ export function useLeaderboard(): {
         b.outcome - a.outcome ||
         a.display_name.localeCompare(b.display_name),
     );
-  }, [dataQ.data, predsQ.data, resultsQ.data, profilesQ.data]);
+  }, [dataQ.data, predsQ.data, resultsQ.data, liveQ.data, profilesQ.data]);
 
   return {
     loading:

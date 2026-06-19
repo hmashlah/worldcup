@@ -800,6 +800,608 @@ async function fetchWikiHtml(): Promise<string> {
   return res.text();
 }
 
+// ── Post-match enrichment (lineups, cards, subs, MOTM, etc.) ────────
+
+interface MatchDetailGoal {
+  team: 'home' | 'away';
+  name: string;
+  minute: number;
+  extraTime?: number;
+  kind: 'goal' | 'penalty' | 'own-goal';
+}
+
+interface MatchDetailPlayer {
+  name: string;
+  number?: number;
+  position?: string;
+  captain?: boolean;
+}
+
+interface MatchDetailSub {
+  name: string;
+  number?: number;
+  minuteIn: number;
+  replaced?: string;
+}
+
+interface MatchDetailCard {
+  team: 'home' | 'away';
+  name: string;
+  minute: number;
+  type: 'yellow' | 'red' | 'second-yellow';
+}
+
+interface MatchDetailLineups {
+  home: { starting: MatchDetailPlayer[]; subs: MatchDetailSub[] };
+  away: { starting: MatchDetailPlayer[]; subs: MatchDetailSub[] };
+}
+
+interface MatchDetailReferee {
+  name: string;
+  nationality?: string;
+  assistants?: string[];
+  var?: string;
+}
+
+interface MatchDetail {
+  goals: MatchDetailGoal[];
+  halfTime?: { home: number; away: number };
+  attendance?: number;
+  motm?: { name: string; team: 'home' | 'away' };
+  referee?: MatchDetailReferee;
+  lineups?: MatchDetailLineups;
+  cards?: MatchDetailCard[];
+  venue?: { stadium: string; city: string };
+}
+
+interface EnrichSyncState {
+  match_id: string;
+  payload: { status?: string } | null;
+  match_detail: MatchDetail | null;
+}
+
+const WIKI_USER_AGENT = 'wc26-prediction-league/1.0 (https://worldcup-1jo.pages.dev; admin@simple-courses.com) match-detail-enrich';
+
+async function fetchWikiGroupPage(group: string): Promise<string> {
+  const url = `https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_${group}`;
+  const res = await fetch(url, {
+    headers: { 'User-Agent': WIKI_USER_AGENT },
+  });
+  if (!res.ok) throw new Error(`wiki group ${group} ${res.status}: ${await res.text()}`);
+  return res.text();
+}
+
+function stripTags(html: string): string {
+  return htmlDecode(html.replace(/<[^>]*>/g, '')).trim();
+}
+
+// ── Lineup parsing ───────────────────────────────────────────────────
+
+interface ParsedLineup {
+  starting: MatchDetailPlayer[];
+  subs: MatchDetailSub[];
+  cards: MatchDetailCard[];
+  manager: string | null;
+}
+
+function parseLineupTable(tableHtml: string): ParsedLineup {
+  const starting: MatchDetailPlayer[] = [];
+  const subs: MatchDetailSub[] = [];
+  const cards: MatchDetailCard[] = [];
+  let manager: string | null = null;
+  let inSubs = false;
+  let inManager = false;
+
+  const subbedOffMap: Record<string, number> = {};
+  const rows = tableHtml.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) ?? [];
+
+  for (const row of rows) {
+    if (/Substitutions/i.test(row) && /<b>/i.test(row)) {
+      inSubs = true;
+      inManager = false;
+      continue;
+    }
+    if (/Manager/i.test(row) && /<b>/i.test(row)) {
+      inManager = true;
+      inSubs = false;
+      continue;
+    }
+
+    if (inManager) {
+      const manM = row.match(/<a[^>]*>([^<]+)<\/a>/) ?? row.match(/<td[^>]*>([^<]+)<\/td>/);
+      if (manM) manager = htmlDecode(manM[1]).trim();
+      continue;
+    }
+
+    const cells = row.match(/<td[^>]*>[\s\S]*?<\/td>/gi) ?? [];
+    if (cells.length < 3) continue;
+
+    const position = stripTags(cells[0]);
+    const numberM = cells[1].match(/(\d+)/);
+    if (!numberM) continue;
+    const number = parseInt(numberM[1], 10);
+
+    const nameCell = cells[2];
+    const nameM = nameCell.match(/<a[^>]*(?:title="([^"]+)"[^>]*)?>([^<]*)<\/a>/);
+    let name: string;
+    if (nameM) {
+      name = htmlDecode(nameM[2] || nameM[1] || '').trim();
+      name = name.replace(/\s+(?:men[''']s\s+)?national\s+(?:football|soccer|association football)\s+team$/i, '').trim();
+    } else {
+      name = stripTags(nameCell);
+    }
+    if (!name || !position) continue;
+
+    const captain = /\(c\)/.test(nameCell) || /\(captain\)/i.test(nameCell);
+
+    let yellowCard: number | null = null;
+    let redCard: number | null = null;
+    let secondYellow: number | null = null;
+    let subOff: number | null = null;
+    let subOn: number | null = null;
+
+    for (let i = 3; i < cells.length; i++) {
+      const cell = cells[i];
+      if (/Yellow_card/i.test(cell) || /title="Booked"/i.test(cell)) {
+        const minM = cell.match(/(\d+)(?:\+(\d+))?\s*[''′']/);
+        if (minM) yellowCard = parseInt(minM[1], 10);
+        else {
+          const minM2 = cell.match(/(?:Yellow_card[^>]*>|Booked[^>]*>)\s*(?:&#160;|&nbsp;|\s)*(\d+)/i);
+          if (minM2) yellowCard = parseInt(minM2[1], 10);
+        }
+      }
+      if (/Red_card/i.test(cell) || /title="Sent off"/i.test(cell)) {
+        const minM = cell.match(/(\d+)(?:\+(\d+))?\s*[''′']/);
+        if (minM) redCard = parseInt(minM[1], 10);
+        else {
+          const minM2 = cell.match(/(?:Red_card[^>]*>|Sent off[^>]*>)\s*(?:&#160;|&nbsp;|\s)*(\d+)/i);
+          if (minM2) redCard = parseInt(minM2[1], 10);
+        }
+      }
+      if (/Yellow-red_card/i.test(cell) || /title="Second yellow"/i.test(cell)) {
+        const minM = cell.match(/(\d+)(?:\+(\d+))?\s*[''′']/);
+        if (minM) secondYellow = parseInt(minM[1], 10);
+      }
+      if (/Sub_off/i.test(cell) || /title="Substituted off"/i.test(cell)) {
+        const minM = cell.match(/(\d+)(?:\+(\d+))?\s*[''′']/);
+        if (minM) subOff = parseInt(minM[1], 10);
+        else {
+          const minM2 = cell.match(/(?:Sub_off[^>]*>|Substituted off[^>]*>)\s*(?:&#160;|&nbsp;|\s)*(\d+)/i);
+          if (minM2) subOff = parseInt(minM2[1], 10);
+        }
+      }
+      if (/Sub_on/i.test(cell) || /title="Substituted on"/i.test(cell)) {
+        const minM = cell.match(/(\d+)(?:\+(\d+))?\s*[''′']/);
+        if (minM) subOn = parseInt(minM[1], 10);
+        else {
+          const minM2 = cell.match(/(?:Sub_on[^>]*>|Substituted on[^>]*>)\s*(?:&#160;|&nbsp;|\s)*(\d+)/i);
+          if (minM2) subOn = parseInt(minM2[1], 10);
+        }
+      }
+    }
+
+    if (inSubs) {
+      const sub: MatchDetailSub = { name, minuteIn: subOn ?? 0 };
+      if (number) sub.number = number;
+      subs.push(sub);
+    } else {
+      const player: MatchDetailPlayer = { name };
+      if (number) player.number = number;
+      if (position) player.position = position;
+      if (captain) player.captain = true;
+      starting.push(player);
+      if (subOff !== null) subbedOffMap[name] = subOff;
+    }
+
+    // Cards — cast team later at call site
+    if (yellowCard !== null) {
+      cards.push({ team: 'home', name, minute: yellowCard, type: 'yellow' });
+    }
+    if (redCard !== null) {
+      cards.push({ team: 'home', name, minute: redCard, type: 'red' });
+    }
+    if (secondYellow !== null) {
+      cards.push({ team: 'home', name, minute: secondYellow, type: 'second-yellow' });
+    }
+  }
+
+  // Link subs to replaced players
+  for (const sub of subs) {
+    const replaced = Object.entries(subbedOffMap).find(([_, min]) => min === sub.minuteIn);
+    if (replaced) sub.replaced = replaced[0];
+  }
+
+  return { starting, subs, cards, manager };
+}
+
+// ── Footballbox meta (attendance, referee, venue) ────────────────────
+
+interface FootballboxMeta {
+  attendance: number | null;
+  referee: { name: string; nationality: string } | null;
+  venue: { stadium: string; city: string } | null;
+}
+
+function parseFootballboxMeta(box: string): FootballboxMeta {
+  const meta: FootballboxMeta = { attendance: null, referee: null, venue: null };
+
+  const frightM = box.match(/class="fright"[^>]*>([\s\S]*?)(?:<\/div>\s*){2,}/);
+  if (frightM) {
+    const frightContent = frightM[1];
+
+    const venueM = frightContent.match(/itemprop="location"[^>]*>([\s\S]*?)<\/(?:div|span)>/);
+    if (venueM) {
+      const venueText = stripTags(venueM[1]);
+      const parts = venueText.split(',').map(s => s.trim());
+      if (parts.length >= 2) {
+        meta.venue = { stadium: parts[0], city: parts.slice(1).join(', ') };
+      } else {
+        meta.venue = { stadium: venueText, city: '' };
+      }
+    }
+
+    const attM = frightContent.match(/Attendance[:\s]*(?:<[^>]*>)*\s*([\d,]+)/i);
+    if (attM) {
+      meta.attendance = parseInt(attM[1].replace(/,/g, ''), 10);
+    }
+
+    const refM = frightContent.match(/Referee[:\s]*(?:<[^>]*>)*\s*(?:<a[^>]*>([^<]+)<\/a>|([^<(]+))\s*\((?:<a[^>]*>)?([^<)]+)/i);
+    if (refM) {
+      meta.referee = {
+        name: htmlDecode(refM[1] || refM[2] || '').trim(),
+        nationality: htmlDecode(refM[3] || '').trim(),
+      };
+    }
+  }
+
+  return meta;
+}
+
+// ── Parse goals from a footballbox section ───────────────────────────
+
+function parseDetailGoalBlock(block: string, team: 'home' | 'away'): MatchDetailGoal[] {
+  const out: MatchDetailGoal[] = [];
+  const liMatches = block.matchAll(/<li>([\s\S]*?)<\/li>/g);
+  for (const m of liMatches) {
+    const li = m[1];
+    const nameM = li.match(/<a[^>]*title="([^"]+)"/) ?? li.match(/<a[^>]*>([^<]+)</);
+    if (!nameM) continue;
+    const rawName = htmlDecode(nameM[1]).trim()
+      .replace(/\s+(?:men[''']s\s+)?national\s+(?:football|soccer|association football)\s+team$/i, '')
+      .replace(/\s*\([^)]*\)\s*$/, '');
+    if (!rawName) continue;
+
+    const isPen = /\(\s*pen\.?\s*\)/i.test(li);
+    const isOG = /\(\s*o\.?\s*g\.?\s*\)/i.test(li);
+    const kind: MatchDetailGoal['kind'] = isPen ? 'penalty' : isOG ? 'own-goal' : 'goal';
+
+    const minuteHits = [...li.matchAll(/(\d+)(?:\+(\d+))?\s*[''′']/g)];
+    for (const h of minuteHits) {
+      const minute = parseInt(h[1], 10);
+      const extraTime = h[2] ? parseInt(h[2], 10) : undefined;
+      if (minute < 1 || minute > 130) continue;
+      const g: MatchDetailGoal = { team, name: rawName, minute, kind };
+      if (extraTime !== undefined) g.extraTime = extraTime;
+      out.push(g);
+    }
+  }
+  return out;
+}
+
+// ── Parse a full match section into MatchDetail ─────────────────────
+
+function parseMatchDetailSection(
+  section: string,
+  targetHome: string,
+  targetAway: string,
+): MatchDetail | null {
+  // Extract teams from footballbox
+  const homeM = section.match(/class="fhome"[\s\S]*?title="([^"]+)"/);
+  const awayM = section.match(/class="faway"[\s\S]*?title="([^"]+)"/);
+  if (!homeM || !awayM) return null;
+
+  const wikiHome = canonicalizeTeam(htmlDecode(homeM[1]));
+  const wikiAway = canonicalizeTeam(htmlDecode(awayM[1]));
+
+  // Verify this is the match we're looking for
+  const pair = [targetHome, targetAway].sort().join('|');
+  const wikiPair = [wikiHome, wikiAway].sort().join('|');
+  if (pair !== wikiPair) return null;
+
+  // Score check (must be finished)
+  const scoreM = section.match(/class="fscore"[^>]*>(?:<a[^>]*>)?\s*(\d+)\s*[–-]\s*(\d+)/);
+  if (!scoreM) return null;
+
+  // Goals
+  const homeGoalsBlock = section.match(/class="fhgoal"[\s\S]*?<\/td>/)?.[0] ?? '';
+  const awayGoalsBlock = section.match(/class="fagoal"[\s\S]*?<\/td>/)?.[0] ?? '';
+
+  // Determine if wiki's home is our team1 (targetHome)
+  const flipped = wikiHome !== targetHome;
+  const homeTeamLabel: 'home' | 'away' = flipped ? 'away' : 'home';
+  const awayTeamLabel: 'home' | 'away' = flipped ? 'home' : 'away';
+
+  const goals: MatchDetailGoal[] = [
+    ...parseDetailGoalBlock(homeGoalsBlock, homeTeamLabel),
+    ...parseDetailGoalBlock(awayGoalsBlock, awayTeamLabel),
+  ].sort((a, b) => a.minute + ((a.extraTime ?? 0) / 100) - b.minute - ((b.extraTime ?? 0) / 100));
+
+  // Meta (attendance, referee, venue)
+  const meta = parseFootballboxMeta(section);
+
+  // Lineup tables
+  const lineupTables = section.match(/<table[^>]*style="[^"]*font-size:\s*90%[^"]*"[^>]*>[\s\S]*?<\/table>/gi) ?? [];
+
+  let homeLineup: ParsedLineup | null = null;
+  let awayLineup: ParsedLineup | null = null;
+
+  if (lineupTables.length >= 2) {
+    homeLineup = parseLineupTable(lineupTables[0]);
+    awayLineup = parseLineupTable(lineupTables[1]);
+  } else if (lineupTables.length === 1) {
+    const wrapper = lineupTables[0];
+    const tdCells = wrapper.match(/<td[^>]*valign="top"[^>]*>[\s\S]*?(?=<td[^>]*valign="top"|<\/tr>)/gi) ?? [];
+    if (tdCells.length >= 2) {
+      homeLineup = parseLineupTable(tdCells[0]);
+      awayLineup = parseLineupTable(tdCells[1]);
+    }
+  }
+
+  // Post-lineup: Man of the Match
+  let motm: { name: string; team: 'home' | 'away' } | undefined;
+  const motmM = section.match(/<b>Man of the Match:<\/b>[\s\S]*?<\/p>/i);
+  if (motmM) {
+    const motmBlock = motmM[0];
+    const motmNameM = motmBlock.match(/<br\s*\/?>[\s\S]*?<a[^>]*(?:title="([^"]+)"[^>]*)?>([^<]*)<\/a>/);
+    if (motmNameM) {
+      const motmName = htmlDecode(motmNameM[2] || motmNameM[1] || '').trim();
+      let motmTeam: 'home' | 'away' | null = null;
+      if (homeLineup) {
+        const inHome = homeLineup.starting.some(p => p.name === motmName) ||
+                       homeLineup.subs.some(p => p.name === motmName);
+        if (inHome) motmTeam = 'home';
+      }
+      if (!motmTeam && awayLineup) {
+        const inAway = awayLineup.starting.some(p => p.name === motmName) ||
+                       awayLineup.subs.some(p => p.name === motmName);
+        if (inAway) motmTeam = 'away';
+      }
+      if (motmTeam) {
+        // Remap based on our orientation
+        const mappedTeam: 'home' | 'away' = motmTeam === 'home' ? homeTeamLabel : awayTeamLabel;
+        motm = { name: motmName, team: mappedTeam };
+      }
+    }
+  }
+
+  // Officials: assistant referees, VAR
+  const assistants: string[] = [];
+  let varRef: string | undefined;
+  const officialsM = section.match(/<p><b>[\s\S]*?Assistant referee[\s\S]*?<\/p>/i);
+  if (officialsM) {
+    const block = officialsM[0];
+    const lines = block.split(/<br\s*\/?>/i);
+    let currentSection = '';
+
+    for (const line of lines) {
+      const boldM = line.match(/<b>[\s\S]*?<\/b>/i);
+      if (boldM) {
+        const headerText = stripTags(boldM[0]).replace(/[:\s]+$/, '').trim().toLowerCase();
+        if (/assistant referees?/i.test(headerText) && !/video/i.test(headerText) && !/reserve/i.test(headerText)) {
+          currentSection = 'assistants';
+        } else if (/^video assistant referee$/i.test(headerText)) {
+          currentSection = 'var';
+        } else {
+          currentSection = headerText;
+        }
+        const afterBold = line.slice(line.indexOf(boldM[0]) + boldM[0].length);
+        const nameInLine = stripTags(afterBold).replace(/\[\d+\]/g, '').replace(/&#91;\d+&#93;/g, '').trim();
+        if (nameInLine && nameInLine.length > 2) {
+          if (currentSection === 'assistants') assistants.push(nameInLine);
+          else if (currentSection === 'var') varRef = nameInLine;
+        }
+        continue;
+      }
+
+      const text = stripTags(line).replace(/\[\d+\]/g, '').replace(/&#91;\d+&#93;/g, '').trim();
+      if (!text || text.length <= 1) continue;
+
+      if (currentSection === 'assistants') {
+        assistants.push(text);
+      } else if (currentSection === 'var' && !varRef) {
+        varRef = text;
+      }
+    }
+  }
+
+  // Build cards array with correct team orientation
+  const allCards: MatchDetailCard[] = [];
+  if (homeLineup) {
+    for (const c of homeLineup.cards) {
+      allCards.push({ team: homeTeamLabel, name: c.name, minute: c.minute, type: c.type });
+    }
+  }
+  if (awayLineup) {
+    for (const c of awayLineup.cards) {
+      allCards.push({ team: awayTeamLabel, name: c.name, minute: c.minute, type: c.type });
+    }
+  }
+  allCards.sort((a, b) => a.minute - b.minute);
+
+  // Build referee object
+  let refereeObj: MatchDetailReferee | undefined;
+  if (meta.referee) {
+    refereeObj = {
+      name: meta.referee.name,
+      nationality: meta.referee.nationality,
+    };
+    if (assistants.length > 0) refereeObj.assistants = assistants;
+    if (varRef) refereeObj.var = varRef;
+  }
+
+  // Build lineups with correct team orientation
+  let lineups: MatchDetailLineups | undefined;
+  if (homeLineup && awayLineup) {
+    if (flipped) {
+      lineups = {
+        home: { starting: awayLineup.starting, subs: awayLineup.subs },
+        away: { starting: homeLineup.starting, subs: homeLineup.subs },
+      };
+    } else {
+      lineups = {
+        home: { starting: homeLineup.starting, subs: homeLineup.subs },
+        away: { starting: awayLineup.starting, subs: awayLineup.subs },
+      };
+    }
+  }
+
+  const detail: MatchDetail = { goals };
+  if (meta.attendance !== null) detail.attendance = meta.attendance;
+  if (motm) detail.motm = motm;
+  if (refereeObj) detail.referee = refereeObj;
+  if (lineups) detail.lineups = lineups;
+  if (allCards.length > 0) detail.cards = allCards;
+  if (meta.venue) detail.venue = meta.venue;
+
+  return detail;
+}
+
+// ── Split Wikipedia page into per-match sections ─────────────────────
+
+function splitIntoMatchSections(html: string): string[] {
+  const sections: string[] = [];
+  const footballboxRe = /<div [^>]*class="footballbox"[^>]*>/g;
+  const indices: number[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = footballboxRe.exec(html)) !== null) {
+    indices.push(m.index);
+  }
+  for (let i = 0; i < indices.length; i++) {
+    const start = indices[i];
+    const end = i + 1 < indices.length ? indices[i + 1] : html.length;
+    sections.push(html.slice(start, end));
+  }
+  return sections;
+}
+
+// ── Main enrichment function ─────────────────────────────────────────
+
+async function enrichFinishedMatches(
+  env: Env,
+  host: string,
+  _matchMap: MatchMap,
+): Promise<{ needed: number; updated: number; errors: string[] }> {
+  // 1. Query DB for finished matches where match_detail is NULL
+  const stateRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/wc26_match_results?select=match_id,payload,match_detail&match_detail=is.null`,
+    {
+      headers: {
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+    },
+  );
+  if (!stateRes.ok) {
+    return { needed: 0, updated: 0, errors: [`enrich select: ${stateRes.status}`] };
+  }
+  const stateRows: EnrichSyncState[] = await stateRes.json();
+
+  // Filter: only FINISHED matches, only group-stage matches
+  const toEnrich = stateRows.filter(r => {
+    if (r.payload?.status !== 'FINISHED') return false;
+    // Only group-stage matches (match_id starts with G-)
+    if (!r.match_id.startsWith('G-')) return false;
+    return true;
+  });
+
+  if (toEnrich.length === 0) {
+    return { needed: 0, updated: 0, errors: [] };
+  }
+
+  // Limit to max 3 per tick
+  const batch = toEnrich.slice(0, 3);
+
+  // 2. Group by group letter to minimize Wikipedia fetches
+  const byGroup = new Map<string, typeof batch>();
+  for (const row of batch) {
+    const group = row.match_id.split('-')[1]; // G-A-1 → A
+    if (!group) continue;
+    const list = byGroup.get(group) ?? [];
+    list.push(row);
+    byGroup.set(group, list);
+  }
+
+  // Fetch our match info for team lookups
+  let ourMatches: OurMatchInfo[];
+  try {
+    ourMatches = await fetchOurMatches(host);
+  } catch (e) {
+    return { needed: batch.length, updated: 0, errors: [(e as Error).message] };
+  }
+  const ourMatchById = new Map(ourMatches.map(m => [m.match_id, m]));
+
+  const errors: string[] = [];
+  let updated = 0;
+
+  // 3. For each group, fetch the Wikipedia page and parse
+  for (const [group, matches] of byGroup) {
+    let html: string;
+    try {
+      html = await fetchWikiGroupPage(group);
+    } catch (e) {
+      errors.push((e as Error).message);
+      continue;
+    }
+
+    const sections = splitIntoMatchSections(html);
+
+    for (const row of matches) {
+      const ourMatch = ourMatchById.get(row.match_id);
+      if (!ourMatch) continue;
+
+      // Find the correct section by trying team pair + date matching
+      let detail: MatchDetail | null = null;
+      for (const sec of sections) {
+        // Quick check: does this section reference our teams?
+        const dateM = sec.match(/class="bday[^"]*">(\d{4}-\d{2}-\d{2})/);
+        const secDate = dateM?.[1];
+        if (secDate) {
+          // Verify date is within ±1 day
+          const dateShifts = [ourMatch.date, shiftDate(ourMatch.date, +1), shiftDate(ourMatch.date, -1)];
+          if (!dateShifts.includes(secDate)) continue;
+        }
+
+        detail = parseMatchDetailSection(sec, ourMatch.team1, ourMatch.team2);
+        if (detail) break;
+      }
+
+      if (!detail || !detail.lineups) continue; // Don't write partial data without lineups
+
+      // 4. Write match_detail to DB
+      const patchRes = await fetch(
+        `${env.SUPABASE_URL}/rest/v1/wc26_match_results?match_id=eq.${encodeURIComponent(row.match_id)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+            authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+            'content-type': 'application/json',
+            prefer: 'return=minimal',
+          },
+          body: JSON.stringify({ match_detail: detail }),
+        },
+      );
+      if (!patchRes.ok) {
+        errors.push(`enrich ${row.match_id}: ${patchRes.status} ${await patchRes.text()}`);
+      } else {
+        updated++;
+      }
+    }
+  }
+
+  return { needed: batch.length, updated, errors };
+}
+
 export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   // Auth.
   const secret = ctx.request.headers.get('x-wc26-secret') ?? '';
@@ -939,6 +1541,10 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   // are live matches with new goals or finished matches needing scorers.
   const wikiRes = await syncGoalScorers(ctx.env, host, toLiveUpsert, matchMap);
 
+  // ── Post-match enrichment (lineups, cards, subs, MOTM, etc.) ─────
+  // Only runs for finished group-stage matches missing match_detail.
+  const enrichRes = await enrichFinishedMatches(ctx.env, host, matchMap);
+
   return Response.json({
     upserted: upsertRes.ok,
     admin_payload_enriched: patchRes.ok,
@@ -953,12 +1559,14 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
       fetched: wikiRes.fetched,
       updated: wikiRes.updated,
     },
+    enrich: { needed: enrichRes.needed, updated: enrichRes.updated },
     errors: [
       ...upsertRes.errors,
       ...patchRes.errors,
       ...liveUpsertRes.errors,
       ...liveDeleteRes.errors,
       ...wikiRes.errors,
+      ...enrichRes.errors,
     ],
   });
 };

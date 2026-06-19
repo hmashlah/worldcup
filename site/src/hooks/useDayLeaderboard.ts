@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useAllPredictions, type PredictionRow } from '@/hooks/usePredictions';
 import { useResults } from '@/hooks/useResults';
+import { useLiveMatches } from '@/hooks/useLiveMatches';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { scorePrediction } from '@/lib/scoring';
@@ -34,6 +35,7 @@ export function useDayLeaderboard(matchIds: string[]): {
   const dataQ = useTournamentData();
   const predsQ = useAllPredictions();
   const resultsQ = useResults();
+  const liveQ = useLiveMatches();
   const profilesQ = useProfiles();
 
   const matchIdSet = useMemo(() => new Set(matchIds), [matchIds]);
@@ -43,8 +45,11 @@ export function useDayLeaderboard(matchIds: string[]): {
       return { entries: [], hasResults: false };
     }
 
-    // Check if any of the day's matches have results
-    const dayResults = matchIds.filter(id => resultsQ.data![id]);
+    // Exclude live (in-progress) matches — only count truly finished ones
+    const liveIds = new Set(Object.keys(liveQ.data ?? {}));
+
+    // Check if any of the day's matches have results AND are not live
+    const dayResults = matchIds.filter(id => resultsQ.data![id] && !liveIds.has(id));
     if (dayResults.length === 0) {
       return { entries: [], hasResults: false };
     }
@@ -72,6 +77,7 @@ export function useDayLeaderboard(matchIds: string[]): {
     for (const p of predsQ.data as PredictionRow[]) {
       if (!approvedIds.has(p.user_id)) continue;
       if (!matchIdSet.has(p.match_id)) continue;
+      if (liveIds.has(p.match_id)) continue; // skip in-progress matches
       const result = resultsQ.data[p.match_id];
       if (!result) continue;
 
@@ -109,7 +115,7 @@ export function useDayLeaderboard(matchIds: string[]): {
     );
 
     return { entries: sorted, hasResults: true };
-  }, [dataQ.data, predsQ.data, resultsQ.data, profilesQ.data, matchIdSet]);
+  }, [dataQ.data, predsQ.data, resultsQ.data, liveQ.data, profilesQ.data, matchIdSet]);
 
   return {
     loading: dataQ.isLoading || predsQ.isLoading || resultsQ.isLoading || profilesQ.isLoading,
