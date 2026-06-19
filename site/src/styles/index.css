@@ -300,6 +300,26 @@ footer {
   font-weight: 700;
 }
 
+.day-pill-new {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  pointer-events: none;
+  animation: pill-dot-pulse 2s ease-in-out infinite;
+}
+@keyframes pill-dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.6; transform: scale(0.8); }
+}
+/* Respect reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .day-pill-new { animation: none; }
+}
+
 .day-header {
   text-align: center;
   margin: 4px 0 24px;
@@ -1582,6 +1602,10 @@ footer {
 }
 [data-theme='funky'] .day-pill.active .day-pill-count {
   color: var(--rnd-final);
+}
+[data-theme='funky'] .day-pill-new {
+  background: var(--rnd-final);
+  box-shadow: 0 0 4px rgba(251, 191, 36, 0.5);
 }
 [data-theme='funky'] .day-relative {
   font-size: 30px;

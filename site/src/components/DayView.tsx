@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { MatchCard } from '@/components/MatchCard';
 import { DayLeaderboard } from '@/components/DayLeaderboard';
 import { useTournamentData } from '@/hooks/useTournamentData';
@@ -7,6 +7,24 @@ import { useAuth } from '@/contexts/AuthContext';
 import { resolveSlot, prettySlot, isKnockoutRound } from '@/lib/tournament';
 import { matchesByDay, defaultDay, relativeDayLabel, shortDayLabel } from '@/lib/days';
 import type { AdvancerMap, ScoreMap } from '@/lib/types';
+
+const SEEN_RESULTS_KEY = 'wc26-seen-results';
+
+function loadSeenResults(): Record<string, true> {
+  try {
+    const raw = localStorage.getItem(SEEN_RESULTS_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as Record<string, true>;
+  } catch {
+    return {};
+  }
+}
+
+function saveSeenResults(seen: Record<string, true>): void {
+  try {
+    localStorage.setItem(SEEN_RESULTS_KEY, JSON.stringify(seen));
+  } catch { /* quota exceeded — degrade silently */ }
+}
 
 export function DayView() {
   const dataQ = useTournamentData();
@@ -18,6 +36,63 @@ export function DayView() {
   const initial = useMemo(() => defaultDay(days), [days]);
   const [activeDate, setActiveDate] = useState<string | null>(initial);
   useEffect(() => { setActiveDate(initial); }, [initial]);
+
+  // ── Seen-results badge logic ───────────────────────────────────
+  const [seenResults, setSeenResults] = useState<Record<string, true>>(loadSeenResults);
+  const initializedRef = useRef(false);
+
+  // On first load: if localStorage is empty (brand-new user), seed it
+  // with all current result IDs so we don't flood every pill with dots.
+  useEffect(() => {
+    if (initializedRef.current) return;
+    if (!resultsQ.data) return;
+    initializedRef.current = true;
+    const existing = loadSeenResults();
+    if (Object.keys(existing).length > 0) return; // already initialized
+    const seed: Record<string, true> = {};
+    for (const id of Object.keys(resultsQ.data)) seed[id] = true;
+    saveSeenResults(seed);
+    setSeenResults(seed);
+  }, [resultsQ.data]);
+
+  // When the active day changes, mark all results on that day as seen.
+  const markDaySeen = useCallback((date: string | null) => {
+    if (!date || !resultsQ.data || !user) return;
+    const day = days.find(d => d.date === date);
+    if (!day) return;
+    const idsWithResults = day.matches
+      .filter(m => resultsQ.data![m.id])
+      .map(m => m.id);
+    if (!idsWithResults.length) return;
+    setSeenResults(prev => {
+      const next = { ...prev };
+      let changed = false;
+      for (const id of idsWithResults) {
+        if (!next[id]) { next[id] = true; changed = true; }
+      }
+      if (!changed) return prev;
+      saveSeenResults(next);
+      return next;
+    });
+  }, [days, resultsQ.data, user]);
+
+  // Mark seen when activeDate changes (user navigates).
+  useEffect(() => { markDaySeen(activeDate); }, [activeDate, markDaySeen]);
+
+  // Determine which days have unseen results (only for authenticated users).
+  const daysWithNew = useMemo<Set<string>>(() => {
+    if (!user || !resultsQ.data) return new Set();
+    const s = new Set<string>();
+    for (const d of days) {
+      for (const m of d.matches) {
+        if (resultsQ.data[m.id] && !seenResults[m.id]) {
+          s.add(d.date);
+          break;
+        }
+      }
+    }
+    return s;
+  }, [user, resultsQ.data, days, seenResults]);
 
   // Auto-scroll the strip so the active pill is visible.
   useEffect(() => {
@@ -54,6 +129,7 @@ export function DayView() {
               className={`day-pill ${isActive ? 'active' : ''}`}
               onClick={() => setActiveDate(d.date)}
             >
+              {daysWithNew.has(d.date) && <span className="day-pill-new" />}
               <span className="day-pill-day">{dayLabel}</span>
               <span className="day-pill-num">{dayNum}</span>
               <span className="day-pill-count">{d.matches.length}</span>
