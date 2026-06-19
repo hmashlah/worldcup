@@ -490,10 +490,16 @@ function ScorersBlock({ scorers }: { scorers: WikiGoal[] }) {
 function WikiScorerLine({ g, side }: { g: WikiGoal; side: 'left' | 'right' }) {
   const minute = g.extraTime ? `${g.minute}+${g.extraTime}` : g.minute ? `${g.minute}` : '?';
   const tag = g.kind === 'penalty' ? ' (pen)' : g.kind === 'own-goal' ? ' (OG)' : '';
-  const name = g.name || 'scorer not available yet';
+  if (!g.name) {
+    return (
+      <li className={`mdp-h2h-goal ${side}`} style={{ color: 'var(--ink-faint)', fontStyle: 'italic' }}>
+        ⚽ {minute}' — awaiting confirmation
+      </li>
+    );
+  }
   return (
     <li className={`mdp-h2h-goal ${side}`}>
-      ⚽ {name} {minute}'{tag}
+      ⚽ {g.name} {minute}'{tag}
     </li>
   );
 }
