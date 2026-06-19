@@ -24,6 +24,9 @@ interface UIState {
   openMatchId: string | null;
   openMatch: (id: string) => void;
   closeMatch: () => void;
+  openGroupName: string | null;
+  openGroup: (name: string) => void;
+  closeGroup: () => void;
   authOpen: boolean;
   setAuthOpen: (open: boolean) => void;
   theme: ThemeKey;
@@ -37,6 +40,9 @@ export const useUI = create<UIState>(set => ({
   openMatchId: null,
   openMatch: id => set({ openMatchId: id }),
   closeMatch: () => set({ openMatchId: null }),
+  openGroupName: null,
+  openGroup: name => set({ openGroupName: name }),
+  closeGroup: () => set({ openGroupName: null }),
   authOpen: false,
   setAuthOpen: open => set({ authOpen: open }),
   theme: readInitialTheme(),

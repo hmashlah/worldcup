@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { Flag } from '@/components/Flag';
 import { MatchCard } from '@/components/MatchCard';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useResults } from '@/hooks/useResults';
+import { useUI } from '@/lib/ui-store';
 import { computeStandings, getThirdPlacedRanking } from '@/lib/tournament';
 import type { Group, ScoreMap } from '@/lib/types';
 
@@ -63,7 +63,11 @@ function GroupCardCompact({ group, isThirdQualified, onExpand }: CardProps) {
 
 function GroupMatchesModal({ group, onClose }: { group: Group; onClose: () => void }) {
   const dataQ = useTournamentData();
+  const openMatchId = useUI(s => s.openMatchId);
   const matches = dataQ.data?.group_matches[group.name] ?? [];
+
+  // Hide the modal when a match detail is open (it renders on top)
+  if (openMatchId) return null;
 
   return (
     <div className="gc-modal-overlay" onClick={onClose}>
@@ -96,7 +100,9 @@ function GroupMatchesModal({ group, onClose }: { group: Group; onClose: () => vo
 export function GroupsGridView() {
   const dataQ = useTournamentData();
   const resultsQ = useResults();
-  const [expandedGroup, setExpandedGroup] = useState<Group | null>(null);
+  const openGroupName = useUI(s => s.openGroupName);
+  const openGroup = useUI(s => s.openGroup);
+  const closeGroup = useUI(s => s.closeGroup);
 
   if (!dataQ.data) return null;
 
@@ -107,6 +113,10 @@ export function GroupsGridView() {
   const ranking = getThirdPlacedRanking(dataQ.data, scores);
   const top8Thirds = new Set(ranking.slice(0, 8).map(t => t.group));
 
+  const expandedGroup = openGroupName
+    ? dataQ.data.groups.find(g => g.name === openGroupName) ?? null
+    : null;
+
   return (
     <>
       <div className="gc-grid">
@@ -115,14 +125,14 @@ export function GroupsGridView() {
             key={g.name}
             group={g}
             isThirdQualified={top8Thirds.has(g.name)}
-            onExpand={() => setExpandedGroup(g)}
+            onExpand={() => openGroup(g.name)}
           />
         ))}
       </div>
       {expandedGroup && (
         <GroupMatchesModal
           group={expandedGroup}
-          onClose={() => setExpandedGroup(null)}
+          onClose={closeGroup}
         />
       )}
     </>
