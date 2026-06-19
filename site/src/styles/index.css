@@ -366,9 +366,7 @@ footer {
 
 .mc-row {
   display: grid;
-  /* Use the same column-width vars as .mc-actual so the two rows have
-     an identical column spine. */
-  grid-template-columns: 1fr var(--mc-score-col) 1fr var(--mc-pts-col);
+  grid-template-columns: 1fr var(--mc-score-col) 1fr;
   align-items: center;
   gap: 12px;
 }

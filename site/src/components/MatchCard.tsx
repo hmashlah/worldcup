@@ -176,7 +176,7 @@ export function MatchCard(p: Props) {
     <div className={`mc ${locked ? 'mc-locked' : ''}`}>
       {showPredictions ? (
         /* PREDICTION row — the user's own pick. */
-        <div className="mc-row">
+        <div className="mc-row mc-row-guest">
           <div className="mc-team mc-left">
             {team1IsResolved
               ? <><Flag team={team1} /><span className="mc-name">{labelLeft}</span></>
@@ -206,9 +206,6 @@ export function MatchCard(p: Props) {
               ? <><span className="mc-name">{labelRight}</span><Flag team={team2} /></>
               : <span className="mc-placeholder">{labelRight}</span>}
           </div>
-          {result && myPred && (
-            <span className={`mc-points pts-${earned}`}>+{earned}</span>
-          )}
         </div>
       ) : (
         /* GUEST / SPECTATOR header — teams + a quiet 'vs'. No prediction
@@ -259,11 +256,14 @@ export function MatchCard(p: Props) {
         </div>
       )}
 
-      {/* Result — centered final score with FT label above */}
+      {/* Result — centered final score with FT label above + points chip */}
       {result && !live && (
         <div className="mc-result">
           <span className="mc-result-label">FT</span>
           <span className="mc-result-score">{result.team1_score} – {result.team2_score}</span>
+          {showPredictions && myPred && (
+            <span className={`mc-points pts-${earned}`}>+{earned}</span>
+          )}
         </div>
       )}
 
