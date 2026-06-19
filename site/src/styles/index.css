@@ -464,15 +464,52 @@ footer {
 
 .mc-actual {
   display: grid;
-  /* IDENTICAL spine to .mc-row, so the score lands directly under the
-     prediction inputs. Both rows are children of .mc, which exposes
-     the column-width vars. */
   grid-template-columns: 1fr var(--mc-score-col) 1fr var(--mc-pts-col);
   align-items: baseline;
   gap: 12px;
   margin-top: 8px;
   font-size: 13px;
   color: var(--ink-soft);
+}
+
+.mc-result {
+  text-align: center;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.mc-result-label {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+}
+.mc-result-score {
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--ink);
+  animation: score-appear .4s ease-out;
+}
+.mc-result-live .mc-live-label {
+  color: #b91c1c;
+}
+.mc-result-live .mc-live-label::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #ef4444;
+  margin-right: 4px;
+  vertical-align: middle;
+  animation: mdp-live-pulse 1.4s ease-in-out infinite;
+}
+.mc-result-live .mc-live-score {
+  color: #b91c1c;
+  animation: live-score-flash .5s ease-out;
 }
 .mc-actual-label {
   grid-column: 1;
@@ -540,7 +577,7 @@ footer {
   gap: 4px 12px;
   font-size: 11px;
   color: var(--ink-faint);
-  margin-top: 8px;
+  margin-top: 4px;
 }
 .mc-meta-time { font-weight: 700; color: var(--ink-soft); }
 .mc-meta-round {
@@ -551,6 +588,16 @@ footer {
   font-size: 10px;
 }
 .mc-meta-ground { margin-left: auto; margin-right: auto; }
+.mc-ground {
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin-top: 4px;
+  /* Same 3-col grid as the guest row so the venue aligns with "vs" */
+  display: grid;
+  grid-template-columns: 1fr var(--mc-score-col) 1fr;
+  align-items: center;
+}
 .mc-lock { color: var(--accent); font-weight: 800; }
 .mc-countdown {
   color: var(--accent);
@@ -2976,6 +3023,9 @@ footer {
   color: var(--ink-soft);
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+.mc-row-guest {
+  grid-template-columns: 1fr var(--mc-score-col) 1fr;
 }
 
 /* Result section's scorers block — reuses h2h-scorers grid for the

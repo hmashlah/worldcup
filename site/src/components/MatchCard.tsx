@@ -249,24 +249,21 @@ export function MatchCard(p: Props) {
         </div>
       )}
 
-      {/* LIVE row — when this match is in progress. Shown to everyone
-          including admin (admin still gets the actual-input row below
-          to type the final once it ends). Mutually exclusive with the
-          "final" read-only row since a finished match isn't live. */}
+      {/* LIVE row — match in progress, same centered layout as FT */}
       {liveScore && (
-        <div className="mc-live">
-          <span className="mc-live-score-pill">{liveScore.phase}</span>
-          <span className="mc-live-score">
+        <div className="mc-result mc-result-live">
+          <span className="mc-result-label mc-live-label">{liveScore.phase}</span>
+          <span className="mc-result-score mc-live-score">
             {liveScore.left ?? '–'} – {liveScore.right ?? '–'}
           </span>
         </div>
       )}
 
-      {/* Result row — read-only display of the final score */}
+      {/* Result — centered final score with FT label above */}
       {result && !live && (
-        <div className="mc-actual">
-          <span className="mc-actual-label">final</span>
-          <span className="mc-actual-score">{result.team1_score} – {result.team2_score}</span>
+        <div className="mc-result">
+          <span className="mc-result-label">FT</span>
+          <span className="mc-result-score">{result.team1_score} – {result.team2_score}</span>
         </div>
       )}
 
@@ -274,6 +271,8 @@ export function MatchCard(p: Props) {
       {showPredictions && locked && team1IsResolved && team2IsResolved && (
         <ConsensusPick matchId={matchId} team1={team1} team2={team2} />
       )}
+
+      <div className="mc-ground"><span /><span>{ground}</span><span /></div>
 
       <div className="mc-meta">
         <span className="mc-meta-time">
@@ -297,7 +296,6 @@ export function MatchCard(p: Props) {
         </span>
         {live && <span className="mc-live-pill">live</span>}
         {roundLabel && <span className="mc-meta-round">{roundLabel}</span>}
-        <span className="mc-meta-ground">{ground}</span>
         {showDetails && (
           <button
             type="button"
