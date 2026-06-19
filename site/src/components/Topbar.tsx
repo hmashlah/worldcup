@@ -44,7 +44,7 @@ export function Topbar() {
   }, [isAdmin, profilesQ.data]);
 
   useEffect(() => {
-    if (tab === 'admin' && !isAdmin) setTab('today');
+    if (tab === 'admin' && (!isAdmin || spectatorMode)) setTab('today');
     if (tab === 'leaderboard' && (!user || spectatorMode)) setTab('today');
     if (tab === 'picks' && (!user || spectatorMode)) setTab('today');
   }, [tab, isAdmin, user, spectatorMode, setTab]);
@@ -54,7 +54,7 @@ export function Topbar() {
   const baseTabs = (user && !spectatorMode)
     ? TABS
     : TABS.filter(t => t.key !== 'leaderboard' && t.key !== 'picks');
-  const tabs = isAdmin ? [...baseTabs, { key: 'admin' as TabKey, label: 'Admin' }] : baseTabs;
+  const tabs = (isAdmin && !spectatorMode) ? [...baseTabs, { key: 'admin' as TabKey, label: 'Admin' }] : baseTabs;
 
   return (
     <header className="topbar">
