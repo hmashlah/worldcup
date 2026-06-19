@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useLeaderboard, type LeaderboardEntry } from '@/hooks/useLeaderboard';
 import { useAuth } from '@/contexts/AuthContext';
+import { PlayerComparison } from './PlayerComparison';
 
 const ROSETTES = ['🥇', '🥈', '🥉'];
 
@@ -17,6 +19,7 @@ function sameRank(a: LeaderboardEntry, b: LeaderboardEntry): boolean {
 export function LeaderboardCard() {
   const { user, isApproved, isAdmin } = useAuth();
   const { loading, entries } = useLeaderboard();
+  const [compareId, setCompareId] = useState<string | null>(null);
 
   if (loading) return <div className="leaderboard-empty">loading…</div>;
   if (!entries.length) return (
@@ -56,10 +59,13 @@ export function LeaderboardCard() {
       </div>
       {entries.map((e, i) => {
         const rank = ranks[i];
+        const isMe = user?.id === e.user_id;
         return (
           <div
             key={e.user_id}
-            className={'leaderboard-row' + (user?.id === e.user_id ? ' is-me' : '')}
+            className={'leaderboard-row' + (isMe ? ' is-me' : '')}
+            onClick={!isMe && user ? () => setCompareId(e.user_id) : undefined}
+            style={!isMe && user ? { cursor: 'pointer' } : undefined}
           >
             <span className="lb-rank">{ROSETTES[rank - 1] ?? `#${rank}`}</span>
             <span className="lb-name">{e.display_name}</span>
@@ -74,6 +80,7 @@ export function LeaderboardCard() {
       <p className="leaderboard-key">
         scoring · 3 pts exact · 1 pt right outcome · +1 pt right advancer in knockouts
       </p>
+      {compareId && <PlayerComparison opponentId={compareId} onClose={() => setCompareId(null)} />}
     </div>
   );
 }
