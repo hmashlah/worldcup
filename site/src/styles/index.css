@@ -558,6 +558,37 @@ footer {
   font-size: 11px;
 }
 
+/* Spectator mode toggle */
+.spectator-toggle {
+  border-radius: 999px;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  transition: background .12s, border-color .12s, color .12s;
+  padding: 0;
+}
+.spectator-toggle:hover { border-color: var(--ink-soft); color: var(--ink); }
+.spectator-toggle.is-on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+[data-theme='funky'] .spectator-toggle {
+  border: 2px solid var(--ink);
+  box-shadow: 1px 1px 0 0 var(--ink);
+}
+[data-theme='funky'] .spectator-toggle.is-on {
+  background: var(--accent-soft);
+  border-color: var(--ink);
+}
+
 /* ── Groups grid ─────────────────────────────────────────────────── */
 
 .gc-grid {

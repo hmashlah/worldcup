@@ -4,6 +4,7 @@ import { DayLeaderboard } from '@/components/DayLeaderboard';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useResults } from '@/hooks/useResults';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUI } from '@/lib/ui-store';
 import { resolveSlot, prettySlot, isKnockoutRound } from '@/lib/tournament';
 import { matchesByDay, defaultDay, relativeDayLabel, shortDayLabel } from '@/lib/days';
 import type { AdvancerMap, ScoreMap } from '@/lib/types';
@@ -30,6 +31,7 @@ export function DayView() {
   const dataQ = useTournamentData();
   const resultsQ = useResults();
   const { user } = useAuth();
+  const spectatorMode = useUI(s => s.spectatorMode);
   const stripRef = useRef<HTMLDivElement>(null);
 
   const days = useMemo(() => dataQ.data ? matchesByDay(dataQ.data) : [], [dataQ.data]);
@@ -180,7 +182,7 @@ export function DayView() {
       </div>
 
       {/* Day leaderboard (only visible for authenticated users, only when results exist) */}
-      {user && <DayLeaderboard matchIds={dayMatchIds} />}
+      {user && !spectatorMode && <DayLeaderboard matchIds={dayMatchIds} />}
     </div>
   );
 }

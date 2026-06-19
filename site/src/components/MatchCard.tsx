@@ -63,10 +63,14 @@ export function MatchCard(p: Props) {
     isKO = false, roundLabel, showDate = false,
   } = p;
   const { user } = useAuth();
+  const spectatorMode = useUI(s => s.spectatorMode);
   const myPredsQ = useMyPredictions();
   const resultsQ = useResults();
   const liveQ = useLiveMatches();
   const upsertPred = useUpsertPrediction();
+
+  // In spectator mode, treat as if not logged in for prediction UI
+  const showPredictions = !!user && !spectatorMode;
 
   // Re-render every 30s so a card open at 12:59 visibly locks at kickoff
   // without needing user interaction.
@@ -170,8 +174,8 @@ export function MatchCard(p: Props) {
 
   return (
     <div className={`mc ${locked ? 'mc-locked' : ''}`}>
-      {user ? (
-        /* PREDICTION row — the user's own pick, even for admin. */
+      {showPredictions ? (
+        /* PREDICTION row — the user's own pick. */
         <div className="mc-row">
           <div className="mc-team mc-left">
             {team1IsResolved
@@ -207,9 +211,8 @@ export function MatchCard(p: Props) {
           )}
         </div>
       ) : (
-        /* GUEST header — teams + a quiet 'vs' where the score inputs
-           would sit. No prediction inputs, no points chip. The score
-           reveal still happens via the LIVE / FINAL rows below. */
+        /* GUEST / SPECTATOR header — teams + a quiet 'vs'. No prediction
+           inputs, no points chip. */
         <div className="mc-row mc-row-guest">
           <div className="mc-team mc-left">
             {team1IsResolved
@@ -225,8 +228,8 @@ export function MatchCard(p: Props) {
         </div>
       )}
 
-      {/* Knockout advancer — only for signed-in users. */}
-      {user && isKO && team1IsResolved && team2IsResolved && (
+      {/* Knockout advancer — only in prediction mode. */}
+      {showPredictions && isKO && team1IsResolved && team2IsResolved && (
         <div className="mc-advancer">
           <span className="mc-advancer-label">your pick advances</span>
           {[team1, team2].map(t => (
@@ -267,8 +270,8 @@ export function MatchCard(p: Props) {
         </div>
       )}
 
-      {/* Consensus pick — visible on locked matches for signed-in users */}
-      {user && locked && team1IsResolved && team2IsResolved && (
+      {/* Consensus pick — visible on locked matches in prediction mode */}
+      {showPredictions && locked && team1IsResolved && team2IsResolved && (
         <ConsensusPick matchId={matchId} team1={team1} team2={team2} />
       )}
 

@@ -4,7 +4,7 @@ export type TabKey = 'today' | 'groups' | 'bracket' | 'leaderboard' | 'picks' | 
 export type ThemeKey = 'minimal' | 'funky';
 
 const THEME_STORAGE_KEY = 'wc26-theme';
-const ADMIN_MODE_STORAGE_KEY = 'wc26-admin-mode';
+const SPECTATOR_MODE_KEY = 'wc26-spectator';
 
 function readInitialTheme(): ThemeKey {
   if (typeof window === 'undefined') return 'minimal';
@@ -12,9 +12,9 @@ function readInitialTheme(): ThemeKey {
   return v === 'funky' ? 'funky' : 'minimal';
 }
 
-function readInitialAdminMode(): boolean {
+function readInitialSpectator(): boolean {
   if (typeof window === 'undefined') return false;
-  return localStorage.getItem(ADMIN_MODE_STORAGE_KEY) === '1';
+  return localStorage.getItem(SPECTATOR_MODE_KEY) === '1';
 }
 
 function applyThemeToDom(theme: ThemeKey) {
@@ -25,8 +25,6 @@ function applyThemeToDom(theme: ThemeKey) {
 interface UIState {
   tab: TabKey;
   setTab: (t: TabKey) => void;
-  /** When set, App renders MatchDetailPage as a full-screen overlay
-   *  instead of the current tab content. Closing it returns to `tab`. */
   openMatchId: string | null;
   openMatch: (id: string) => void;
   closeMatch: () => void;
@@ -35,19 +33,15 @@ interface UIState {
   theme: ThemeKey;
   toggleTheme: () => void;
   setTheme: (t: ThemeKey) => void;
-  /** Admin viewing the site as themselves (results inputs, admin tab) vs.
-   *  as a regular user (predictions only). Persisted in localStorage. */
-  adminMode: boolean;
-  toggleAdminMode: () => void;
-  setAdminMode: (on: boolean) => void;
+  /** Spectator mode: hides predictions, consensus, points — shows only
+   *  matches, scores, and schedule. Like a logged-out view but while
+   *  staying signed in. */
+  spectatorMode: boolean;
+  toggleSpectator: () => void;
 }
 
 export const useUI = create<UIState>(set => ({
   tab: 'today',
-  // Switching tabs also closes any open match-detail overlay — otherwise
-  // the detail page stays on screen even though `tab` changed, leaving
-  // tabs feeling broken when a user opens a match and then taps
-  // Leaderboard / Bracket / etc.
   setTab: t => set({ tab: t, openMatchId: null }),
   openMatchId: null,
   openMatch: id => set({ openMatchId: id }),
@@ -66,19 +60,18 @@ export const useUI = create<UIState>(set => ({
     applyThemeToDom(t);
     set({ theme: t });
   },
-  adminMode: readInitialAdminMode(),
-  toggleAdminMode: () => set(s => {
-    const next = !s.adminMode;
-    localStorage.setItem(ADMIN_MODE_STORAGE_KEY, next ? '1' : '0');
-    return { adminMode: next };
+  spectatorMode: readInitialSpectator(),
+  toggleSpectator: () => set(s => {
+    const next = !s.spectatorMode;
+    localStorage.setItem(SPECTATOR_MODE_KEY, next ? '1' : '0');
+    // If switching to spectator while on a prediction-only tab, bounce to Matches
+    if (next && (s.tab === 'leaderboard' || s.tab === 'picks')) {
+      return { spectatorMode: next, tab: 'today' };
+    }
+    return { spectatorMode: next };
   }),
-  setAdminMode: on => {
-    localStorage.setItem(ADMIN_MODE_STORAGE_KEY, on ? '1' : '0');
-    set({ adminMode: on });
-  },
 }));
 
-// Apply on first load too (handles direct nav, /loop wakes, etc.)
 if (typeof document !== 'undefined') {
   applyThemeToDom(readInitialTheme());
 }
