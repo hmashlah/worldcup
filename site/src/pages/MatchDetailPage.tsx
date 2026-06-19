@@ -251,12 +251,6 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
         team1={team1Resolved}
         team2={team2Resolved}
       />
-
-      {/* ─── Venue ──────────────────────────────────────────────────── */}
-      <section className="mdp-section">
-        <h3 className="mdp-h3">Venue</h3>
-        <p className="mdp-venue-detail">{match.ground}</p>
-      </section>
     </section>
   );
 }
@@ -335,7 +329,7 @@ function PredictionsSection({
 
   return (
     <section className="mdp-section">
-      <CollapsibleHeader label="League predictions" defaultOpen={true}>
+      <CollapsibleHeader label="League predictions" defaultOpen={false}>
         {rows.length === 0 ? (
           <p className="mdp-empty">No predictions for this match.</p>
         ) : (
@@ -393,14 +387,7 @@ function H2HSection({ team1, team2 }: { team1: string | null; team2: string | nu
   const matches: H2HMatch[] = h2hQ.data.pairs[key] ?? [];
 
   if (matches.length === 0) {
-    return (
-      <section className="mdp-section">
-        <h3 className="mdp-h3">Previous meetings</h3>
-        <p className="mdp-empty">
-          No previous tournament meetings between these teams. This is their first.
-        </p>
-      </section>
-    );
+    return null;
   }
 
   // Compute summary from team1's perspective (left side of the header).
@@ -544,30 +531,25 @@ function MatchDetailBlock({ detail }: { detail: MatchDetail }) {
 
   return (
     <>
-      {/* ─── Match Info (always visible) ─────────────────────────── */}
+      {/* ─── Match Info (collapsible) ─────────────────────────── */}
       {hasInfo && (
         <section className="mdp-section mdp-detail-section">
-          <h3 className="mdp-h3">Match Info</h3>
-          <div className="mdp-info-grid">
-            {detail.attendance != null && (
-              <div className="mdp-info-item">
-                <label>Attendance</label>
-                <span>{detail.attendance.toLocaleString()}</span>
-              </div>
-            )}
-            {detail.motm && (
-              <div className="mdp-info-item">
-                <label>Man of the Match</label>
-                <span>{detail.motm.name}</span>
-              </div>
-            )}
-            {detail.venue && (
-              <div className="mdp-info-item">
-                <label>Venue</label>
-                <span>{detail.venue.stadium}, {detail.venue.city}</span>
-              </div>
-            )}
-          </div>
+          <CollapsibleHeader label="Match Info" defaultOpen={false}>
+            <div className="mdp-info-grid">
+              {detail.attendance != null && (
+                <div className="mdp-info-item">
+                  <label>Attendance</label>
+                  <span>{detail.attendance.toLocaleString()}</span>
+                </div>
+              )}
+              {detail.motm && (
+                <div className="mdp-info-item">
+                  <label>Man of the Match</label>
+                  <span>{detail.motm.name}</span>
+                </div>
+              )}
+            </div>
+          </CollapsibleHeader>
         </section>
       )}
 
