@@ -10,6 +10,8 @@ cloudflare_execute: GET /accounts/{accountId}/pages/projects/worldcup/deployment
 
 Report the status, commit hash, and any errors.
 
+If the status is not yet `success` or `failure`, wait 10 seconds and check again using the MCP. Repeat until it resolves. Do NOT use bash/curl for this — always use the `cloudflare_execute` MCP tool.
+
 ## Service Worker Cache
 
 The pre-push hook auto-bumps the SW cache version. No manual intervention needed.
