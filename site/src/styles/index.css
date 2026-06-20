@@ -591,10 +591,10 @@ footer {
   font-size: 11px;
   color: var(--ink-faint);
   margin-top: 4px;
-  /* Same 3-col grid as the guest row so the venue aligns with "vs" */
-  display: grid;
-  grid-template-columns: 1fr var(--mc-score-col) 1fr;
-  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 12px;
 }
 .mc-lock { color: var(--accent); font-weight: 800; }
 .mc-countdown {

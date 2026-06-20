@@ -265,7 +265,7 @@ export function MatchCard(p: Props) {
         </div>
       )}
 
-      <div className="mc-ground"><span /><span>{ground}</span><span /></div>
+      <div className="mc-ground">{ground}</div>
 
       <div className="mc-meta">
         <span className="mc-meta-time">

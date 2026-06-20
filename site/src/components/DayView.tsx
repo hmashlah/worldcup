@@ -176,7 +176,12 @@ export function DayView() {
       </div>
 
       {/* Active day header */}
-      <div className="day-header">
+      <div
+        className="day-header"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         <h2 className="day-relative">{relativeDayLabel(activeDay.date)}</h2>
         <p className="day-absolute">
           {new Date(activeDay.date + 'T00:00:00').toLocaleDateString(undefined, {
