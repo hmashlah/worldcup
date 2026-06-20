@@ -2,20 +2,15 @@
 
 ## After every `git push`
 
-After every `git push` command, immediately check the Cloudflare Pages deployment status using the Cloudflare MCP and report whether it succeeded or failed:
+After every `git push` command, immediately check the Cloudflare Pages deployment status by running:
 
-```
-cloudflare_execute: GET /accounts/{accountId}/pages/projects/worldcup/deployments?per_page=1
+```sh
+./scripts/check-deploy.sh
 ```
 
 Report the status, commit hash, and any errors.
 
-If the status is not yet `success` or `failure`, wait 10 seconds and check again using the MCP. Repeat until it resolves. Do NOT use bash/curl for this — always use the `cloudflare_execute` MCP tool.
-
-Alternatively, run the deploy check script:
-```sh
-./scripts/check-deploy.sh
-```
+Do NOT use the Cloudflare MCP for this — always use the script.
 
 ## Service Worker Cache
 
