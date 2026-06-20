@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Flag } from '@/components/Flag';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useResults } from '@/hooks/useResults';
@@ -130,6 +130,13 @@ function GroupMatchesModal({ group, onClose }: { group: Group; onClose: () => vo
   const resultsQ = useResults();
   const openMatchId = useUI(s => s.openMatchId);
   const matches = dataQ.data?.group_matches[group.name] ?? [];
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [onClose]);
 
   // Simulated scores: raw string values for controlled inputs
   const [simRaw, setSimRaw] = useState<Record<string, { team1: string; team2: string }>>({});
