@@ -1,10 +1,10 @@
+import { useState, useCallback } from 'react';
 import { Flag } from '@/components/Flag';
-import { MatchCard } from '@/components/MatchCard';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useResults } from '@/hooks/useResults';
 import { useUI } from '@/lib/ui-store';
 import { computeStandings, getThirdPlacedRanking } from '@/lib/tournament';
-import type { Group, ScoreMap } from '@/lib/types';
+import type { Group, GroupMatch, ScoreMap } from '@/lib/types';
 
 interface CardProps { group: Group; isThirdQualified: boolean; onExpand: () => void }
 
@@ -61,10 +61,111 @@ function GroupCardCompact({ group, isThirdQualified, onExpand }: CardProps) {
   );
 }
 
+/** Compact row showing a played match result (read-only). */
+function PlayedMatchRow({ match, score }: { match: GroupMatch; score: { team1: number; team2: number } }) {
+  return (
+    <div className="gc-sim-row gc-sim-row--played">
+      <div className="gc-sim-team gc-sim-team--left">
+        <Flag team={match.team1} /><span>{match.team1}</span>
+      </div>
+      <div className="gc-sim-score-display">
+        <span>{score.team1}</span>
+        <span className="gc-sim-dash">–</span>
+        <span>{score.team2}</span>
+      </div>
+      <div className="gc-sim-team gc-sim-team--right">
+        <span>{match.team2}</span><Flag team={match.team2} />
+      </div>
+      <div className="gc-sim-meta">{match.date} · {match.time}</div>
+    </div>
+  );
+}
+
+/** Compact row for an unplayed match with inline score inputs. */
+function SimMatchRow({
+  match,
+  simScore,
+  onChange,
+}: {
+  match: GroupMatch;
+  simScore: { team1: string; team2: string } | undefined;
+  onChange: (matchId: string, field: 'team1' | 'team2', value: string) => void;
+}) {
+  return (
+    <div className="gc-sim-row">
+      <div className="gc-sim-team gc-sim-team--left">
+        <Flag team={match.team1} /><span>{match.team1}</span>
+      </div>
+      <div className="gc-sim-inputs">
+        <input
+          type="number"
+          min={0}
+          max={99}
+          className="gc-sim-input"
+          value={simScore?.team1 ?? ''}
+          onChange={e => onChange(match.id, 'team1', e.target.value)}
+          aria-label={`${match.team1} score`}
+        />
+        <span className="gc-sim-dash">–</span>
+        <input
+          type="number"
+          min={0}
+          max={99}
+          className="gc-sim-input"
+          value={simScore?.team2 ?? ''}
+          onChange={e => onChange(match.id, 'team2', e.target.value)}
+          aria-label={`${match.team2} score`}
+        />
+      </div>
+      <div className="gc-sim-team gc-sim-team--right">
+        <span>{match.team2}</span><Flag team={match.team2} />
+      </div>
+      <div className="gc-sim-meta">{match.date} · {match.time}</div>
+    </div>
+  );
+}
+
 function GroupMatchesModal({ group, onClose }: { group: Group; onClose: () => void }) {
   const dataQ = useTournamentData();
+  const resultsQ = useResults();
   const openMatchId = useUI(s => s.openMatchId);
   const matches = dataQ.data?.group_matches[group.name] ?? [];
+
+  // Simulated scores: raw string values for controlled inputs
+  const [simRaw, setSimRaw] = useState<Record<string, { team1: string; team2: string }>>({});
+
+  const handleSimChange = useCallback((matchId: string, field: 'team1' | 'team2', value: string) => {
+    setSimRaw(prev => ({
+      ...prev,
+      [matchId]: { ...prev[matchId], [field]: value } as { team1: string; team2: string },
+    }));
+  }, []);
+
+  const resetSim = useCallback(() => setSimRaw({}), []);
+
+  // Build merged ScoreMap: real results + valid sim scores
+  const realResults = resultsQ.data ?? {};
+  const mergedScores: ScoreMap = {};
+  for (const [id, r] of Object.entries(realResults)) {
+    mergedScores[id] = { team1: r.team1_score, team2: r.team2_score };
+  }
+  for (const [id, raw] of Object.entries(simRaw)) {
+    if (realResults[id]) continue; // don't override real results
+    const t1 = parseInt(raw.team1, 10);
+    const t2 = parseInt(raw.team2, 10);
+    if (!isNaN(t1) && !isNaN(t2) && t1 >= 0 && t2 >= 0) {
+      mergedScores[id] = { team1: t1, team2: t2 };
+    }
+  }
+
+  const standings = dataQ.data ? computeStandings(dataQ.data, group, mergedScores) : [];
+  const hasSimActive = Object.keys(simRaw).some(id => {
+    if (realResults[id]) return false;
+    const raw = simRaw[id];
+    const t1 = parseInt(raw.team1, 10);
+    const t2 = parseInt(raw.team2, 10);
+    return !isNaN(t1) && !isNaN(t2);
+  });
 
   // Hide the modal when a match detail is open (it renders on top)
   if (openMatchId) return null;
@@ -73,24 +174,65 @@ function GroupMatchesModal({ group, onClose }: { group: Group; onClose: () => vo
     <div className="gc-modal-overlay" onClick={onClose}>
       <div className="gc-modal" onClick={e => e.stopPropagation()}>
         <div className="gc-modal-header">
-          <h3>{group.name} — Matches</h3>
+          <h3>{group.name} — What-if Simulator</h3>
           <button className="gc-modal-close" onClick={onClose}>×</button>
         </div>
         <div className="gc-modal-body">
-          {matches.map(m => (
-            <MatchCard
-              key={m.id}
-              matchId={m.id}
-              team1={m.team1}
-              team2={m.team2}
-              team1IsResolved
-              team2IsResolved
-              date={m.date}
-              time={m.time}
-              ground={m.ground}
-              showDate
-            />
-          ))}
+          {/* Standings table */}
+          <div className="gc-sim-standings">
+            {hasSimActive && <span className="gc-sim-badge">SIMULATED</span>}
+            <table className="gc-table">
+              <thead>
+                <tr>
+                  <th className="team-col">Team</th>
+                  <th>P</th><th>W</th><th>D</th><th>L</th>
+                  <th>GD</th><th>Pts</th>
+                </tr>
+              </thead>
+              <tbody>
+                {standings.map((t, i) => {
+                  const cls = i < 2 ? 'qualified' : i === 2 ? 'third-tied' : '';
+                  return (
+                    <tr className={cls} key={t.team}>
+                      <td className="team-col"><Flag team={t.team} /><span>{t.team}</span></td>
+                      <td>{t.P}</td><td>{t.W}</td><td>{t.D}</td><td>{t.L}</td>
+                      <td>{t.GD > 0 ? `+${t.GD}` : t.GD}</td>
+                      <td className="pts">{t.Pts}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {hasSimActive && (
+              <button className="gc-sim-reset" onClick={resetSim} type="button">
+                Reset simulation
+              </button>
+            )}
+          </div>
+
+          {/* Match rows */}
+          <div className="gc-sim-matches">
+            {matches.map(m => {
+              const result = realResults[m.id];
+              if (result) {
+                return (
+                  <PlayedMatchRow
+                    key={m.id}
+                    match={m}
+                    score={{ team1: result.team1_score, team2: result.team2_score }}
+                  />
+                );
+              }
+              return (
+                <SimMatchRow
+                  key={m.id}
+                  match={m}
+                  simScore={simRaw[m.id]}
+                  onChange={handleSimChange}
+                />
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

@@ -4175,3 +4175,188 @@ footer {
   }
   .compare-match { font-size: 11px; }
 }
+
+/* ── What-if Simulator (Group matches modal) ─────────────────────── */
+
+.gc-sim-standings {
+  position: relative;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.gc-sim-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: var(--accent);
+  color: var(--surface);
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+.gc-sim-reset {
+  display: block;
+  margin: 10px auto 0;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  border-radius: var(--r-sm);
+  padding: 5px 14px;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: color .12s, border-color .12s;
+}
+.gc-sim-reset:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.gc-sim-matches {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gc-sim-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  position: relative;
+}
+
+.gc-sim-row--played {
+  background: var(--bg);
+}
+
+.gc-sim-team {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 0;
+}
+.gc-sim-team span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gc-sim-team--right {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.gc-sim-inputs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gc-sim-input {
+  width: 30px;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  text-align: center;
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--surface);
+  -moz-appearance: textfield;
+}
+.gc-sim-input::-webkit-outer-spin-button,
+.gc-sim-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.gc-sim-input:focus {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.gc-sim-dash {
+  color: var(--ink-faint);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.gc-sim-score-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 800;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gc-sim-meta {
+  grid-column: 1 / -1;
+  font-size: 10px;
+  color: var(--ink-faint);
+  text-align: center;
+  margin-top: 2px;
+}
+
+/* Dark theme */
+[data-theme='dark'] .gc-sim-input {
+  background: var(--bg);
+  border-color: var(--line);
+  color: var(--ink);
+}
+[data-theme='dark'] .gc-sim-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+[data-theme='dark'] .gc-sim-row--played {
+  background: var(--line-soft);
+}
+
+/* Funky theme */
+[data-theme='funky'] .gc-sim-input {
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  font-size: 14px;
+  background: #fef3c7;
+}
+[data-theme='funky'] .gc-sim-input:focus {
+  background: #fde68a;
+  box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.25);
+}
+[data-theme='funky'] .gc-sim-badge {
+  background: linear-gradient(120deg, #ec4899 0%, #a855f7 100%);
+  border: 1.5px solid var(--ink);
+  box-shadow: 1px 1px 0 0 var(--ink);
+}
+[data-theme='funky'] .gc-sim-reset {
+  border: 1.5px solid var(--ink);
+  box-shadow: 1px 1px 0 0 var(--ink);
+  font-weight: 800;
+}
+[data-theme='funky'] .gc-sim-row {
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+}
+
+/* Mobile */
+@media (max-width: 720px) {
+  .gc-sim-row { padding: 6px 8px; gap: 6px; }
+  .gc-sim-team { font-size: 12px; gap: 4px; }
+  .gc-sim-input { width: 28px; height: 24px; font-size: 12px; }
+  .gc-sim-score-display { font-size: 13px; }
+}
+
+@media (max-width: 380px) {
+  .gc-sim-team { font-size: 11px; }
+  .gc-sim-input { width: 26px; height: 22px; font-size: 11px; }
+}
