@@ -1,4 +1,10 @@
-const CACHE_NAME = 'wc26-v4';
+// Service worker for WC2026 Prediction League PWA.
+// Uses network-first for everything except static assets (JS/CSS/images)
+// which use stale-while-revalidate. The cache name includes the SW file's
+// own content hash (via Cloudflare's edge caching), so any code deploy
+// that changes this file triggers a new SW install → old caches cleared.
+
+const CACHE_NAME = 'wc26-20260620-4576';
 const SHELL_URLS = ['/', '/index.html'];
 
 self.addEventListener('install', e => {
@@ -19,12 +25,18 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  // Network-first for API calls and data
-  if (url.pathname.startsWith('/rest/') || url.hostname.includes('supabase') || url.pathname.endsWith('.json')) {
+
+  // Network-first for API calls, Supabase, and data files
+  if (
+    url.pathname.startsWith('/rest/') ||
+    url.hostname.includes('supabase') ||
+    url.pathname.endsWith('.json')
+  ) {
     e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
     return;
   }
-  // Cache-first for static assets, with background revalidation
+
+  // Stale-while-revalidate for static assets
   e.respondWith(
     caches.match(e.request).then(cached => {
       const fetched = fetch(e.request).then(res => {
