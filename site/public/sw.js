@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wc26-v2';
+const CACHE_NAME = 'wc26-v3';
 const SHELL_URLS = ['/', '/index.html'];
 
 self.addEventListener('install', e => {
