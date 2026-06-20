@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef, type TouchEvent } from 'react';
 import { MatchCard } from '@/components/MatchCard';
 import { DayLeaderboard } from '@/components/DayLeaderboard';
 import { useTournamentData } from '@/hooks/useTournamentData';
@@ -31,6 +31,11 @@ export function DayView() {
   const resultsQ = useResults();
   const { user } = useAuth();
   const stripRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // ── Swipe gesture state ────────────────────────────────────────
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const touchEnd = useRef<{ x: number; y: number } | null>(null);
 
   const days = useMemo(() => dataQ.data ? matchesByDay(dataQ.data) : [], [dataQ.data]);
   const initial = useMemo(() => defaultDay(days), [days]);
@@ -101,6 +106,38 @@ export function DayView() {
     el?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
   }, [activeDate]);
 
+  // ── Swipe gesture handlers ─────────────────────────────────────
+  const onTouchStart = useCallback((e: TouchEvent<HTMLDivElement>) => {
+    touchEnd.current = null;
+    touchStart.current = { x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY };
+  }, []);
+
+  const onTouchMove = useCallback((e: TouchEvent<HTMLDivElement>) => {
+    touchEnd.current = { x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY };
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    if (!touchStart.current || !touchEnd.current) return;
+    const diffX = touchStart.current.x - touchEnd.current.x;
+    const diffY = touchStart.current.y - touchEnd.current.y;
+
+    // Only trigger if horizontal movement exceeds threshold and is greater than vertical
+    if (Math.abs(diffX) < 50 || Math.abs(diffX) < Math.abs(diffY)) return;
+
+    const idx = days.findIndex(d => d.date === activeDate);
+    if (idx === -1) return;
+
+    if (diffX > 0) {
+      // Swiped left → next day
+      const next = days[idx + 1];
+      if (next) setActiveDate(next.date);
+    } else {
+      // Swiped right → previous day
+      const prev = days[idx - 1];
+      if (prev) setActiveDate(prev.date);
+    }
+  }, [days, activeDate]);
+
   const activeDay = (days.find(d => d.date === activeDate) ?? days[0]) || null;
   const dayMatchIds = useMemo(() => activeDay ? activeDay.matches.map(m => m.id) : [], [activeDay]);
 
@@ -151,7 +188,13 @@ export function DayView() {
       </div>
 
       {/* Match list */}
-      <div className="day-list">
+      <div
+        className="day-list"
+        ref={listRef}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         {activeDay.matches.map(m => {
           const t1 = m.isKO
             ? resolveSlot(dataQ.data!, scores, advancers, m.team1)
