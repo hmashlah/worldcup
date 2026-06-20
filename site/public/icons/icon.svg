@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="64" fill="#2a2530"/>
+  <circle cx="256" cy="220" r="120" fill="none" stroke="#b85770" stroke-width="12"/>
+  <path d="M256 100 L270 160 L330 160 L280 200 L300 260 L256 225 L212 260 L232 200 L182 160 L242 160 Z" fill="#b85770"/>
+  <text x="256" y="420" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="72" fill="#faf8f5">2026</text>
+</svg>
