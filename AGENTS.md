@@ -16,6 +16,10 @@ Do NOT use the Cloudflare MCP for this — always use the script.
 
 The pre-push hook auto-bumps the SW cache version. No manual intervention needed.
 
+## Git Rules
+
+- NEVER use `--no-verify` on git push or git commit. Always let the pre-push hook run.
+
 ## Database Access
 
 Credentials are in `site/.env.local`. Use these for direct Supabase queries when debugging.
