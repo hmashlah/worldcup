@@ -3,6 +3,7 @@ import { GroupsGridView } from '@/components/GroupsGridView';
 import { Bracket } from '@/components/Bracket';
 import { LeaderboardCard } from '@/components/LeaderboardCard';
 import { PointsTrendChart } from '@/components/PointsTrendChart';
+import { SeasonAwards } from '@/components/SeasonAwards';
 import { MyPicksView } from '@/components/MyPicksView';
 import { Topbar } from '@/components/Topbar';
 import { AuthModal } from '@/components/AuthModal';
@@ -107,6 +108,7 @@ function LeaderboardTab() {
       </div>
       <LeaderboardCard />
       <PointsTrendChart />
+      <SeasonAwards />
     </section>
   );
 }
