@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProfiles, type ProfileRow } from '@/hooks/useProfiles';
 import { relativeTime, extractMentions } from '@/lib/utils';
 
+const REACTION_EMOJIS = ['👍', '😂', '🔥', '❤️', '😮', '😢'];
+
 const EMOJI_GROUPS: Array<{ label: string; emojis: string[] }> = [
   { label: 'Football', emojis: ['⚽', '🥅', '🏆', '🏟️', '🎯', '🔥', '💪', '👏', '🙌', '🤝', '🫡', '🇦🇷'] },
   { label: 'Reactions', emojis: ['😂', '🤣', '😭', '😱', '🤯', '😤', '🥳', '🫠', '💀', '🤡', '👀', '😈'] },
@@ -17,6 +19,13 @@ interface Message {
   text: string;
   image_url: string | null;
   created_at: string;
+}
+
+interface Reaction {
+  id: string;
+  message_id: string;
+  user_id: string;
+  emoji: string;
 }
 
 /** Render message text with @mentions highlighted. */
@@ -65,6 +74,8 @@ export function ChatView() {
   const emojiRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [reactions, setReactions] = useState<Reaction[]>([]);
+  const [reactPickerMsgId, setReactPickerMsgId] = useState<string | null>(null);
 
   const profiles = profilesQ.data ?? {};
 
@@ -124,6 +135,41 @@ export function ChatView() {
           if (prev.some(m => m.id === newMsg.id)) return prev;
           return [...prev, newMsg];
         });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  // Fetch reactions
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('wc26_reactions')
+        .select('id, message_id, user_id, emoji');
+      setReactions((data as Reaction[]) ?? []);
+    })();
+  }, []);
+
+  // Subscribe to reaction changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('reactions:global')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'wc26_reactions',
+      }, (payload) => {
+        const r = payload.new as Reaction;
+        setReactions(prev => prev.some(x => x.id === r.id) ? prev : [...prev, r]);
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'wc26_reactions',
+      }, (payload) => {
+        const old = payload.old as { id: string };
+        setReactions(prev => prev.filter(r => r.id !== old.id));
       })
       .subscribe();
 
@@ -297,6 +343,51 @@ export function ChatView() {
     setMessages(prev => prev.filter(m => m.id !== msgId));
   };
 
+  const toggleReaction = async (msgId: string, emoji: string) => {
+    if (!user) return;
+    const existing = reactions.find(r => r.message_id === msgId && r.user_id === user.id && r.emoji === emoji);
+    if (existing) {
+      // Remove reaction
+      await supabase.from('wc26_reactions').delete().eq('id', existing.id);
+      setReactions(prev => prev.filter(r => r.id !== existing.id));
+    } else {
+      // Add reaction
+      const { data } = await supabase.from('wc26_reactions').insert({
+        message_id: msgId,
+        user_id: user.id,
+        emoji,
+      }).select('id, message_id, user_id, emoji').single();
+      if (data) {
+        setReactions(prev => [...prev, data as Reaction]);
+      }
+      // Notify the message author (if not self)
+      const msg = messages.find(m => m.id === msgId);
+      if (msg && msg.user_id !== user.id) {
+        const senderName = profiles[user.id]?.display_name ?? 'Someone';
+        await supabase.from('wc26_notifications').insert({
+          user_id: msg.user_id,
+          from_user_id: user.id,
+          match_id: 'global',
+          type: 'reaction',
+          text: `${senderName} reacted ${emoji} to your message`,
+        });
+      }
+    }
+    setReactPickerMsgId(null);
+  };
+
+  /** Get grouped reaction counts for a message */
+  const getReactions = (msgId: string) => {
+    const msgReactions = reactions.filter(r => r.message_id === msgId);
+    const grouped: Record<string, { count: number; mine: boolean }> = {};
+    for (const r of msgReactions) {
+      if (!grouped[r.emoji]) grouped[r.emoji] = { count: 0, mine: false };
+      grouped[r.emoji].count++;
+      if (r.user_id === user?.id) grouped[r.emoji].mine = true;
+    }
+    return grouped;
+  };
+
   const handleSend = useCallback(async () => {
     if (!user || !inputText.trim() || sending) return;
     const text = inputText.trim();
@@ -422,7 +513,51 @@ export function ChatView() {
                     )}
                   </>
                 )}
-                <div className="chat-msg-time">{relativeTime(msg.created_at)}</div>
+                <div className="chat-msg-footer">
+                  <span className="chat-msg-time">{relativeTime(msg.created_at)}</span>
+                  {user && !msg.id.startsWith('temp-') && (
+                    <button
+                      type="button"
+                      className="chat-react-btn"
+                      onClick={() => setReactPickerMsgId(reactPickerMsgId === msg.id ? null : msg.id)}
+                    >
+                      +
+                    </button>
+                  )}
+                </div>
+                {reactPickerMsgId === msg.id && (
+                  <div className="chat-react-picker">
+                    {REACTION_EMOJIS.map(e => (
+                      <button
+                        key={e}
+                        type="button"
+                        className="chat-react-emoji"
+                        onClick={() => toggleReaction(msg.id, e)}
+                      >
+                        {e}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {(() => {
+                  const grouped = getReactions(msg.id);
+                  const entries = Object.entries(grouped);
+                  if (entries.length === 0) return null;
+                  return (
+                    <div className="chat-reactions">
+                      {entries.map(([emoji, { count, mine }]) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          className={`chat-reaction-pill ${mine ? 'chat-reaction-mine' : ''}`}
+                          onClick={() => toggleReaction(msg.id, emoji)}
+                        >
+                          {emoji} {count}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}
