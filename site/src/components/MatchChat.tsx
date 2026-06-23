@@ -3,6 +3,13 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfiles, type ProfileRow } from '@/hooks/useProfiles';
 
+const EMOJI_GROUPS: Array<{ label: string; emojis: string[] }> = [
+  { label: 'Football', emojis: ['⚽', '🥅', '🏆', '🏟️', '🎯', '🔥', '💪', '👏', '🙌', '🤝', '🫡', '🇦🇷'] },
+  { label: 'Reactions', emojis: ['😂', '🤣', '😭', '😱', '🤯', '😤', '🥳', '🫠', '💀', '🤡', '👀', '😈'] },
+  { label: 'Hands', emojis: ['👍', '👎', '🤞', '✌️', '🤙', '👊', '🫶', '🙏', '💅', '🖕', '👆', '✊'] },
+  { label: 'Misc', emojis: ['❤️', '💔', '🎉', '🎊', '💯', '⭐', '🌟', '🍀', '🐐', '🦁', '🇧🇷', '🇩🇪'] },
+];
+
 interface Message {
   id: string;
   user_id: string;
@@ -83,9 +90,11 @@ export function MatchChat({ matchId, onClose }: Props) {
   const [sending, setSending] = useState(false);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionIdx, setMentionIdx] = useState(0);
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const emojiRef = useRef<HTMLDivElement>(null);
 
   const profiles = profilesQ.data ?? {};
 
@@ -148,11 +157,39 @@ export function MatchChat({ matchId, onClose }: Props) {
   // Close on Escape key (only if not in mention autocomplete)
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && mentionQuery === null) onClose();
+      if (e.key === 'Escape' && mentionQuery === null && !emojiOpen) onClose();
+      if (e.key === 'Escape' && emojiOpen) setEmojiOpen(false);
     };
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, [onClose, mentionQuery]);
+  }, [onClose, mentionQuery, emojiOpen]);
+
+  // Close emoji picker on outside click
+  useEffect(() => {
+    if (!emojiOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) {
+        setEmojiOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [emojiOpen]);
+
+  const insertEmoji = (emoji: string) => {
+    const cursorPos = inputRef.current?.selectionStart ?? inputText.length;
+    const newText = inputText.slice(0, cursorPos) + emoji + inputText.slice(cursorPos);
+    setInputText(newText);
+    setEmojiOpen(false);
+    setTimeout(() => {
+      if (inputRef.current) {
+        const pos = cursorPos + emoji.length;
+        inputRef.current.focus();
+        inputRef.current.selectionStart = pos;
+        inputRef.current.selectionEnd = pos;
+      }
+    }, 0);
+  };
 
   // Detect @mention trigger from input
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -309,6 +346,37 @@ export function MatchChat({ matchId, onClose }: Props) {
                 onKeyDown={handleKeyDown}
                 rows={1}
               />
+            </div>
+            <div className="emoji-picker-wrapper" ref={emojiRef}>
+              <button
+                type="button"
+                className="emoji-toggle"
+                onClick={() => setEmojiOpen(o => !o)}
+                aria-label="Insert emoji"
+              >
+                ☺
+              </button>
+              {emojiOpen && (
+                <div className="emoji-picker">
+                  {EMOJI_GROUPS.map(g => (
+                    <div key={g.label} className="emoji-group">
+                      <div className="emoji-group-label">{g.label}</div>
+                      <div className="emoji-grid">
+                        {g.emojis.map(e => (
+                          <button
+                            key={e}
+                            type="button"
+                            className="emoji-btn"
+                            onMouseDown={ev => { ev.preventDefault(); insertEmoji(e); }}
+                          >
+                            {e}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <button
               type="button"
