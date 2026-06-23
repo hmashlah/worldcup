@@ -4611,9 +4611,10 @@ footer {
   gap: 8px;
   padding: 12px;
   border-top: 1px solid var(--line);
+  align-items: flex-end;
 }
 .chat-input {
-  flex: 1;
+  width: 100%;
   border: 1px solid var(--line);
   border-radius: 20px;
   padding: 8px 14px;
