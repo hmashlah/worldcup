@@ -118,6 +118,7 @@ export function MatchCard(p: Props) {
   // show. Group-stage cards always have both teams resolved.
   const showDetails = team1IsResolved && team2IsResolved;
   const openMatch = useUI(s => s.openMatch);
+  const openTeam = useUI(s => s.openTeam);
 
   // Live score for this match, if any. FD's home/away may not match our
   // team1/team2 — flip the displayed scoreline if it doesn't.
@@ -177,7 +178,7 @@ export function MatchCard(p: Props) {
         <div className="mc-row mc-row-guest">
           <div className="mc-team mc-left">
             {team1IsResolved
-              ? <><Flag team={team1} /><span className="mc-name">{labelLeft}</span></>
+              ? <><Flag team={team1} /><span className="mc-name team-link" onClick={() => openTeam(team1)}>{labelLeft}</span></>
               : <span className="mc-placeholder">{labelLeft}</span>}
           </div>
           <div className="mc-scores">
@@ -201,7 +202,7 @@ export function MatchCard(p: Props) {
           </div>
           <div className="mc-team mc-right">
             {team2IsResolved
-              ? <><span className="mc-name">{labelRight}</span><Flag team={team2} /></>
+              ? <><span className="mc-name team-link" onClick={() => openTeam(team2)}>{labelRight}</span><Flag team={team2} /></>
               : <span className="mc-placeholder">{labelRight}</span>}
           </div>
         </div>
@@ -211,13 +212,13 @@ export function MatchCard(p: Props) {
         <div className="mc-row mc-row-guest">
           <div className="mc-team mc-left">
             {team1IsResolved
-              ? <><Flag team={team1} /><span className="mc-name">{labelLeft}</span></>
+              ? <><Flag team={team1} /><span className="mc-name team-link" onClick={() => openTeam(team1)}>{labelLeft}</span></>
               : <span className="mc-placeholder">{labelLeft}</span>}
           </div>
           <div className="mc-scores mc-scores-guest">vs</div>
           <div className="mc-team mc-right">
             {team2IsResolved
-              ? <><span className="mc-name">{labelRight}</span><Flag team={team2} /></>
+              ? <><span className="mc-name team-link" onClick={() => openTeam(team2)}>{labelRight}</span><Flag team={team2} /></>
               : <span className="mc-placeholder">{labelRight}</span>}
           </div>
         </div>

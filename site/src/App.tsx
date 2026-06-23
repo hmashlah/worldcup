@@ -10,6 +10,7 @@ import { AuthModal } from '@/components/AuthModal';
 import { PendingApproval } from '@/components/PendingApproval';
 import { AdminPendingUsers } from '@/components/AdminPendingUsers';
 import { MatchDetailPage } from '@/pages/MatchDetailPage';
+import { TeamMatchesModal } from '@/components/TeamMatchesModal';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useUI } from '@/lib/ui-store';
@@ -23,7 +24,7 @@ export default function App() {
 }
 
 function Shell() {
-  const { tab, authOpen, setAuthOpen, openMatchId } = useUI();
+  const { tab, authOpen, setAuthOpen, openMatchId, openTeamName, closeTeam } = useUI();
   const dataQ = useTournamentData();
   const { user, isAdmin, isApproved, approvalLoading } = useAuth();
 
@@ -63,6 +64,7 @@ function Shell() {
         <p>Made with <span className="heart">♡</span> for our 2026 summer</p>
       </footer>
       {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
+      {openTeamName && <TeamMatchesModal team={openTeamName} onClose={closeTeam} />}
     </>
   );
 }

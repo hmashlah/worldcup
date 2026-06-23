@@ -11,6 +11,7 @@ interface CardProps { group: Group; isThirdQualified: boolean; onExpand: () => v
 function GroupCardCompact({ group, isThirdQualified, onExpand }: CardProps) {
   const dataQ = useTournamentData();
   const resultsQ = useResults();
+  const openTeam = useUI(s => s.openTeam);
 
   const scores: ScoreMap = {};
   for (const [id, r] of Object.entries(resultsQ.data ?? {})) {
@@ -48,7 +49,7 @@ function GroupCardCompact({ group, isThirdQualified, onExpand }: CardProps) {
               : i === 2 ? 'third-tied' : '');
             return (
               <tr className={cls} key={t.team}>
-                <td className="team-col"><Flag team={t.team} /><span>{t.team}</span></td>
+                <td className="team-col"><Flag team={t.team} /><span className="team-link" onClick={() => openTeam(t.team)}>{t.team}</span></td>
                 <td>{t.P}</td><td>{t.W}</td><td>{t.D}</td><td>{t.L}</td>
                 <td>{t.GD > 0 ? `+${t.GD}` : t.GD}</td>
                 <td className="pts">{t.Pts}</td>
