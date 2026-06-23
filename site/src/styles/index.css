@@ -4564,7 +4564,7 @@ footer {
 .chat-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 160px);
+  height: calc(100dvh - 160px);
   max-width: 640px;
   margin: 0 auto;
   border: 1px solid var(--line);
@@ -4722,9 +4722,19 @@ footer {
     border-radius: var(--r-md);
   }
   .chat-container {
-    height: calc(100vh - 130px);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 100%;
+    max-height: none;
     border: 0;
     border-radius: 0;
+    z-index: 40;
+  }
+  .chat-messages-full {
+    padding-top: 56px; /* space for topbar */
   }
   .chat-input-row {
     padding: 8px;

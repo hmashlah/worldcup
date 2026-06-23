@@ -62,9 +62,11 @@ function Shell() {
           </>
         )}
       </main>
-      <footer>
-        <p>Made with <span className="heart">♡</span> for our 2026 summer</p>
-      </footer>
+      {tab !== 'chat' && (
+        <footer>
+          <p>Made with <span className="heart">♡</span> for our 2026 summer</p>
+        </footer>
+      )}
       {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
       {openTeamName && <TeamMatchesModal team={openTeamName} onClose={closeTeam} />}
     </>
