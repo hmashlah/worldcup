@@ -9,6 +9,7 @@ import { ChatView } from '@/components/ChatView';
 import { Topbar } from '@/components/Topbar';
 import { AuthModal } from '@/components/AuthModal';
 import { PendingApproval } from '@/components/PendingApproval';
+import { AdminPendingUsers } from '@/components/AdminPendingUsers';
 import { MatchDetailPage } from '@/pages/MatchDetailPage';
 import { TeamMatchesModal } from '@/components/TeamMatchesModal';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
@@ -26,7 +27,7 @@ export default function App() {
 function Shell() {
   const { tab, authOpen, setAuthOpen, openMatchId, openTeamName, closeTeam } = useUI();
   const dataQ = useTournamentData();
-  const { user, isApproved, approvalLoading } = useAuth();
+  const { user, isAdmin, isApproved, approvalLoading } = useAuth();
 
   // Signed-in but not yet approved by admin → show holding screen.
   // Anonymous visitors get the full read-only browse — they just see
@@ -55,6 +56,7 @@ function Shell() {
                     {tab === 'leaderboard' && user && <LeaderboardTab />}
                     {tab === 'picks' && user && <MyPicksTab />}
                     {tab === 'chat' && user && <ChatView />}
+                    {tab === 'admin' && isAdmin && <AdminTab />}
                   </>
             )}
           </>
@@ -123,6 +125,18 @@ function MyPicksTab() {
         <p>Your predictions vs. actual results. 3 pts exact · 1 pt right outcome · +1 correct advancer in knockouts.</p>
       </div>
       <MyPicksView />
+    </section>
+  );
+}
+
+function AdminTab() {
+  return (
+    <section className="tab-panel active">
+      <div className="section-intro">
+        <h2>Admin</h2>
+        <p>Approve or decline pending signups.</p>
+      </div>
+      <AdminPendingUsers />
     </section>
   );
 }

@@ -16,7 +16,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
 ];
 
 export function Topbar() {
-  const { user, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
   const { tab, setTab, setAuthOpen, theme, toggleTheme } = useUI();
   const dataQ = useTournamentData();
   const predsQ = useMyPredictions();
@@ -38,16 +38,17 @@ export function Topbar() {
   }, [user, dataQ.data, predsQ.data]);
 
   useEffect(() => {
+    if (tab === 'admin' && !isAdmin) setTab('today');
     if (tab === 'leaderboard' && !user) setTab('today');
     if (tab === 'picks' && !user) setTab('today');
     if (tab === 'chat' && !user) setTab('today');
-  }, [tab, user, setTab]);
+  }, [tab, isAdmin, user, setTab]);
 
   // Build the visible tab list: guests don't see prediction-related tabs (Leaderboard, My Picks, Chat).
   const baseTabs = user
     ? TABS
     : TABS.filter(t => t.key !== 'leaderboard' && t.key !== 'picks' && t.key !== 'chat');
-  const tabs = baseTabs;
+  const tabs = isAdmin ? [...baseTabs, { key: 'admin' as TabKey, label: 'Admin' }] : baseTabs;
 
   return (
     <header className="topbar">
