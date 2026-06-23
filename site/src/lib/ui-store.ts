@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type TabKey = 'today' | 'groups' | 'bracket' | 'leaderboard' | 'picks' | 'admin';
+export type TabKey = 'today' | 'groups' | 'bracket' | 'leaderboard' | 'picks' | 'chat' | 'admin';
 export type ThemeKey = 'minimal' | 'dark' | 'funky';
 
 const THEME_STORAGE_KEY = 'wc26-theme';
@@ -32,9 +32,6 @@ interface UIState {
   closeTeam: () => void;
   authOpen: boolean;
   setAuthOpen: (open: boolean) => void;
-  openChatMatchId: string | null;
-  openChat: (matchId: string) => void;
-  closeChat: () => void;
   theme: ThemeKey;
   toggleTheme: () => void;
   setTheme: (t: ThemeKey) => void;
@@ -54,9 +51,6 @@ export const useUI = create<UIState>(set => ({
   closeTeam: () => set({ openTeamName: null }),
   authOpen: false,
   setAuthOpen: open => set({ authOpen: open }),
-  openChatMatchId: null,
-  openChat: matchId => set({ openChatMatchId: matchId }),
-  closeChat: () => set({ openChatMatchId: null }),
   theme: readInitialTheme(),
   toggleTheme: () => set(s => {
     const order: ThemeKey[] = ['minimal', 'dark', 'funky'];

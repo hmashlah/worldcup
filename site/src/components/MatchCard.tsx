@@ -4,7 +4,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMyPredictions, useUpsertPrediction } from '@/hooks/usePredictions';
 import { useResults } from '@/hooks/useResults';
 import { useLiveMatches } from '@/hooks/useLiveMatches';
-import { useChatCounts } from '@/hooks/useChatCounts';
 import { useNow } from '@/hooks/useNow';
 import { isLocked, parseKickoff, fmtShortDate } from '@/lib/time';
 import { scorePrediction } from '@/lib/scoring';
@@ -52,7 +51,6 @@ export function MatchCard(p: Props) {
   const myPredsQ = useMyPredictions();
   const resultsQ = useResults();
   const liveQ = useLiveMatches();
-  const chatCountsQ = useChatCounts();
   const upsertPred = useUpsertPrediction();
 
   // In spectator mode, treat as if not logged in for prediction UI
@@ -107,7 +105,6 @@ export function MatchCard(p: Props) {
   const showDetails = team1IsResolved && team2IsResolved;
   const openMatch = useUI(s => s.openMatch);
   const openTeam = useUI(s => s.openTeam);
-  const openChat = useUI(s => s.openChat);
 
   // Live score for this match, if any. FD's home/away may not match our
   // team1/team2 — flip the displayed scoreline if it doesn't.
@@ -279,18 +276,6 @@ export function MatchCard(p: Props) {
         </span>
         {live && <span className="mc-live-pill">live</span>}
         {roundLabel && <span className="mc-meta-round">{roundLabel}</span>}
-        {user && (
-          <button
-            type="button"
-            className="mc-chat-btn"
-            onClick={() => openChat(matchId)}
-            aria-label="Match chat"
-          >
-            💬{(chatCountsQ.data?.[matchId] ?? 0) > 0 && (
-              <span className="mc-chat-count">{chatCountsQ.data![matchId]}</span>
-            )}
-          </button>
-        )}
         {showDetails && (
           <button
             type="button"

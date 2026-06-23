@@ -7,7 +7,7 @@ export function NotificationBell() {
   const notificationsQ = useNotifications();
   const { unreadFlash } = useNotificationRealtime();
   const markAllRead = useMarkAllRead();
-  const openChat = useUI(s => s.openChat);
+  const setTab = useUI(s => s.setTab);
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -33,8 +33,8 @@ export function NotificationBell() {
     }
   };
 
-  const handleNotificationClick = (matchId: string) => {
-    openChat(matchId);
+  const handleNotificationClick = () => {
+    setTab('chat');
     setOpen(false);
   };
 
@@ -72,7 +72,7 @@ export function NotificationBell() {
                 key={n.id}
                 type="button"
                 className={`notif-item ${n.read ? '' : 'notif-item-unread'}`}
-                onClick={() => handleNotificationClick(n.match_id)}
+                onClick={() => handleNotificationClick()}
               >
                 <span className="notif-item-text">{n.text}</span>
                 <span className="notif-item-time">{relativeTime(n.created_at)}</span>

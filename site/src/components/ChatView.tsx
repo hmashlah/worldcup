@@ -18,17 +18,11 @@ interface Message {
   created_at: string;
 }
 
-interface Props {
-  matchId: string;
-  onClose: () => void;
-}
-
 /** Render message text with @mentions highlighted. */
 function renderMessageText(text: string, profiles: Record<string, ProfileRow>) {
   const names = Object.values(profiles).map(p => p.display_name);
   if (names.length === 0) return <>{text}</>;
 
-  // Build regex that matches @name for any known name
   const escaped = names.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   const regex = new RegExp(`@(${escaped.join('|')})`, 'gi');
   const parts: Array<{ text: string; isMention: boolean }> = [];
@@ -53,7 +47,7 @@ function renderMessageText(text: string, profiles: Record<string, ProfileRow>) {
   );
 }
 
-export function MatchChat({ matchId, onClose }: Props) {
+export function ChatView() {
   const { user } = useAuth();
   const profilesQ = useProfiles();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -64,7 +58,6 @@ export function MatchChat({ matchId, onClose }: Props) {
   const [mentionIdx, setMentionIdx] = useState(0);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const emojiRef = useRef<HTMLDivElement>(null);
 
@@ -86,32 +79,31 @@ export function MatchChat({ matchId, onClose }: Props) {
     return otherUsers.filter(u => u.name.toLowerCase().startsWith(q)).slice(0, 5);
   }, [mentionQuery, otherUsers]);
 
-  // Fetch existing messages
+  // Fetch existing messages (global — no match_id filter)
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const { data } = await supabase
         .from('wc26_messages')
         .select('id, user_id, text, created_at')
-        .eq('match_id', matchId)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
+        .limit(200);
       if (!cancelled) {
         setMessages((data as Message[]) ?? []);
         setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [matchId]);
+  }, []);
 
-  // Subscribe to realtime inserts
+  // Subscribe to realtime inserts (all messages)
   useEffect(() => {
     const channel = supabase
-      .channel(`messages:${matchId}`)
+      .channel('messages:global')
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'wc26_messages',
-        filter: `match_id=eq.${matchId}`,
       }, (payload) => {
         const newMsg = payload.new as Message;
         setMessages(prev => [...prev, newMsg]);
@@ -119,22 +111,12 @@ export function MatchChat({ matchId, onClose }: Props) {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [matchId]);
+  }, []);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  // Close on Escape key (only if not in mention autocomplete)
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && mentionQuery === null && !emojiOpen) onClose();
-      if (e.key === 'Escape' && emojiOpen) setEmojiOpen(false);
-    };
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [onClose, mentionQuery, emojiOpen]);
 
   // Close emoji picker on outside click
   useEffect(() => {
@@ -168,13 +150,11 @@ export function MatchChat({ matchId, onClose }: Props) {
     const val = e.target.value;
     setInputText(val);
 
-    // Find if cursor is after a @ that starts a mention
     const cursorPos = e.target.selectionStart ?? val.length;
     const textBeforeCursor = val.slice(0, cursorPos);
     const atIdx = textBeforeCursor.lastIndexOf('@');
     if (atIdx >= 0 && (atIdx === 0 || textBeforeCursor[atIdx - 1] === ' ')) {
       const query = textBeforeCursor.slice(atIdx + 1);
-      // Only trigger if no space that would indicate end of mention attempt
       if (!query.includes('\n')) {
         setMentionQuery(query);
         setMentionIdx(0);
@@ -193,10 +173,9 @@ export function MatchChat({ matchId, onClose }: Props) {
     const newText = `${before}@${name} ${after}`;
     setInputText(newText);
     setMentionQuery(null);
-    // Focus back on input
     setTimeout(() => {
       if (inputRef.current) {
-        const pos = atIdx + name.length + 2; // @name + space
+        const pos = atIdx + name.length + 2;
         inputRef.current.focus();
         inputRef.current.selectionStart = pos;
         inputRef.current.selectionEnd = pos;
@@ -209,33 +188,46 @@ export function MatchChat({ matchId, onClose }: Props) {
     const text = inputText.trim();
     setSending(true);
 
-    // Insert message
-    await supabase.from('wc26_messages').insert({
+    // Optimistic: add message locally immediately
+    const optimisticMsg: Message = {
+      id: `temp-${Date.now()}`,
       user_id: user.id,
-      match_id: matchId,
       text,
-    });
+      created_at: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
+    setInputText('');
+
+    // Insert into DB
+    const { data } = await supabase.from('wc26_messages').insert({
+      user_id: user.id,
+      match_id: 'global',
+      text,
+    }).select('id, user_id, text, created_at').single();
+
+    // Replace optimistic message with real one (if realtime hasn't already)
+    if (data) {
+      setMessages(prev => prev.map(m => m.id === optimisticMsg.id ? (data as Message) : m));
+    }
 
     // Extract mentions and create notifications
-    const mentionedIds = extractMentions(text, profiles);
+    const mentionedIds = extractMentions(text, profiles, user.id);
     if (mentionedIds.length > 0) {
       const senderName = profiles[user.id]?.display_name ?? 'Someone';
       const notifications = mentionedIds.map(uid => ({
         user_id: uid,
         from_user_id: user.id,
-        match_id: matchId,
+        match_id: 'global',
         type: 'mention' as const,
-        text: `${senderName} mentioned you in match chat`,
+        text: `${senderName} mentioned you in chat`,
       }));
       await supabase.from('wc26_notifications').insert(notifications);
     }
 
-    setInputText('');
     setSending(false);
-  }, [user, inputText, matchId, sending, profiles]);
+  }, [user, inputText, sending, profiles]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Handle mention autocomplete navigation
     if (mentionQuery !== null && mentionSuggestions.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -266,14 +258,9 @@ export function MatchChat({ matchId, onClose }: Props) {
   };
 
   return (
-    <div className="gc-modal-overlay" onClick={onClose}>
-      <div className="gc-modal chat-modal" onClick={e => e.stopPropagation()}>
-        <div className="gc-modal-header">
-          <h3>Match Chat</h3>
-          <button type="button" className="gc-modal-close" onClick={onClose}>×</button>
-        </div>
-
-        <div className="chat-messages" ref={messagesContainerRef}>
+    <section className="tab-panel active">
+      <div className="chat-container">
+        <div className="chat-messages chat-messages-full">
           {loading && <p className="chat-loading">Loading messages…</p>}
           {!loading && messages.length === 0 && (
             <p className="chat-empty">No messages yet — be the first!</p>
@@ -362,6 +349,6 @@ export function MatchChat({ matchId, onClose }: Props) {
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

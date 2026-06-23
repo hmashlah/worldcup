@@ -13,6 +13,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
   { key: 'bracket',     label: 'Bracket' },
   { key: 'leaderboard', label: 'Leaderboard' },
   { key: 'picks',       label: 'My Picks' },
+  { key: 'chat',        label: 'Chat' },
 ];
 
 export function Topbar() {
@@ -48,12 +49,13 @@ export function Topbar() {
     if (tab === 'admin' && !isAdmin) setTab('today');
     if (tab === 'leaderboard' && !user) setTab('today');
     if (tab === 'picks' && !user) setTab('today');
+    if (tab === 'chat' && !user) setTab('today');
   }, [tab, isAdmin, user, setTab]);
 
-  // Build the visible tab list: guests don't see prediction-related tabs (Leaderboard, My Picks).
+  // Build the visible tab list: guests don't see prediction-related tabs (Leaderboard, My Picks, Chat).
   const baseTabs = user
     ? TABS
-    : TABS.filter(t => t.key !== 'leaderboard' && t.key !== 'picks');
+    : TABS.filter(t => t.key !== 'leaderboard' && t.key !== 'picks' && t.key !== 'chat');
   const tabs = isAdmin ? [...baseTabs, { key: 'admin' as TabKey, label: 'Admin' }] : baseTabs;
 
   return (

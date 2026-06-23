@@ -5,13 +5,13 @@ import { LeaderboardCard } from '@/components/LeaderboardCard';
 import { PointsTrendChart } from '@/components/PointsTrendChart';
 import { SeasonAwards } from '@/components/SeasonAwards';
 import { MyPicksView } from '@/components/MyPicksView';
+import { ChatView } from '@/components/ChatView';
 import { Topbar } from '@/components/Topbar';
 import { AuthModal } from '@/components/AuthModal';
 import { PendingApproval } from '@/components/PendingApproval';
 import { AdminPendingUsers } from '@/components/AdminPendingUsers';
 import { MatchDetailPage } from '@/pages/MatchDetailPage';
 import { TeamMatchesModal } from '@/components/TeamMatchesModal';
-import { MatchChat } from '@/components/MatchChat';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useUI } from '@/lib/ui-store';
@@ -25,7 +25,7 @@ export default function App() {
 }
 
 function Shell() {
-  const { tab, authOpen, setAuthOpen, openMatchId, openTeamName, closeTeam, openChatMatchId, closeChat } = useUI();
+  const { tab, authOpen, setAuthOpen, openMatchId, openTeamName, closeTeam } = useUI();
   const dataQ = useTournamentData();
   const { user, isAdmin, isApproved, approvalLoading } = useAuth();
 
@@ -55,6 +55,7 @@ function Shell() {
                     {tab === 'bracket' && <BracketTab />}
                     {tab === 'leaderboard' && user && <LeaderboardTab />}
                     {tab === 'picks' && user && <MyPicksTab />}
+                    {tab === 'chat' && user && <ChatView />}
                     {tab === 'admin' && isAdmin && <AdminTab />}
                   </>
             )}
@@ -66,7 +67,6 @@ function Shell() {
       </footer>
       {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
       {openTeamName && <TeamMatchesModal team={openTeamName} onClose={closeTeam} />}
-      {openChatMatchId && <MatchChat matchId={openChatMatchId} onClose={closeChat} />}
     </>
   );
 }

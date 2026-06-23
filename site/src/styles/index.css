@@ -4561,6 +4561,25 @@ footer {
   display: flex;
   flex-direction: column;
 }
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 160px);
+  max-width: 640px;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--surface);
+}
+.chat-messages-full {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .chat-messages {
   flex: 1;
   overflow-y: auto;
