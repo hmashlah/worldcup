@@ -3,11 +3,29 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import checker from 'vite-plugin-checker';
 import path from 'path';
+import fs from 'fs';
+
+/** Vite plugin: injects a unique cache version into sw.js at build time.
+ *  This replaces the old pre-push hook approach that caused git conflicts. */
+function swCacheVersion() {
+  return {
+    name: 'sw-cache-version',
+    writeBundle(options: { dir?: string }) {
+      const outDir = options.dir || path.resolve(__dirname, 'dist');
+      const swPath = path.join(outDir, 'sw.js');
+      if (!fs.existsSync(swPath)) return;
+      const version = `wc26-${Date.now()}`;
+      const content = fs.readFileSync(swPath, 'utf-8');
+      fs.writeFileSync(swPath, content.replace('__SW_CACHE_VERSION__', version));
+    },
+  };
+}
 
 export default defineConfig({
   plugins: [
     react(),
     checker({ typescript: true }),
+    swCacheVersion(),
   ],
   base: '/',
   resolve: {

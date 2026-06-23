@@ -1,10 +1,9 @@
 // Service worker for WC2026 Prediction League PWA.
 // Uses network-first for everything except static assets (JS/CSS/images)
-// which use stale-while-revalidate. The cache name includes the SW file's
-// own content hash (via Cloudflare's edge caching), so any code deploy
-// that changes this file triggers a new SW install → old caches cleared.
+// which use stale-while-revalidate. The cache name is injected at build
+// time so every deploy busts the old cache automatically.
 
-const CACHE_NAME = 'wc26-20260623-4621';
+const CACHE_NAME = '__SW_CACHE_VERSION__';
 const SHELL_URLS = ['/', '/index.html'];
 
 self.addEventListener('install', e => {
