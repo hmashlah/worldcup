@@ -15,6 +15,7 @@ interface Message {
   id: string;
   user_id: string;
   text: string;
+  image_url: string | null;
   created_at: string;
 }
 
@@ -54,12 +55,16 @@ export function ChatView() {
   const [loading, setLoading] = useState(true);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionIdx, setMentionIdx] = useState(0);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const emojiRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   const profiles = profilesQ.data ?? {};
 
@@ -85,7 +90,7 @@ export function ChatView() {
     (async () => {
       const { data } = await supabase
         .from('wc26_messages')
-        .select('id, user_id, text, created_at')
+        .select('id, user_id, text, image_url, created_at')
         .order('created_at', { ascending: true })
         .limit(200);
       if (!cancelled) {
@@ -195,6 +200,103 @@ export function ChatView() {
     }, 0);
   };
 
+  /** Compress an image file to max 800px wide, JPEG quality 0.7 */
+  const compressImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxW = 800;
+        const scale = img.width > maxW ? maxW / img.width : 1;
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.7);
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    e.target.value = ''; // reset so same file can be re-selected
+
+    setUploading(true);
+    try {
+      const compressed = await compressImage(file);
+      const filename = `${user.id}/${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from('chat-images')
+        .upload(filename, compressed, { contentType: 'image/jpeg' });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('chat-images')
+        .getPublicUrl(filename);
+
+      const imageUrl = urlData.publicUrl;
+
+      // Optimistic message with image
+      const optimisticMsg: Message = {
+        id: `temp-${Date.now()}`,
+        user_id: user.id,
+        text: '',
+        image_url: imageUrl,
+        created_at: new Date().toISOString(),
+      };
+      setMessages(prev => [...prev, optimisticMsg]);
+
+      // Insert into DB
+      const { data } = await supabase.from('wc26_messages').insert({
+        user_id: user.id,
+        match_id: 'global',
+        text: '',
+        image_url: imageUrl,
+      }).select('id, user_id, text, image_url, created_at').single();
+
+      if (data) {
+        setMessages(prev => prev.map(m => m.id === optimisticMsg.id ? (data as Message) : m));
+      }
+    } catch (err) {
+      console.error('Image upload failed:', err);
+    }
+    setUploading(false);
+  };
+
+  const EDIT_WINDOW_MS = 30 * 60_000; // 30 minutes
+
+  const canEditMsg = (msg: Message) => {
+    if (msg.user_id !== user?.id) return false;
+    if (msg.id.startsWith('temp-')) return false;
+    return Date.now() - new Date(msg.created_at).getTime() < EDIT_WINDOW_MS;
+  };
+
+  const startEdit = (msg: Message) => {
+    setEditingId(msg.id);
+    setEditText(msg.text);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditText('');
+  };
+
+  const saveEdit = async (msgId: string) => {
+    const trimmed = editText.trim();
+    if (!trimmed) return;
+    await supabase.from('wc26_messages').update({ text: trimmed }).eq('id', msgId);
+    setMessages(prev => prev.map(m => m.id === msgId ? { ...m, text: trimmed } : m));
+    setEditingId(null);
+    setEditText('');
+  };
+
+  const deleteMsg = async (msgId: string) => {
+    await supabase.from('wc26_messages').delete().eq('id', msgId);
+    setMessages(prev => prev.filter(m => m.id !== msgId));
+  };
+
   const handleSend = useCallback(async () => {
     if (!user || !inputText.trim() || sending) return;
     const text = inputText.trim();
@@ -205,6 +307,7 @@ export function ChatView() {
       id: `temp-${Date.now()}`,
       user_id: user.id,
       text,
+      image_url: null,
       created_at: new Date().toISOString(),
     };
     setMessages(prev => [...prev, optimisticMsg]);
@@ -215,7 +318,7 @@ export function ChatView() {
       user_id: user.id,
       match_id: 'global',
       text,
-    }).select('id, user_id, text, created_at').single();
+    }).select('id, user_id, text, image_url, created_at').single();
 
     // Replace optimistic message with real one (if realtime hasn't already)
     if (data) {
@@ -280,10 +383,45 @@ export function ChatView() {
           {messages.map(msg => {
             const isMine = msg.user_id === user?.id;
             const name = profiles[msg.user_id]?.display_name ?? 'Unknown';
+            const editable = canEditMsg(msg);
             return (
               <div key={msg.id} className={`chat-msg ${isMine ? 'chat-msg-mine' : 'chat-msg-other'}`}>
                 {!isMine && <div className="chat-msg-name">{name}</div>}
-                <div className="chat-msg-text">{renderMessageText(msg.text, profiles)}</div>
+                {msg.image_url && (
+                  <img
+                    src={msg.image_url}
+                    alt="shared image"
+                    className="chat-msg-image"
+                    loading="lazy"
+                    onClick={() => window.open(msg.image_url!, '_blank')}
+                  />
+                )}
+                {editingId === msg.id ? (
+                  <div className="chat-edit-row">
+                    <input
+                      className="chat-edit-input"
+                      value={editText}
+                      onChange={e => setEditText(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') saveEdit(msg.id);
+                        if (e.key === 'Escape') cancelEdit();
+                      }}
+                      autoFocus
+                    />
+                    <button type="button" className="chat-edit-save" onClick={() => saveEdit(msg.id)}>✓</button>
+                    <button type="button" className="chat-edit-cancel" onClick={cancelEdit}>✕</button>
+                  </div>
+                ) : (
+                  <>
+                    {msg.text && <div className="chat-msg-text">{renderMessageText(msg.text, profiles)}</div>}
+                    {isMine && editable && (
+                      <div className="chat-msg-actions">
+                        {msg.text && <button type="button" onClick={() => startEdit(msg)}>edit</button>}
+                        <button type="button" onClick={() => deleteMsg(msg.id)}>delete</button>
+                      </div>
+                    )}
+                  </>
+                )}
                 <div className="chat-msg-time">{relativeTime(msg.created_at)}</div>
               </div>
             );
@@ -318,6 +456,22 @@ export function ChatView() {
                 rows={1}
               />
             </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="chat-file-input"
+              onChange={handleImageSelect}
+            />
+            <button
+              type="button"
+              className="chat-image-btn"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              aria-label="Send image"
+            >
+              {uploading ? '…' : '📷'}
+            </button>
             <div className="emoji-picker-wrapper" ref={emojiRef}>
               <button
                 type="button"
@@ -353,7 +507,7 @@ export function ChatView() {
               type="button"
               className="chat-send"
               onClick={handleSend}
-              disabled={sending || !inputText.trim()}
+              disabled={sending || !inputText.trim() || uploading}
               aria-label="Send message"
             >
               ↑
