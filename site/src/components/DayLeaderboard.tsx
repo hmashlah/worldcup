@@ -1,16 +1,8 @@
-import { useDayLeaderboard, type DayLeaderboardEntry } from '@/hooks/useDayLeaderboard';
+import { useDayLeaderboard } from '@/hooks/useDayLeaderboard';
 import { useAuth } from '@/contexts/AuthContext';
+import { sameRank } from '@/lib/utils';
 
 const ROSETTES = ['🥇', '🥈', '🥉'];
-
-function sameRank(a: DayLeaderboardEntry, b: DayLeaderboardEntry): boolean {
-  return (
-    a.total === b.total &&
-    a.exact === b.exact &&
-    a.outcome === b.outcome &&
-    a.advancer === b.advancer
-  );
-}
 
 interface Props {
   matchIds: string[];

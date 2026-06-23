@@ -1,20 +1,10 @@
 import { useState } from 'react';
-import { useLeaderboard, type LeaderboardEntry } from '@/hooks/useLeaderboard';
+import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { useAuth } from '@/contexts/AuthContext';
 import { PlayerComparison } from './PlayerComparison';
+import { sameRank } from '@/lib/utils';
 
 const ROSETTES = ['🥇', '🥈', '🥉'];
-
-/** Two entries share a rank when every scoring column matches.
- *  Display-name only stabilizes the within-rank order. */
-function sameRank(a: LeaderboardEntry, b: LeaderboardEntry): boolean {
-  return (
-    a.total === b.total &&
-    a.exact === b.exact &&
-    a.outcome === b.outcome &&
-    a.advancer === b.advancer
-  );
-}
 
 export function LeaderboardCard() {
   const { user, isApproved, isAdmin } = useAuth();

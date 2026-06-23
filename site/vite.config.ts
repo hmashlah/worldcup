@@ -56,9 +56,10 @@ export default defineConfig({
       include: ['src/lib/**/*.ts'],
       exclude: [
         'src/lib/**/*.test.ts',
-        'src/lib/supabase.ts',   // client init — nothing to test
-        'src/lib/ui-store.ts',   // Zustand store — tested via integration
-        'src/lib/types.ts',      // type-only file
+        'src/lib/supabase.ts',      // client init — nothing to test
+        'src/lib/ui-store.ts',      // Zustand store — tested via integration
+        'src/lib/types.ts',         // type-only file
+        'src/lib/match-detail.ts',  // type-only file
       ],
       reporter: ['text', 'text-summary'],
       thresholds: {

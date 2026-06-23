@@ -4,9 +4,8 @@ import { useResults } from '@/hooks/useResults';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { scorePrediction } from '@/lib/scoring';
-import { isKnockoutRound } from '@/lib/tournament';
+import { isMatchKO } from '@/lib/utils';
 import { allMatches } from '@/lib/days';
-import type { TournamentData } from '@/lib/types';
 
 export interface TrendPoint {
   matchId: string;
@@ -21,11 +20,6 @@ export interface PlayerTrend {
   display_name: string;
   points: TrendPoint[];
   finalTotal: number;
-}
-
-function isMatchKO(data: TournamentData, matchId: string): boolean {
-  const m = data.ko_matches.find(k => k.id === matchId);
-  return !!m && isKnockoutRound(m.round);
 }
 
 /**

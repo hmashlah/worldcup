@@ -8,22 +8,8 @@ import { useChatCounts } from '@/hooks/useChatCounts';
 import { useNow } from '@/hooks/useNow';
 import { isLocked, parseKickoff, fmtShortDate } from '@/lib/time';
 import { scorePrediction } from '@/lib/scoring';
+import { normalizeNation } from '@/lib/utils';
 import { useUI } from '@/lib/ui-store';
-
-/** Reduce country-name pairs that differ between data.json and FD to a
- *  single canonical lowercased string, so the live-score orientation
- *  check works without a full alias map round-trip. */
-function normalizeNation(name: string): string {
-  const ALIASES: Record<string, string> = {
-    'czechia': 'czech republic',
-    'bosnia-herzegovina': 'bosnia & herzegovina',
-    'cape verde islands': 'cape verde',
-    'congo dr': 'dr congo',
-    'united states': 'usa',
-  };
-  const lower = name.trim().toLowerCase();
-  return ALIASES[lower] ?? lower;
-}
 
 interface Props {
   matchId: string;

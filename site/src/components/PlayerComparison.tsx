@@ -5,7 +5,7 @@ import { useResults } from '@/hooks/useResults';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useProfiles } from '@/hooks/useProfiles';
 import { scorePrediction } from '@/lib/scoring';
-import { isKnockoutRound } from '@/lib/tournament';
+import { isMatchKO } from '@/lib/utils';
 import type { TournamentData, GroupMatch, KoMatch } from '@/lib/types';
 
 interface Props {
@@ -21,11 +21,6 @@ interface CompareRow {
   myPts: number;
   theirPred: string;
   theirPts: number;
-}
-
-function isMatchKO(data: TournamentData, matchId: string): boolean {
-  const m = data.ko_matches.find(k => k.id === matchId);
-  return !!m && isKnockoutRound(m.round);
 }
 
 /** Build a matchId → {team1, team2} lookup from tournament data. */

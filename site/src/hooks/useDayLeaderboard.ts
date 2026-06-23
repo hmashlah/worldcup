@@ -5,8 +5,7 @@ import { useLiveMatches } from '@/hooks/useLiveMatches';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { scorePrediction } from '@/lib/scoring';
-import { isKnockoutRound } from '@/lib/tournament';
-import type { TournamentData } from '@/lib/types';
+import { isMatchKO } from '@/lib/utils';
 
 export interface DayLeaderboardEntry {
   user_id: string;
@@ -16,11 +15,6 @@ export interface DayLeaderboardEntry {
   outcome: number;
   advancer: number;
   predictions: number;
-}
-
-function isMatchKO(data: TournamentData, matchId: string): boolean {
-  const m = data.ko_matches.find(k => k.id === matchId);
-  return !!m && isKnockoutRound(m.round);
 }
 
 /**

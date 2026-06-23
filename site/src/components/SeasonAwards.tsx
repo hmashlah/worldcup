@@ -4,26 +4,14 @@ import { useResults } from '@/hooks/useResults';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { scorePrediction } from '@/lib/scoring';
-import { isKnockoutRound } from '@/lib/tournament';
 import { allMatches } from '@/lib/days';
-import type { TournamentData } from '@/lib/types';
+import { isMatchKO, getOutcome } from '@/lib/utils';
 
 interface Award {
   emoji: string;
   name: string;
   winner: string;
   stat: string;
-}
-
-function isMatchKO(data: TournamentData, matchId: string): boolean {
-  const m = data.ko_matches.find(k => k.id === matchId);
-  return !!m && isKnockoutRound(m.round);
-}
-
-function getOutcome(team1Score: number, team2Score: number): 't1' | 'draw' | 't2' {
-  if (team1Score > team2Score) return 't1';
-  if (team1Score < team2Score) return 't2';
-  return 'draw';
 }
 
 export function SeasonAwards() {
