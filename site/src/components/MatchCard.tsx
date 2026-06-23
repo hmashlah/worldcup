@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMyPredictions, useUpsertPrediction } from '@/hooks/usePredictions';
 import { useResults } from '@/hooks/useResults';
 import { useLiveMatches } from '@/hooks/useLiveMatches';
+import { useChatCounts } from '@/hooks/useChatCounts';
 import { useNow } from '@/hooks/useNow';
 import { isLocked, parseKickoff, fmtShortDate } from '@/lib/time';
 import { scorePrediction } from '@/lib/scoring';
@@ -65,6 +66,7 @@ export function MatchCard(p: Props) {
   const myPredsQ = useMyPredictions();
   const resultsQ = useResults();
   const liveQ = useLiveMatches();
+  const chatCountsQ = useChatCounts();
   const upsertPred = useUpsertPrediction();
 
   // In spectator mode, treat as if not logged in for prediction UI
@@ -298,7 +300,9 @@ export function MatchCard(p: Props) {
             onClick={() => openChat(matchId)}
             aria-label="Match chat"
           >
-            💬
+            💬{(chatCountsQ.data?.[matchId] ?? 0) > 0 && (
+              <span className="mc-chat-count">{chatCountsQ.data![matchId]}</span>
+            )}
           </button>
         )}
         {showDetails && (

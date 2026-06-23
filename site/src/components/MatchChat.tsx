@@ -36,16 +36,15 @@ function relativeTime(iso: string): string {
 
 /** Extract @mentions from text. Returns user_ids of mentioned users. */
 function extractMentions(text: string, profiles: Record<string, ProfileRow>): string[] {
-  const mentionRegex = /@([\w\s]+?)(?=\s@|\s*$|[.,!?;])/g;
   const mentioned: string[] = [];
-  let match: RegExpExecArray | null;
-  while ((match = mentionRegex.exec(text)) !== null) {
-    const name = match[1].trim().toLowerCase();
-    for (const [uid, p] of Object.entries(profiles)) {
-      if (p.display_name.toLowerCase() === name) {
-        mentioned.push(uid);
-        break;
-      }
+  const names = Object.entries(profiles);
+  // Sort by name length descending so "Aria Rose" matches before "Aria"
+  names.sort((a, b) => b[1].display_name.length - a[1].display_name.length);
+  const lowerText = text.toLowerCase();
+  for (const [uid, p] of names) {
+    const pattern = `@${p.display_name.toLowerCase()}`;
+    if (lowerText.includes(pattern)) {
+      mentioned.push(uid);
     }
   }
   return [...new Set(mentioned)];
