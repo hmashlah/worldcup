@@ -11,6 +11,7 @@ import { PendingApproval } from '@/components/PendingApproval';
 import { AdminPendingUsers } from '@/components/AdminPendingUsers';
 import { MatchDetailPage } from '@/pages/MatchDetailPage';
 import { TeamMatchesModal } from '@/components/TeamMatchesModal';
+import { MatchChat } from '@/components/MatchChat';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useUI } from '@/lib/ui-store';
@@ -24,7 +25,7 @@ export default function App() {
 }
 
 function Shell() {
-  const { tab, authOpen, setAuthOpen, openMatchId, openTeamName, closeTeam } = useUI();
+  const { tab, authOpen, setAuthOpen, openMatchId, openTeamName, closeTeam, openChatMatchId, closeChat } = useUI();
   const dataQ = useTournamentData();
   const { user, isAdmin, isApproved, approvalLoading } = useAuth();
 
@@ -65,6 +66,7 @@ function Shell() {
       </footer>
       {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
       {openTeamName && <TeamMatchesModal team={openTeamName} onClose={closeTeam} />}
+      {openChatMatchId && <MatchChat matchId={openChatMatchId} onClose={closeChat} />}
     </>
   );
 }

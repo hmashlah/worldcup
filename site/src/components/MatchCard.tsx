@@ -119,6 +119,7 @@ export function MatchCard(p: Props) {
   const showDetails = team1IsResolved && team2IsResolved;
   const openMatch = useUI(s => s.openMatch);
   const openTeam = useUI(s => s.openTeam);
+  const openChat = useUI(s => s.openChat);
 
   // Live score for this match, if any. FD's home/away may not match our
   // team1/team2 — flip the displayed scoreline if it doesn't.
@@ -290,6 +291,16 @@ export function MatchCard(p: Props) {
         </span>
         {live && <span className="mc-live-pill">live</span>}
         {roundLabel && <span className="mc-meta-round">{roundLabel}</span>}
+        {user && (
+          <button
+            type="button"
+            className="mc-chat-btn"
+            onClick={() => openChat(matchId)}
+            aria-label="Match chat"
+          >
+            💬
+          </button>
+        )}
         {showDetails && (
           <button
             type="button"

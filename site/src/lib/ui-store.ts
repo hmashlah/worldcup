@@ -32,6 +32,9 @@ interface UIState {
   closeTeam: () => void;
   authOpen: boolean;
   setAuthOpen: (open: boolean) => void;
+  openChatMatchId: string | null;
+  openChat: (matchId: string) => void;
+  closeChat: () => void;
   theme: ThemeKey;
   toggleTheme: () => void;
   setTheme: (t: ThemeKey) => void;
@@ -51,6 +54,9 @@ export const useUI = create<UIState>(set => ({
   closeTeam: () => set({ openTeamName: null }),
   authOpen: false,
   setAuthOpen: open => set({ authOpen: open }),
+  openChatMatchId: null,
+  openChat: matchId => set({ openChatMatchId: matchId }),
+  closeChat: () => set({ openChatMatchId: null }),
   theme: readInitialTheme(),
   toggleTheme: () => set(s => {
     const order: ThemeKey[] = ['minimal', 'dark', 'funky'];
