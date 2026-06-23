@@ -4,7 +4,7 @@
 // own content hash (via Cloudflare's edge caching), so any code deploy
 // that changes this file triggers a new SW install → old caches cleared.
 
-const CACHE_NAME = 'wc26-20260623-6767';
+const CACHE_NAME = 'wc26-20260623-6821';
 const SHELL_URLS = ['/', '/index.html'];
 
 self.addEventListener('install', e => {
