@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useMyPredictions } from '@/hooks/usePredictions';
-import { useProfiles } from '@/hooks/useProfiles';
 import { matchesByDay, defaultDay, countUnsubmitted } from '@/lib/days';
 import { useUI, type TabKey } from '@/lib/ui-store';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -12,16 +11,15 @@ const TABS: Array<{ key: TabKey; label: string }> = [
   { key: 'groups',      label: 'Groups' },
   { key: 'bracket',     label: 'Bracket' },
   { key: 'leaderboard', label: 'Leaderboard' },
-  { key: 'picks',       label: 'My Picks' },
   { key: 'chat',        label: 'Chat' },
+  { key: 'picks',       label: 'My Picks' },
 ];
 
 export function Topbar() {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { tab, setTab, setAuthOpen, theme, toggleTheme } = useUI();
   const dataQ = useTournamentData();
   const predsQ = useMyPredictions();
-  const profilesQ = useProfiles();
   const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = async () => {
@@ -39,24 +37,17 @@ export function Topbar() {
     return countUnsubmitted(day.matches, predsQ.data);
   }, [user, dataQ.data, predsQ.data]);
 
-  // Count of users awaiting admin approval (admin-only signal).
-  const pendingApprovals = useMemo(() => {
-    if (!isAdmin || !profilesQ.data) return 0;
-    return Object.values(profilesQ.data).filter(p => !p.approved).length;
-  }, [isAdmin, profilesQ.data]);
-
   useEffect(() => {
-    if (tab === 'admin' && !isAdmin) setTab('today');
     if (tab === 'leaderboard' && !user) setTab('today');
     if (tab === 'picks' && !user) setTab('today');
     if (tab === 'chat' && !user) setTab('today');
-  }, [tab, isAdmin, user, setTab]);
+  }, [tab, user, setTab]);
 
   // Build the visible tab list: guests don't see prediction-related tabs (Leaderboard, My Picks, Chat).
   const baseTabs = user
     ? TABS
     : TABS.filter(t => t.key !== 'leaderboard' && t.key !== 'picks' && t.key !== 'chat');
-  const tabs = isAdmin ? [...baseTabs, { key: 'admin' as TabKey, label: 'Admin' }] : baseTabs;
+  const tabs = baseTabs;
 
   return (
     <header className="topbar">
@@ -73,11 +64,6 @@ export function Topbar() {
             onClick={() => setTab(t.key)}
           >
             {t.label}
-            {t.key === 'admin' && pendingApprovals > 0 && (
-              <span className="tab-badge" title={`${pendingApprovals} pending approval${pendingApprovals === 1 ? '' : 's'}`}>
-                {pendingApprovals}
-              </span>
-            )}
           </button>
         ))}
       </nav>

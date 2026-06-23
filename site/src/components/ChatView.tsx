@@ -106,7 +106,19 @@ export function ChatView() {
         table: 'wc26_messages',
       }, (payload) => {
         const newMsg = payload.new as Message;
-        setMessages(prev => [...prev, newMsg]);
+        setMessages(prev => {
+          // Deduplicate: if this message already exists (from optimistic send), replace temp
+          const hasTemp = prev.some(m => m.id.startsWith('temp-') && m.user_id === newMsg.user_id && m.text === newMsg.text);
+          if (hasTemp) {
+            return prev.map(m =>
+              m.id.startsWith('temp-') && m.user_id === newMsg.user_id && m.text === newMsg.text
+                ? newMsg : m
+            );
+          }
+          // Also skip if exact ID already present
+          if (prev.some(m => m.id === newMsg.id)) return prev;
+          return [...prev, newMsg];
+        });
       })
       .subscribe();
 

@@ -4631,18 +4631,20 @@ footer {
   padding: 12px;
   border-top: 1px solid var(--line);
   align-items: flex-end;
+  min-width: 0;
 }
 .chat-input {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 20px;
   padding: 8px 14px;
-  font-size: 14px;
+  font-size: 16px;
   outline: none;
   font-family: var(--sans);
   resize: none;
   background: var(--surface);
   color: var(--ink);
+  max-height: 100px;
 }
 .chat-input:focus {
   border-color: var(--ink);
@@ -4718,6 +4720,19 @@ footer {
     max-height: 90vh;
     max-width: 100%;
     border-radius: var(--r-md);
+  }
+  .chat-container {
+    height: calc(100vh - 130px);
+    border: 0;
+    border-radius: 0;
+  }
+  .chat-input-row {
+    padding: 8px;
+    gap: 6px;
+  }
+  .chat-input {
+    font-size: 16px; /* prevents iOS zoom */
+    padding: 8px 12px;
   }
 }
 
