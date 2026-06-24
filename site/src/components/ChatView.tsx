@@ -252,14 +252,14 @@ export function ChatView() {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
-        const maxW = 800;
+        const maxW = 480;
         const scale = img.width > maxW ? maxW / img.width : 1;
         const canvas = document.createElement('canvas');
         canvas.width = img.width * scale;
         canvas.height = img.height * scale;
         const ctx = canvas.getContext('2d')!;
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.7);
+        canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.6);
       };
       img.src = URL.createObjectURL(file);
     });

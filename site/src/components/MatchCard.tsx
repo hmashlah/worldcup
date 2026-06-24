@@ -9,6 +9,7 @@ import { isLocked, parseKickoff, fmtShortDate } from '@/lib/time';
 import { scorePrediction } from '@/lib/scoring';
 import { normalizeNation } from '@/lib/utils';
 import { useUI } from '@/lib/ui-store';
+import { PicksRevealModal } from '@/components/PicksRevealModal';
 
 interface Props {
   matchId: string;
@@ -67,6 +68,7 @@ export function MatchCard(p: Props) {
   const [a, setA] = useState('');
   const [b, setB] = useState('');
   const [adv, setAdv] = useState('');
+  const [picksOpen, setPicksOpen] = useState(false);
 
   useEffect(() => {
     setA(myPred ? String(myPred.team1_score) : '');
@@ -276,6 +278,15 @@ export function MatchCard(p: Props) {
         </span>
         {live && <span className="mc-live-pill">live</span>}
         {roundLabel && <span className="mc-meta-round">{roundLabel}</span>}
+        {locked && user && team1IsResolved && team2IsResolved && (
+          <button
+            type="button"
+            className="mc-picks-btn"
+            onClick={() => setPicksOpen(true)}
+          >
+            picks
+          </button>
+        )}
         {showDetails && (
           <button
             type="button"
@@ -287,6 +298,14 @@ export function MatchCard(p: Props) {
           </button>
         )}
       </div>
+      {picksOpen && (
+        <PicksRevealModal
+          matchId={matchId}
+          team1={team1}
+          team2={team2}
+          onClose={() => setPicksOpen(false)}
+        />
+      )}
     </div>
   );
 }

@@ -5296,3 +5296,98 @@ footer {
   margin: 0;
   max-width: 280px;
 }
+
+/* ── Picks Reveal Modal ───────────────────────────────────────────── */
+.picks-reveal-modal {
+  max-width: 420px;
+}
+.picks-reveal-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.picks-consensus {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.picks-consensus-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-weight: 700;
+}
+.picks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.picks-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+}
+.picks-card-mine {
+  border-color: var(--accent, #2563eb);
+  background: rgba(37, 99, 235, 0.04);
+}
+.picks-card-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+.picks-card-score {
+  font-size: 15px;
+  font-weight: 800;
+  font-family: var(--mono, monospace);
+}
+.picks-card-adv {
+  font-size: 10px;
+  color: var(--ink-faint);
+  margin-left: 8px;
+}
+.picks-empty {
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: 13px;
+  padding: 24px 0;
+}
+/* Card deal animation */
+.picks-card-animate {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: picks-deal 0.3s ease forwards;
+}
+@keyframes picks-deal {
+  to { opacity: 1; transform: translateY(0); }
+}
+/* Picks button on match card */
+.mc-picks-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.mc-picks-btn:hover {
+  border-color: var(--ink-soft);
+  color: var(--ink);
+}
+[data-theme='dark'] .picks-card-mine {
+  background: rgba(99, 102, 241, 0.08);
+}
+[data-theme='funky'] .picks-card-mine {
+  border-color: var(--accent, #ff6b6b);
+  background: rgba(255, 107, 107, 0.06);
+}
