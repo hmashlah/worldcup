@@ -4634,19 +4634,21 @@ footer {
   color: var(--ink-faint);
 }
 .trophy-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 .trophy-card {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 12px 16px;
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   background: var(--surface);
   position: relative;
+  flex: 1 1 200px;
+  min-width: 180px;
 }
 .trophy-emoji {
   font-size: 24px;
@@ -4692,8 +4694,12 @@ footer {
 }
 
 @media (max-width: 720px) {
-  .trophy-grid { grid-template-columns: 1fr; gap: 8px; }
-  .trophy-card { padding: 10px 12px; }
+  .trophy-grid { gap: 8px; }
+  .trophy-card {
+    padding: 10px 12px;
+    flex: 1 1 160px;
+    min-width: 150px;
+  }
   .trophy-emoji { font-size: 20px; }
 }
 
