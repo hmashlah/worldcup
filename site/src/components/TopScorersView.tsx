@@ -3,12 +3,14 @@ import { useTopScorers, usePlayerStats, useTeamStats } from '@/hooks/useTopScore
 import { rankByCards, rankByMotm, rankByAttack, rankByDefence, rankTeamsByCards } from '@/lib/stats';
 import { Flag } from '@/components/Flag';
 import { PlayerModal } from '@/components/PlayerModal';
+import { useUI } from '@/lib/ui-store';
 
 export function TopScorersView() {
   const { scorers, loading: goalLoading } = useTopScorers();
   const statsQ = usePlayerStats();
   const teamStatsQ = useTeamStats();
   const [selectedPlayer, setSelectedPlayer] = useState<{ name: string; team: string } | null>(null);
+  const openTeam = useUI(s => s.openTeam);
 
   const loading = goalLoading || statsQ.isLoading || teamStatsQ.isLoading;
   const allStats = statsQ.data ?? [];
@@ -54,7 +56,7 @@ export function TopScorersView() {
               {bestAttack.map((t, i) => (
                 <div key={t.team} className={`stats-card-row ${i === 0 ? 'stats-card-leader' : ''}`}>
                   <span className="stats-card-rank">{i + 1}</span>
-                  <span className="stats-card-name"><Flag team={t.team} /> {t.team}</span>
+                  <span className="stats-card-name stats-card-clickable" onClick={() => openTeam(t.team)}><Flag team={t.team} /> {t.team}</span>
                   <span className="stats-card-value">{t.goals_for} goals</span>
                 </div>
               ))}
@@ -70,7 +72,7 @@ export function TopScorersView() {
               {bestDefence.map((t, i) => (
                 <div key={t.team} className={`stats-card-row ${i === 0 ? 'stats-card-leader' : ''}`}>
                   <span className="stats-card-rank">{i + 1}</span>
-                  <span className="stats-card-name"><Flag team={t.team} /> {t.team}</span>
+                  <span className="stats-card-name stats-card-clickable" onClick={() => openTeam(t.team)}><Flag team={t.team} /> {t.team}</span>
                   <span className="stats-card-value">{t.goals_against} conceded</span>
                 </div>
               ))}
@@ -118,7 +120,7 @@ export function TopScorersView() {
               {mostBookedTeams.map((t, i) => (
                 <div key={t.team} className={`stats-card-row ${i === 0 ? 'stats-card-leader' : ''}`}>
                   <span className="stats-card-rank">{i + 1}</span>
-                  <span className="stats-card-name"><Flag team={t.team} /> {t.team}</span>
+                  <span className="stats-card-name stats-card-clickable" onClick={() => openTeam(t.team)}><Flag team={t.team} /> {t.team}</span>
                   <span className="stats-card-value">{t.yellow_cards}🟨{t.red_cards > 0 ? ` ${t.red_cards}🟥` : ''}</span>
                 </div>
               ))}
