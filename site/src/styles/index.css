@@ -858,7 +858,7 @@ footer {
 .tm-match-row:last-child { border-bottom: 0; }
 .tm-teams {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 1fr 60px 1fr;
   align-items: center;
   gap: 8px;
 }
