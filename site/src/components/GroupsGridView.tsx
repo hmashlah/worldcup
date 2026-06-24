@@ -3,7 +3,7 @@ import { Flag } from '@/components/Flag';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useResults } from '@/hooks/useResults';
 import { useUI } from '@/lib/ui-store';
-import { computeStandings, getThirdPlacedRanking } from '@/lib/tournament';
+import { computeStandings, getThirdPlacedRanking, type Standing } from '@/lib/tournament';
 import type { Group, GroupMatch, ScoreMap } from '@/lib/types';
 
 interface CardProps { group: Group; isThirdQualified: boolean; onExpand: () => void }
@@ -247,6 +247,45 @@ function GroupMatchesModal({ group, onClose }: { group: Group; onClose: () => vo
   );
 }
 
+function ThirdPlaceTable({ ranking }: { ranking: Array<Standing & { group: string }> }) {
+  return (
+    <div className="third-place-section">
+      <h3 className="third-place-title">Best Third-Place Teams</h3>
+      <p className="third-place-subtitle">Top 8 advance to the Round of 32</p>
+      <table className="third-place-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Team</th>
+            <th>Grp</th>
+            <th>P</th>
+            <th>W</th>
+            <th>D</th>
+            <th>L</th>
+            <th>GD</th>
+            <th>Pts</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ranking.map((t, i) => (
+            <tr key={t.team} className={i < 8 ? 'third-qualified' : 'third-eliminated'}>
+              <td>{i + 1}</td>
+              <td className="third-team-cell"><Flag team={t.team} />{t.team}</td>
+              <td>{t.group.replace('Group ', '')}</td>
+              <td>{t.P}</td>
+              <td>{t.W}</td>
+              <td>{t.D}</td>
+              <td>{t.L}</td>
+              <td>{t.GD > 0 ? `+${t.GD}` : t.GD}</td>
+              <td className="third-pts">{t.Pts}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function GroupsGridView() {
   const dataQ = useTournamentData();
   const resultsQ = useResults();
@@ -279,6 +318,9 @@ export function GroupsGridView() {
           />
         ))}
       </div>
+      {ranking.length > 0 && (
+        <ThirdPlaceTable ranking={ranking} />
+      )}
       {expandedGroup && (
         <GroupMatchesModal
           group={expandedGroup}

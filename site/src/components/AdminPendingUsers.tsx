@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useProfiles, useSetApproval, useDeleteProfile } from '@/hooks/useProfiles';
 import { useAllPredictions } from '@/hooks/usePredictions';
 import { useResults } from '@/hooks/useResults';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 export function AdminPendingUsers() {
   const { user } = useAuth();
@@ -12,6 +13,16 @@ export function AdminPendingUsers() {
   const setApproval = useSetApproval();
   const deleteProfile = useDeleteProfile();
   const [showAll, setShowAll] = useState(false);
+  const [capsuleCount, setCapsuleCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { count } = await supabase
+        .from('wc26_time_capsule')
+        .select('*', { count: 'exact', head: true });
+      setCapsuleCount(count);
+    })();
+  }, []);
 
   const { pending, approved, myProfile } = useMemo(() => {
     const all = Object.values(profilesQ.data ?? {});
@@ -127,6 +138,10 @@ export function AdminPendingUsers() {
         <div className="admin-diag-row">
           <span>Actual results stored</span>
           <strong>{Object.keys(resultsQ.data ?? {}).length}</strong>
+        </div>
+        <div className="admin-diag-row">
+          <span>Time Capsules sealed</span>
+          <strong>{capsuleCount ?? '—'} / {approved.length}</strong>
         </div>
       </div>
     </div>
