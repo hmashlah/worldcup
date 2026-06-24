@@ -55,8 +55,9 @@ export function TrophyRoom() {
 
     const trophyList: Trophy[] = [];
 
-    // ─── Per-matchday: Matchday King ───────────────────────────────
-    for (const date of sortedDates) {
+    // ─── Per-matchday: Matchday King (last 3 days only) ──────────────
+    const recentDates = sortedDates.slice(-3);
+    for (const date of recentDates) {
       const dayMatches = matchesByDate[date];
       let bestPlayer = '';
       let bestPts = 0;
@@ -95,7 +96,8 @@ export function TrophyRoom() {
       }
     }
 
-    // ─── Psychic — first exact score on a shock result (team2 win or draw where >60% picked team1) ───
+    // ─── Psychic — first exact score on a shock result (last 3 only) ───
+    const psychicTrophies: Trophy[] = [];
     for (const m of chronoMatches) {
       const result = results[m.id];
       if (!result) continue;
@@ -118,7 +120,7 @@ export function TrophyRoom() {
         const pred = predByUser[userId]?.[m.id];
         if (pred && pred.team1_score === result.team1_score && pred.team2_score === result.team2_score) {
           const dateLabel = new Date(m.date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-          trophyList.push({
+          psychicTrophies.push({
             emoji: '🔮',
             title: 'Psychic',
             winner: getName(userId),
@@ -129,8 +131,9 @@ export function TrophyRoom() {
         }
       }
     }
-
-    // ─── Contrarian — picked against consensus and was right ─────────
+    trophyList.push(...psychicTrophies.slice(-3));
+    // ─── Contrarian — picked against consensus and was right (last 3 only) ───
+    const contrarianTrophies: Trophy[] = [];
     for (const m of chronoMatches) {
       const result = results[m.id];
       if (!result) continue;
@@ -159,7 +162,7 @@ export function TrophyRoom() {
         const pct = outcomeCounts[outcome] / totalPreds;
         if (pct <= 0.25 && outcome === actualOutcome) {
           const dateLabel = new Date(m.date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-          trophyList.push({
+          contrarianTrophies.push({
             emoji: '🎲',
             title: 'Contrarian',
             winner: getName(userId),
@@ -170,6 +173,7 @@ export function TrophyRoom() {
         }
       }
     }
+    trophyList.push(...contrarianTrophies.slice(-3));
 
     // ─── Cursed — longest streak without any points ──────────────────
     let cursedPlayer = '';
