@@ -1,15 +1,18 @@
 import { useState } from 'react';
-import { useTopScorers, usePlayerStats } from '@/hooks/useTopScorers';
+import { useTopScorers, usePlayerStats, useTeamStats } from '@/hooks/useTopScorers';
+import { Flag } from '@/components/Flag';
 
-type ViewMode = 'goals' | 'cards' | 'motm';
+type ViewMode = 'goals' | 'cards' | 'motm' | 'teams';
 
 export function TopScorersView() {
   const { scorers, loading: goalLoading } = useTopScorers();
   const statsQ = usePlayerStats();
+  const teamStatsQ = useTeamStats();
   const [view, setView] = useState<ViewMode>('goals');
 
-  const loading = goalLoading || statsQ.isLoading;
+  const loading = goalLoading || statsQ.isLoading || teamStatsQ.isLoading;
   const allStats = statsQ.data ?? [];
+  const teamStats = teamStatsQ.data ?? [];
 
   const cardPlayers = [...allStats]
     .filter(p => p.yellow_cards > 0 || p.red_cards > 0)
@@ -39,6 +42,9 @@ export function TopScorersView() {
         </button>
         <button className={`stats-tab ${view === 'motm' ? 'active' : ''}`} onClick={() => setView('motm')}>
           MOTM
+        </button>
+        <button className={`stats-tab ${view === 'teams' ? 'active' : ''}`} onClick={() => setView('teams')}>
+          Teams
         </button>
       </div>
 
@@ -119,6 +125,39 @@ export function TopScorersView() {
                     <td className="scorers-rank">{i + 1}</td>
                     <td className="scorers-name">{s.name}</td>
                     <td className="scorers-goals">{s.motm}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {view === 'teams' && (
+        <div className="scorers-table-wrap">
+          {teamStats.length === 0 ? (
+            <p className="stats-empty">No team data yet.</p>
+          ) : (
+            <table className="scorers-table">
+              <thead>
+                <tr>
+                  <th>Team</th>
+                  <th>GF</th>
+                  <th>GA</th>
+                  <th>Pen</th>
+                  <th>🟨</th>
+                  <th>🟥</th>
+                </tr>
+              </thead>
+              <tbody>
+                {teamStats.map(t => (
+                  <tr key={t.team}>
+                    <td className="scorers-name"><Flag team={t.team} /> {t.team}</td>
+                    <td className="scorers-goals">{t.goals_for}</td>
+                    <td>{t.goals_against}</td>
+                    <td>{t.penalties || ''}</td>
+                    <td>{t.yellow_cards || ''}</td>
+                    <td>{t.red_cards || ''}</td>
                   </tr>
                 ))}
               </tbody>

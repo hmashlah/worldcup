@@ -13,6 +13,15 @@ export interface PlayerStat {
   appearances: number;
 }
 
+export interface TeamStat {
+  team: string;
+  goals_for: number;
+  goals_against: number;
+  penalties: number;
+  yellow_cards: number;
+  red_cards: number;
+}
+
 export function useTopScorers() {
   const query = useQuery({
     queryKey: ['player-stats'],
@@ -44,5 +53,21 @@ export function usePlayerStats() {
       return (data ?? []) as PlayerStat[];
     },
     refetchInterval: 5 * 60_000,
+  });
+}
+
+export function useTeamStats() {
+  return useQuery({
+    queryKey: ['team-stats'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('wc26_team_stats')
+        .select('*')
+        .order('goals_for', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as TeamStat[];
+    },
+    refetchInterval: 5 * 60_000,
+    refetchOnWindowFocus: true,
   });
 }

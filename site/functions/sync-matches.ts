@@ -1227,7 +1227,7 @@ interface PlayerStat {
   appearances: number;
 }
 
-async function rebuildPlayerStats(env: Env): Promise<{ upserted: number; error?: string }> {
+async function rebuildPlayerStats(env: Env, matchMap: MatchMap): Promise<{ upserted: number; error?: string }> {
   const url = env.SUPABASE_URL;
   const key = env.SUPABASE_SERVICE_ROLE_KEY;
   const headers = {
@@ -1250,6 +1250,11 @@ async function rebuildPlayerStats(env: Env): Promise<{ upserted: number; error?:
   };
 
   for (const row of rows) {
+    const mapEntry = matchMap[row.match_id];
+    const homeTeam = mapEntry?.home ?? 'home';
+    const awayTeam = mapEntry?.away ?? 'away';
+    const resolveTeam = (t: string) => t === 'home' ? homeTeam : awayTeam;
+
     const d = row.match_detail as {
       goals?: Array<{ team: string; name: string; kind: string }>;
       cards?: Array<{ team: string; name: string; type: string }>;
@@ -1262,8 +1267,7 @@ async function rebuildPlayerStats(env: Env): Promise<{ upserted: number; error?:
       for (const g of d.goals) {
         const name = g.name?.trim();
         if (!name) continue;
-        const team = g.team === 'home' ? 'home' : 'away';
-        const p = ensure(name, team);
+        const p = ensure(name, resolveTeam(g.team));
         if (g.kind === 'own-goal') p.own_goals++;
         else {
           p.goals++;
@@ -1277,8 +1281,7 @@ async function rebuildPlayerStats(env: Env): Promise<{ upserted: number; error?:
       for (const c of d.cards) {
         const name = c.name?.trim();
         if (!name) continue;
-        const team = c.team === 'home' ? 'home' : 'away';
-        const p = ensure(name, team);
+        const p = ensure(name, resolveTeam(c.team));
         if (c.type === 'yellow') p.yellow_cards++;
         else if (c.type === 'red' || c.type === 'second-yellow') p.red_cards++;
       }
@@ -1286,8 +1289,7 @@ async function rebuildPlayerStats(env: Env): Promise<{ upserted: number; error?:
 
     // MOTM
     if (d.motm?.name) {
-      const team = d.motm.team === 'home' ? 'home' : 'away';
-      ensure(d.motm.name.trim(), team).motm++;
+      ensure(d.motm.name.trim(), resolveTeam(d.motm.team)).motm++;
     }
   }
 
@@ -1301,6 +1303,103 @@ async function rebuildPlayerStats(env: Env): Promise<{ upserted: number; error?:
   });
 
   const insertRes = await fetch(`${url}/rest/v1/wc26_player_stats`, {
+    method: 'POST',
+    headers: { ...headers, Prefer: 'return=minimal' },
+    body: JSON.stringify(upsertRows),
+  });
+
+  if (!insertRes.ok) return { upserted: 0, error: `insert failed: ${insertRes.status}` };
+  return { upserted: upsertRows.length };
+}
+
+// ── Rebuild team stats from match results + match_detail ───────────────
+
+interface TeamStat {
+  team: string;
+  goals_for: number;
+  goals_against: number;
+  penalties: number;
+  yellow_cards: number;
+  red_cards: number;
+}
+
+async function rebuildTeamStats(env: Env, matchMap: MatchMap): Promise<{ upserted: number; error?: string }> {
+  const url = env.SUPABASE_URL;
+  const key = env.SUPABASE_SERVICE_ROLE_KEY;
+  const headers = {
+    apikey: key,
+    authorization: `Bearer ${key}`,
+    'content-type': 'application/json',
+  };
+
+  // Fetch all results with match_detail
+  const res = await fetch(`${url}/rest/v1/wc26_match_results?select=match_id,team1_score,team2_score,match_detail`, { headers });
+  if (!res.ok) return { upserted: 0, error: `fetch failed: ${res.status}` };
+
+  const rows = await res.json() as Array<{
+    match_id: string;
+    team1_score: number;
+    team2_score: number;
+    match_detail: Record<string, unknown> | null;
+  }>;
+
+  const stats: Record<string, TeamStat> = {};
+  const ensure = (team: string): TeamStat => {
+    if (!stats[team]) stats[team] = { team, goals_for: 0, goals_against: 0, penalties: 0, yellow_cards: 0, red_cards: 0 };
+    return stats[team];
+  };
+
+  for (const row of rows) {
+    const mapEntry = matchMap[row.match_id];
+    if (!mapEntry) continue;
+
+    const homeTeam = mapEntry.home;
+    const awayTeam = mapEntry.away;
+    const home = ensure(homeTeam);
+    const away = ensure(awayTeam);
+
+    // Goals for/against from scores
+    home.goals_for += row.team1_score;
+    home.goals_against += row.team2_score;
+    away.goals_for += row.team2_score;
+    away.goals_against += row.team1_score;
+
+    // Cards and penalties from match_detail
+    if (row.match_detail) {
+      const d = row.match_detail as {
+        goals?: Array<{ team: string; kind: string }>;
+        cards?: Array<{ team: string; type: string }>;
+      };
+
+      if (d.goals) {
+        for (const g of d.goals) {
+          if (g.kind === 'penalty') {
+            if (g.team === 'home') home.penalties++;
+            else away.penalties++;
+          }
+        }
+      }
+
+      if (d.cards) {
+        for (const c of d.cards) {
+          const t = c.team === 'home' ? home : away;
+          if (c.type === 'yellow') t.yellow_cards++;
+          else if (c.type === 'red' || c.type === 'second-yellow') t.red_cards++;
+        }
+      }
+    }
+  }
+
+  const upsertRows = Object.values(stats);
+  if (upsertRows.length === 0) return { upserted: 0 };
+
+  // Full rebuild
+  await fetch(`${url}/rest/v1/wc26_team_stats?team=not.is.null`, {
+    method: 'DELETE',
+    headers,
+  });
+
+  const insertRes = await fetch(`${url}/rest/v1/wc26_team_stats`, {
     method: 'POST',
     headers: { ...headers, Prefer: 'return=minimal' },
     body: JSON.stringify(upsertRows),
@@ -1454,7 +1553,10 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   const enrichRes = await enrichFinishedMatches(ctx.env, host, matchMap);
 
   // ── Rebuild player stats from all match_detail ─────────────────────
-  const playerStatsRes = await rebuildPlayerStats(ctx.env);
+  const playerStatsRes = await rebuildPlayerStats(ctx.env, matchMap);
+
+  // ── Rebuild team stats ─────────────────────────────────────────────
+  const teamStatsRes = await rebuildTeamStats(ctx.env, matchMap);
 
   return Response.json({
     upserted: upsertRes.ok,
@@ -1472,6 +1574,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     },
     enrich: { needed: enrichRes.needed, updated: enrichRes.updated },
     player_stats: playerStatsRes,
+    team_stats: teamStatsRes,
     errors: [
       ...upsertRes.errors,
       ...patchRes.errors,
