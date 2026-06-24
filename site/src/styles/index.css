@@ -4615,6 +4615,9 @@ footer {
 /* ── Trophy Room ──────────────────────────────────────────────────── */
 .trophy-room {
   margin-top: 24px;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .trophy-room-header {
   display: flex;
