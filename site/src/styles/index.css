@@ -1616,18 +1616,18 @@ footer {
 }
 .theme-toggle svg { display: block; }
 
-/* In MINIMAL mode the button previews FUNKY — colorful gradient.
-   In FUNKY mode the button previews MINIMAL — black and white.
-   Each tells you what tapping it gets you. */
+/* In MINIMAL mode the button previews DARK — dark circle.
+   In DARK mode the button previews FUNKY — colorful gradient.
+   In FUNKY mode the button previews MINIMAL — clean white. */
 :root[data-theme='minimal'] .theme-toggle,
 :root:not([data-theme]) .theme-toggle {
-  background: linear-gradient(120deg, #ec4899 0%, #a855f7 50%, #3b82f6 100%);
+  background: #1e1e2e;
   border: 0;
-  color: white;
-  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35);
+  color: #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 :root[data-theme='minimal'] .theme-toggle:hover {
-  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.5);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 :root[data-theme='funky'] .theme-toggle {
   background: var(--surface);
@@ -2511,14 +2511,13 @@ footer {
 
 /* Theme toggle button in dark mode — shows a subtle moonlit pill */
 :root[data-theme='dark'] .theme-toggle {
-  background: var(--line);
-  border: 1px solid var(--ink-faint);
-  color: var(--ink);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(120deg, #ec4899 0%, #a855f7 50%, #3b82f6 100%);
+  border: 0;
+  color: white;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35);
 }
 :root[data-theme='dark'] .theme-toggle:hover {
-  box-shadow: 0 2px 8px rgba(244, 114, 182, 0.3);
-  border-color: var(--accent);
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.5);
 }
 
 /* Pending pill */
