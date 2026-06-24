@@ -12,6 +12,7 @@ import { PendingApproval } from '@/components/PendingApproval';
 import { AdminPendingUsers } from '@/components/AdminPendingUsers';
 import { MatchDetailPage } from '@/pages/MatchDetailPage';
 import { TeamMatchesModal } from '@/components/TeamMatchesModal';
+import { TimeCapsuleModal, useTimeCapsule } from '@/components/TimeCapsule';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useUI } from '@/lib/ui-store';
@@ -28,6 +29,7 @@ function Shell() {
   const { tab, authOpen, setAuthOpen, openMatchId, openTeamName, closeTeam } = useUI();
   const dataQ = useTournamentData();
   const { user, isAdmin, isApproved, approvalLoading } = useAuth();
+  const capsule = useTimeCapsule();
 
   // Signed-in but not yet approved by admin → show holding screen.
   // Anonymous visitors get the full read-only browse — they just see
@@ -69,6 +71,9 @@ function Shell() {
       )}
       {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
       {openTeamName && <TeamMatchesModal team={openTeamName} onClose={closeTeam} />}
+      {capsule.showPrompt && isApproved && (
+        <TimeCapsuleModal onClose={() => capsule.setShowPrompt(false)} />
+      )}
     </>
   );
 }

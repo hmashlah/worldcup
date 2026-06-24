@@ -5167,3 +5167,73 @@ footer {
 @media (max-width: 720px) {
   .emoji-picker-wrapper { display: none; }
 }
+
+/* ── Time Capsule ─────────────────────────────────────────────────── */
+.capsule-modal {
+  max-width: 420px;
+}
+.capsule-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.capsule-intro {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0;
+  line-height: 1.5;
+}
+.capsule-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.capsule-required { color: crimson; }
+.capsule-input {
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: var(--sans);
+  outline: none;
+  background: var(--surface);
+  color: var(--ink);
+}
+.capsule-input:focus { border-color: var(--ink); }
+.capsule-seal-btn {
+  background: var(--ink);
+  color: var(--surface);
+  border: 0;
+  border-radius: var(--r-sm);
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.capsule-seal-btn:disabled { opacity: 0.5; cursor: default; }
+.capsule-seal-btn:hover:not(:disabled) { opacity: 0.85; }
+.capsule-sealed {
+  padding: 32px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.capsule-icon { font-size: 48px; }
+.capsule-sealed h3 {
+  margin: 0;
+  font-family: var(--sans);
+  font-weight: 800;
+}
+.capsule-sealed p {
+  color: var(--ink-soft);
+  font-size: 13px;
+  margin: 0;
+  max-width: 280px;
+}
