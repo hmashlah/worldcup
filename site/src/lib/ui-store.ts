@@ -4,6 +4,16 @@ export type TabKey = 'today' | 'groups' | 'bracket' | 'leaderboard' | 'picks' | 
 export type ThemeKey = 'minimal' | 'dark' | 'funky';
 
 const THEME_STORAGE_KEY = 'wc26-theme';
+const TAB_STORAGE_KEY = 'wc26-tab';
+
+const VALID_TABS: TabKey[] = ['today', 'groups', 'bracket', 'leaderboard', 'picks', 'chat', 'admin'];
+
+function readInitialTab(): TabKey {
+  if (typeof window === 'undefined') return 'today';
+  const v = sessionStorage.getItem(TAB_STORAGE_KEY);
+  if (v && VALID_TABS.includes(v as TabKey)) return v as TabKey;
+  return 'today';
+}
 
 function readInitialTheme(): ThemeKey {
   if (typeof window === 'undefined') return 'minimal';
@@ -38,8 +48,11 @@ interface UIState {
 }
 
 export const useUI = create<UIState>(set => ({
-  tab: 'today',
-  setTab: t => set({ tab: t, openMatchId: null }),
+  tab: readInitialTab(),
+  setTab: t => {
+    sessionStorage.setItem(TAB_STORAGE_KEY, t);
+    set({ tab: t, openMatchId: null });
+  },
   openMatchId: null,
   openMatch: id => set({ openMatchId: id }),
   closeMatch: () => set({ openMatchId: null }),

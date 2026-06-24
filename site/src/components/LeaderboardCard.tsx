@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfiles } from '@/hooks/useProfiles';
+import { Flag } from '@/components/Flag';
 import { PlayerComparison } from './PlayerComparison';
 import { sameRank } from '@/lib/utils';
 
@@ -9,6 +11,7 @@ const ROSETTES = ['🥇', '🥈', '🥉'];
 export function LeaderboardCard() {
   const { user, isApproved, isAdmin } = useAuth();
   const { loading, entries } = useLeaderboard();
+  const profilesQ = useProfiles();
   const [compareId, setCompareId] = useState<string | null>(null);
 
   if (loading) return <div className="leaderboard-empty">loading…</div>;
@@ -58,7 +61,7 @@ export function LeaderboardCard() {
             style={!isMe && user ? { cursor: 'pointer' } : undefined}
           >
             <span className="lb-rank">{ROSETTES[rank - 1] ?? `#${rank}`}</span>
-            <span className="lb-name">{e.display_name}</span>
+            <span className="lb-name">{profilesQ.data?.[e.user_id]?.fav_team && <Flag team={profilesQ.data[e.user_id].fav_team!} />} {e.display_name}</span>
             <span>{e.predictions}</span>
             <span>{e.exact}</span>
             <span>{e.outcome}</span>

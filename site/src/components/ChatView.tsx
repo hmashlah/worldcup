@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfiles, type ProfileRow } from '@/hooks/useProfiles';
+import { Flag } from '@/components/Flag';
 import { relativeTime, extractMentions } from '@/lib/utils';
 
 const REACTION_EMOJIS = ['👍', '😂', '🔥', '❤️', '😮', '😢'];
@@ -480,7 +481,7 @@ export function ChatView() {
             const editable = canEditMsg(msg);
             return (
               <div key={msg.id} className={`chat-msg ${isMine ? 'chat-msg-mine' : 'chat-msg-other'}`}>
-                {!isMine && <div className="chat-msg-name">{name}</div>}
+                {!isMine && <div className="chat-msg-name">{profiles[msg.user_id]?.fav_team && <Flag team={profiles[msg.user_id].fav_team!} />} {name}</div>}
                 {msg.image_url && (
                   <img
                     src={msg.image_url}

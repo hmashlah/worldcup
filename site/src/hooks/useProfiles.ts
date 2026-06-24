@@ -5,6 +5,7 @@ export interface ProfileRow {
   user_id: string;
   display_name: string;
   approved: boolean;
+  fav_team: string | null;
   created_at?: string;
 }
 
@@ -15,7 +16,7 @@ export function useProfiles() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('wc26_profiles')
-        .select('user_id, display_name, approved, created_at');
+        .select('user_id, display_name, approved, fav_team, created_at');
       if (error) throw error;
       const map: Record<string, ProfileRow> = {};
       for (const p of (data ?? []) as ProfileRow[]) map[p.user_id] = p;
@@ -76,11 +77,29 @@ export function useMyProfile(userId: string | null) {
       if (!userId) return null;
       const { data, error } = await supabase
         .from('wc26_profiles')
-        .select('user_id, display_name, approved, created_at')
+        .select('user_id, display_name, approved, fav_team, created_at')
         .eq('user_id', userId)
         .maybeSingle();
       if (error) throw error;
       return (data as ProfileRow | null) ?? null;
+    },
+  });
+}
+
+/** Update current user's fav_team. */
+export function useSetFavTeam() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId, favTeam }: { userId: string; favTeam: string }) => {
+      const { error } = await supabase
+        .from('wc26_profiles')
+        .update({ fav_team: favTeam })
+        .eq('user_id', userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profiles'] });
+      qc.invalidateQueries({ queryKey: ['my-profile'] });
     },
   });
 }

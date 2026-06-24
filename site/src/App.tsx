@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { DayView } from '@/components/DayView';
 import { GroupsGridView } from '@/components/GroupsGridView';
 import { Bracket } from '@/components/Bracket';
@@ -14,8 +15,10 @@ import { AdminPendingUsers } from '@/components/AdminPendingUsers';
 import { MatchDetailPage } from '@/pages/MatchDetailPage';
 import { TeamMatchesModal } from '@/components/TeamMatchesModal';
 import { TimeCapsuleModal, useTimeCapsule } from '@/components/TimeCapsule';
+import { FavTeamModal } from '@/components/FavTeamModal';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { useTournamentData } from '@/hooks/useTournamentData';
+import { useProfiles } from '@/hooks/useProfiles';
 import { useUI } from '@/lib/ui-store';
 
 export default function App() {
@@ -31,6 +34,12 @@ function Shell() {
   const dataQ = useTournamentData();
   const { user, isAdmin, isApproved, approvalLoading } = useAuth();
   const capsule = useTimeCapsule();
+  const profilesQ = useProfiles();
+  const myFavTeam = user ? profilesQ.data?.[user.id]?.fav_team : undefined;
+  const [favTeamDismissed, setFavTeamDismissed] = useState(false);
+
+  // Show fav team modal if: user is approved, no fav_team set, capsule not showing
+  const showFavTeamModal = !!user && isApproved && myFavTeam === null && !capsule.showPrompt && !favTeamDismissed;
 
   // Signed-in but not yet approved by admin → show holding screen.
   // Anonymous visitors get the full read-only browse — they just see
@@ -74,6 +83,9 @@ function Shell() {
       {openTeamName && <TeamMatchesModal team={openTeamName} onClose={closeTeam} />}
       {capsule.showPrompt && isApproved && (
         <TimeCapsuleModal onClose={() => capsule.setShowPrompt(false)} />
+      )}
+      {showFavTeamModal && (
+        <FavTeamModal onClose={() => setFavTeamDismissed(true)} />
       )}
     </>
   );

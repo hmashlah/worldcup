@@ -44,6 +44,7 @@ export function PicksRevealModal({ matchId, team1, team2, onClose }: Props) {
       .map(p => ({
         ...p,
         display_name: profilesQ.data![p.user_id]?.display_name ?? 'Unknown',
+        fav_team: profilesQ.data![p.user_id]?.fav_team ?? null,
         isMe: p.user_id === user?.id,
       }))
       .sort((a, b) => a.display_name.localeCompare(b.display_name));
@@ -121,7 +122,7 @@ export function PicksRevealModal({ matchId, team1, team2, onClose }: Props) {
                 className={`picks-card ${p.isMe ? 'picks-card-mine' : ''} ${animate ? 'picks-card-animate' : ''}`}
                 style={animate ? { animationDelay: `${i * 120}ms` } : undefined}
               >
-                <span className="picks-card-name">{p.display_name}</span>
+                <span className="picks-card-name">{p.fav_team && <Flag team={p.fav_team} />} {p.display_name}</span>
                 <span className="picks-card-score">{p.team1_score} – {p.team2_score}</span>
                 {p.advancer && <span className="picks-card-adv">{p.advancer} advances</span>}
               </div>

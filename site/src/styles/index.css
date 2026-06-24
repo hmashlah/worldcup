@@ -5482,3 +5482,51 @@ footer {
   border-color: var(--accent, #ff6b6b);
   background: rgba(255, 107, 107, 0.06);
 }
+
+/* ── Fav Team Modal ───────────────────────────────────────────────── */
+.fav-team-modal {
+  max-width: 480px;
+}
+.fav-team-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.fav-team-intro {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+.fav-team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 6px;
+}
+.fav-team-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: transparent;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.1s, background 0.1s;
+}
+.fav-team-option:hover { background: var(--bg); }
+.fav-team-selected {
+  border-color: var(--accent, #2563eb);
+  background: rgba(37, 99, 235, 0.06);
+  font-weight: 700;
+}
+[data-theme='dark'] .fav-team-selected {
+  background: rgba(99, 102, 241, 0.1);
+}
+[data-theme='funky'] .fav-team-selected {
+  border-color: var(--accent, #ff6b6b);
+  background: rgba(255, 107, 107, 0.08);
+}
