@@ -16,16 +16,16 @@ export function TopScorersView() {
   const topCards = [...allStats]
     .filter(p => p.yellow_cards > 0 || p.red_cards > 0)
     .sort((a, b) => (b.yellow_cards + b.red_cards * 2) - (a.yellow_cards + a.red_cards * 2))
-    .slice(0, 5);
+    .slice(0, 10);
 
   const topMotm = [...allStats]
     .filter(p => p.motm > 0)
     .sort((a, b) => b.motm - a.motm)
-    .slice(0, 5);
+    .slice(0, 10);
 
-  const bestAttack = [...teamStats].sort((a, b) => b.goals_for - a.goals_for).slice(0, 5);
-  const bestDefence = [...teamStats].sort((a, b) => a.goals_against - b.goals_against).slice(0, 5);
-  const mostBookedTeams = [...teamStats].sort((a, b) => (b.yellow_cards + b.red_cards * 2) - (a.yellow_cards + a.red_cards * 2)).slice(0, 5);
+  const bestAttack = [...teamStats].sort((a, b) => b.goals_for - a.goals_for).slice(0, 10);
+  const bestDefence = [...teamStats].sort((a, b) => a.goals_against - b.goals_against).slice(0, 10);
+  const mostBookedTeams = [...teamStats].sort((a, b) => (b.yellow_cards + b.red_cards * 2) - (a.yellow_cards + a.red_cards * 2)).slice(0, 10);
 
   return (
     <section className="tab-panel active">
