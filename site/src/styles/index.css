@@ -895,6 +895,88 @@ footer {
   color: var(--ink-soft);
   margin-top: 2px;
 }
+.tm-team-stats {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.tm-coach {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+.tm-stats-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tm-squad {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.tm-squad-title {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+.tm-squad-group { margin-bottom: 8px; }
+.tm-squad-pos {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+  margin-bottom: 4px;
+}
+.tm-squad-player {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  padding: 4px 8px;
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  transition: background 0.1s;
+}
+.tm-squad-player:hover { background: var(--bg); }
+.tm-squad-num {
+  width: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-faint);
+}
+.tm-squad-name { flex: 1; font-weight: 600; }
+.tm-squad-stat { font-size: 11px; }
+
+/* Player bio in modal */
+.player-bio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.player-bio-number {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink-faint);
+}
+.player-bio-item {
+  font-size: 12px;
+  color: var(--ink-soft);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 2px 8px;
+}
 
 /* ── Bracket (kept simple) ───────────────────────────────────────── */
 

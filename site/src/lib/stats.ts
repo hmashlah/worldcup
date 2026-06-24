@@ -13,6 +13,10 @@ export interface PlayerStat {
   red_cards: number;
   motm: number;
   appearances: number;
+  position: string | null;
+  dob: string | null;
+  club: string | null;
+  shirt_number: number | null;
 }
 
 export interface TeamStat {
@@ -22,6 +26,7 @@ export interface TeamStat {
   penalties: number;
   yellow_cards: number;
   red_cards: number;
+  coach: string | null;
 }
 
 export interface Consensus {

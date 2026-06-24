@@ -1,11 +1,14 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Flag } from '@/components/Flag';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useResults } from '@/hooks/useResults';
 import { useUI } from '@/lib/ui-store';
 import { allMatches } from '@/lib/days';
 import { resolveSlot } from '@/lib/tournament';
+import { supabase } from '@/lib/supabase';
+import { PlayerModal } from '@/components/PlayerModal';
 import type { ScoreMap, AdvancerMap } from '@/lib/types';
+import type { PlayerStat, TeamStat } from '@/lib/stats';
 
 interface Props {
   team: string;
@@ -16,6 +19,9 @@ export function TeamMatchesModal({ team, onClose }: Props) {
   const dataQ = useTournamentData();
   const resultsQ = useResults();
   const openMatchId = useUI(s => s.openMatchId);
+  const [squad, setSquad] = useState<PlayerStat[]>([]);
+  const [teamInfo, setTeamInfo] = useState<TeamStat | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<{ name: string; team: string } | null>(null);
 
   // Close on Escape key
   useEffect(() => {
@@ -23,6 +29,18 @@ export function TeamMatchesModal({ team, onClose }: Props) {
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, [onClose]);
+
+  // Fetch squad and team info
+  useEffect(() => {
+    (async () => {
+      const [{ data: players }, { data: tInfo }] = await Promise.all([
+        supabase.from('wc26_player_stats').select('*').eq('team', team).order('shirt_number', { ascending: true }),
+        supabase.from('wc26_team_stats').select('*').eq('team', team).maybeSingle(),
+      ]);
+      if (players) setSquad(players as PlayerStat[]);
+      if (tInfo) setTeamInfo(tInfo as TeamStat);
+    })();
+  }, [team]);
 
   // Hide when match detail is open
   if (openMatchId) return null;
@@ -99,8 +117,57 @@ export function TeamMatchesModal({ team, onClose }: Props) {
               </div>
             );
           })}
+
+          {/* Team stats */}
+          {teamInfo && (
+            <div className="tm-team-stats">
+              {teamInfo.coach && <div className="tm-coach">Coach: <strong>{teamInfo.coach}</strong></div>}
+              <div className="tm-stats-pills">
+                <span className="player-stat">⚽ {teamInfo.goals_for} scored</span>
+                <span className="player-stat">{teamInfo.goals_against} conceded</span>
+                {teamInfo.penalties > 0 && <span className="player-stat">{teamInfo.penalties} pen</span>}
+                {teamInfo.yellow_cards > 0 && <span className="player-stat">🟨 {teamInfo.yellow_cards}</span>}
+                {teamInfo.red_cards > 0 && <span className="player-stat">🟥 {teamInfo.red_cards}</span>}
+              </div>
+            </div>
+          )}
+
+          {/* Squad list */}
+          {squad.length > 0 && (
+            <div className="tm-squad">
+              <div className="tm-squad-title">Squad</div>
+              {(['GK', 'DF', 'MF', 'FW', null] as const).map(pos => {
+                const players = squad.filter(p => p.position === pos || (!pos && !p.position));
+                if (players.length === 0) return null;
+                return (
+                  <div key={pos ?? 'other'} className="tm-squad-group">
+                    {pos && <div className="tm-squad-pos">{pos === 'GK' ? 'Goalkeepers' : pos === 'DF' ? 'Defenders' : pos === 'MF' ? 'Midfielders' : 'Forwards'}</div>}
+                    {!pos && <div className="tm-squad-pos">Other</div>}
+                    {players.map(p => (
+                      <button
+                        key={p.name}
+                        type="button"
+                        className="tm-squad-player"
+                        onClick={() => setSelectedPlayer({ name: p.name, team: p.team })}
+                      >
+                        {p.shirt_number && <span className="tm-squad-num">{p.shirt_number}</span>}
+                        <span className="tm-squad-name">{p.name}</span>
+                        {p.goals > 0 && <span className="tm-squad-stat">⚽{p.goals}</span>}
+                        {p.yellow_cards > 0 && <span className="tm-squad-stat">🟨</span>}
+                        {p.red_cards > 0 && <span className="tm-squad-stat">🟥</span>}
+                        {p.motm > 0 && <span className="tm-squad-stat">⭐</span>}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
+      {selectedPlayer && (
+        <PlayerModal playerName={selectedPlayer.name} playerTeam={selectedPlayer.team} onClose={() => setSelectedPlayer(null)} />
+      )}
     </div>
   );
 }

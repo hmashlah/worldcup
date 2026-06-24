@@ -60,10 +60,10 @@ describe('computeConsensus', () => {
 
 describe('rankByCards', () => {
   const players: PlayerStat[] = [
-    { name: 'A', team: 'T1', goals: 0, penalties: 0, own_goals: 0, yellow_cards: 3, red_cards: 0, motm: 0, appearances: 3 },
-    { name: 'B', team: 'T2', goals: 0, penalties: 0, own_goals: 0, yellow_cards: 1, red_cards: 1, motm: 0, appearances: 3 },
-    { name: 'C', team: 'T3', goals: 0, penalties: 0, own_goals: 0, yellow_cards: 0, red_cards: 0, motm: 0, appearances: 3 },
-    { name: 'D', team: 'T4', goals: 0, penalties: 0, own_goals: 0, yellow_cards: 2, red_cards: 0, motm: 0, appearances: 3 },
+    { name: 'A', team: 'T1', goals: 0, penalties: 0, own_goals: 0, yellow_cards: 3, red_cards: 0, motm: 0, appearances: 3, position: null, dob: null, club: null, shirt_number: null },
+    { name: 'B', team: 'T2', goals: 0, penalties: 0, own_goals: 0, yellow_cards: 1, red_cards: 1, motm: 0, appearances: 3, position: null, dob: null, club: null, shirt_number: null },
+    { name: 'C', team: 'T3', goals: 0, penalties: 0, own_goals: 0, yellow_cards: 0, red_cards: 0, motm: 0, appearances: 3, position: null, dob: null, club: null, shirt_number: null },
+    { name: 'D', team: 'T4', goals: 0, penalties: 0, own_goals: 0, yellow_cards: 2, red_cards: 0, motm: 0, appearances: 3, position: null, dob: null, club: null, shirt_number: null },
   ];
 
   it('ranks by yellows + reds*2, filters zero-card players', () => {
@@ -82,9 +82,9 @@ describe('rankByCards', () => {
 
 describe('rankByMotm', () => {
   const players: PlayerStat[] = [
-    { name: 'A', team: 'T1', goals: 0, penalties: 0, own_goals: 0, yellow_cards: 0, red_cards: 0, motm: 2, appearances: 3 },
-    { name: 'B', team: 'T2', goals: 0, penalties: 0, own_goals: 0, yellow_cards: 0, red_cards: 0, motm: 0, appearances: 3 },
-    { name: 'C', team: 'T3', goals: 0, penalties: 0, own_goals: 0, yellow_cards: 0, red_cards: 0, motm: 1, appearances: 3 },
+    { name: 'A', team: 'T1', goals: 0, penalties: 0, own_goals: 0, yellow_cards: 0, red_cards: 0, motm: 2, appearances: 3, position: null, dob: null, club: null, shirt_number: null },
+    { name: 'B', team: 'T2', goals: 0, penalties: 0, own_goals: 0, yellow_cards: 0, red_cards: 0, motm: 0, appearances: 3, position: null, dob: null, club: null, shirt_number: null },
+    { name: 'C', team: 'T3', goals: 0, penalties: 0, own_goals: 0, yellow_cards: 0, red_cards: 0, motm: 1, appearances: 3, position: null, dob: null, club: null, shirt_number: null },
   ];
 
   it('ranks by motm count, filters zeros', () => {
@@ -99,9 +99,9 @@ describe('rankByMotm', () => {
 
 describe('team rankings', () => {
   const teams: TeamStat[] = [
-    { team: 'Brazil', goals_for: 8, goals_against: 2, penalties: 1, yellow_cards: 5, red_cards: 0 },
-    { team: 'Germany', goals_for: 5, goals_against: 1, penalties: 0, yellow_cards: 3, red_cards: 1 },
-    { team: 'Iran', goals_for: 2, goals_against: 6, penalties: 0, yellow_cards: 8, red_cards: 0 },
+    { team: 'Brazil', goals_for: 8, goals_against: 2, penalties: 1, yellow_cards: 5, red_cards: 0, coach: null },
+    { team: 'Germany', goals_for: 5, goals_against: 1, penalties: 0, yellow_cards: 3, red_cards: 1, coach: null },
+    { team: 'Iran', goals_for: 2, goals_against: 6, penalties: 0, yellow_cards: 8, red_cards: 0, coach: null },
   ];
 
   it('rankByAttack sorts by goals_for descending', () => {
