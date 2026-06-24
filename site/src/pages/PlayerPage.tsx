@@ -3,7 +3,15 @@ import { supabase } from '@/lib/supabase';
 import { Flag } from '@/components/Flag';
 import { useUI } from '@/lib/ui-store';
 import type { MatchDetail } from '@/lib/match-detail';
-import type { PlayerStat } from '@/lib/stats';
+
+interface SquadPlayer {
+  name: string;
+  team: string;
+  position: string | null;
+  shirt_number: number | null;
+  dob: string | null;
+  club: string | null;
+}
 
 interface MatchEvent {
   matchId: string;
@@ -36,20 +44,22 @@ interface Props {
 export function PlayerPage({ playerName, playerTeam }: Props) {
   const closePlayer = useUI(s => s.closePlayer);
   const openTeam = useUI(s => s.openTeam);
-  const [bio, setBio] = useState<PlayerStat | null>(null);
+  const [bio, setBio] = useState<SquadPlayer | null>(null);
   const [events, setEvents] = useState<MatchEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      // Fetch player bio
-      const { data: bioData } = await supabase
-        .from('wc26_player_stats')
-        .select('*')
-        .eq('name', playerName)
-        .eq('team', playerTeam)
-        .maybeSingle();
-      if (bioData) setBio(bioData as PlayerStat);
+      // Fetch player bio from static squads.json
+      const squadRes = await fetch('/data/squads.json');
+      if (squadRes.ok) {
+        const all = await squadRes.json();
+        const teamData = all[playerTeam];
+        if (teamData?.players) {
+          const found = teamData.players.find((p: SquadPlayer) => p.name === playerName);
+          if (found) setBio(found);
+        }
+      }
 
       // Fetch match events
       const { data } = await supabase

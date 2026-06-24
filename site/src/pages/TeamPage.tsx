@@ -9,6 +9,20 @@ import { supabase } from '@/lib/supabase';
 import type { ScoreMap, AdvancerMap } from '@/lib/types';
 import type { PlayerStat, TeamStat } from '@/lib/stats';
 
+interface SquadPlayer {
+  name: string;
+  team: string;
+  position: string | null;
+  shirt_number: number | null;
+  dob: string | null;
+  club: string | null;
+}
+
+interface SquadData {
+  coach: string | null;
+  players: SquadPlayer[];
+}
+
 interface Props {
   team: string;
 }
@@ -18,16 +32,28 @@ export function TeamPage({ team }: Props) {
   const resultsQ = useResults();
   const closeTeam = useUI(s => s.closeTeam);
   const openPlayer = useUI(s => s.openPlayer);
-  const [squad, setSquad] = useState<PlayerStat[]>([]);
+  const [squadData, setSquadData] = useState<SquadData | null>(null);
+  const [playerStats, setPlayerStats] = useState<Record<string, PlayerStat>>({});
   const [teamInfo, setTeamInfo] = useState<TeamStat | null>(null);
 
   useEffect(() => {
     (async () => {
-      const [{ data: players }, { data: tInfo }] = await Promise.all([
-        supabase.from('wc26_player_stats').select('*').eq('team', team).order('shirt_number', { ascending: true }),
+      // Load squad data from static JSON
+      const res = await fetch('/data/squads.json');
+      if (res.ok) {
+        const all = await res.json();
+        if (all[team]) setSquadData(all[team] as SquadData);
+      }
+      // Load player stats from DB (for goals/cards/motm)
+      const [{ data: stats }, { data: tInfo }] = await Promise.all([
+        supabase.from('wc26_player_stats').select('*').eq('team', team),
         supabase.from('wc26_team_stats').select('*').eq('team', team).maybeSingle(),
       ]);
-      if (players) setSquad(players as PlayerStat[]);
+      if (stats) {
+        const map: Record<string, PlayerStat> = {};
+        for (const s of stats as PlayerStat[]) map[s.name] = s;
+        setPlayerStats(map);
+      }
       if (tInfo) setTeamInfo(tInfo as TeamStat);
     })();
   }, [team]);
@@ -60,16 +86,18 @@ export function TeamPage({ team }: Props) {
       </div>
 
       {/* Coach + stats */}
-      {teamInfo && (
+      {(teamInfo || squadData?.coach) && (
         <div className="team-page-info">
-          {teamInfo.coach && <div className="team-page-coach">Coach: <strong>{teamInfo.coach}</strong></div>}
-          <div className="team-page-stats">
-            <span className="player-stat">⚽ {teamInfo.goals_for} scored</span>
-            <span className="player-stat">{teamInfo.goals_against} conceded</span>
-            {teamInfo.penalties > 0 && <span className="player-stat">{teamInfo.penalties} pen</span>}
-            {teamInfo.yellow_cards > 0 && <span className="player-stat">🟨 {teamInfo.yellow_cards}</span>}
-            {teamInfo.red_cards > 0 && <span className="player-stat">🟥 {teamInfo.red_cards}</span>}
-          </div>
+          {(squadData?.coach || teamInfo?.coach) && <div className="team-page-coach">Coach: <strong>{squadData?.coach || teamInfo?.coach}</strong></div>}
+          {teamInfo && (
+            <div className="team-page-stats">
+              <span className="player-stat">⚽ {teamInfo.goals_for} scored</span>
+              <span className="player-stat">{teamInfo.goals_against} conceded</span>
+              {teamInfo.penalties > 0 && <span className="player-stat">{teamInfo.penalties} pen</span>}
+              {teamInfo.yellow_cards > 0 && <span className="player-stat">🟨 {teamInfo.yellow_cards}</span>}
+              {teamInfo.red_cards > 0 && <span className="player-stat">🟥 {teamInfo.red_cards}</span>}
+            </div>
+          )}
         </div>
       )}
 
@@ -112,31 +140,34 @@ export function TeamPage({ team }: Props) {
       </div>
 
       {/* Squad */}
-      {squad.length > 0 && (
+      {squadData && squadData.players.length > 0 && (
         <div className="team-page-section">
-          <h3>Squad</h3>
+          <h3>Squad ({squadData.players.length})</h3>
           {(['GK', 'DF', 'MF', 'FW', null] as const).map(pos => {
-            const players = squad.filter(p => p.position === pos || (!pos && !p.position));
+            const players = squadData.players.filter(p => p.position === pos || (!pos && !p.position));
             if (players.length === 0) return null;
             return (
               <div key={pos ?? 'other'} className="tm-squad-group">
                 <div className="tm-squad-pos">{pos === 'GK' ? 'Goalkeepers' : pos === 'DF' ? 'Defenders' : pos === 'MF' ? 'Midfielders' : pos === 'FW' ? 'Forwards' : 'Other'}</div>
-                {players.map(p => (
-                  <button
-                    key={p.name}
-                    type="button"
-                    className="tm-squad-player"
-                    onClick={() => openPlayer(p.name, p.team)}
-                  >
-                    {p.shirt_number && <span className="tm-squad-num">{p.shirt_number}</span>}
-                    <span className="tm-squad-name">{p.name}</span>
-                    {p.club && <span className="tm-squad-club">{p.club}</span>}
-                    {p.goals > 0 && <span className="tm-squad-stat">⚽{p.goals}</span>}
-                    {p.yellow_cards > 0 && <span className="tm-squad-stat">🟨</span>}
-                    {p.red_cards > 0 && <span className="tm-squad-stat">🟥</span>}
-                    {p.motm > 0 && <span className="tm-squad-stat">⭐</span>}
-                  </button>
-                ))}
+                {players.map(p => {
+                  const stats = playerStats[p.name];
+                  return (
+                    <button
+                      key={p.name}
+                      type="button"
+                      className="tm-squad-player"
+                      onClick={() => openPlayer(p.name, team)}
+                    >
+                      {p.shirt_number && <span className="tm-squad-num">{p.shirt_number}</span>}
+                      <span className="tm-squad-name">{p.name}</span>
+                      {p.club && <span className="tm-squad-club">{p.club}</span>}
+                      {stats?.goals ? <span className="tm-squad-stat">⚽{stats.goals}</span> : null}
+                      {stats?.yellow_cards ? <span className="tm-squad-stat">🟨</span> : null}
+                      {stats?.red_cards ? <span className="tm-squad-stat">🟥</span> : null}
+                      {stats?.motm ? <span className="tm-squad-stat">⭐</span> : null}
+                    </button>
+                  );
+                })}
               </div>
             );
           })}
