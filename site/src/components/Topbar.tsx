@@ -12,7 +12,7 @@ const TABS: Array<{ key: TabKey; label: string }> = [
   { key: 'groups',      label: 'Groups' },
   { key: 'bracket',     label: 'Bracket' },
   { key: 'leaderboard', label: 'Leaderboard' },
-  { key: 'stats',       label: 'Stats' },
+  { key: 'stats',       label: 'Records' },
   { key: 'chat',        label: 'Chat' },
   { key: 'picks',       label: 'My Picks' },
 ];

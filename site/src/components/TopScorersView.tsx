@@ -1,170 +1,136 @@
-import { useState } from 'react';
 import { useTopScorers, usePlayerStats, useTeamStats } from '@/hooks/useTopScorers';
 import { Flag } from '@/components/Flag';
-
-type ViewMode = 'goals' | 'cards' | 'motm' | 'teams';
 
 export function TopScorersView() {
   const { scorers, loading: goalLoading } = useTopScorers();
   const statsQ = usePlayerStats();
   const teamStatsQ = useTeamStats();
-  const [view, setView] = useState<ViewMode>('goals');
 
   const loading = goalLoading || statsQ.isLoading || teamStatsQ.isLoading;
   const allStats = statsQ.data ?? [];
   const teamStats = teamStatsQ.data ?? [];
 
-  const cardPlayers = [...allStats]
+  if (loading) return <p style={{ textAlign: 'center', padding: '32px' }}>Loading stats…</p>;
+
+  // Derived stats
+  const topCards = [...allStats]
     .filter(p => p.yellow_cards > 0 || p.red_cards > 0)
     .sort((a, b) => (b.yellow_cards + b.red_cards * 2) - (a.yellow_cards + a.red_cards * 2))
-    .slice(0, 10);
+    .slice(0, 5);
 
-  const motmPlayers = [...allStats]
+  const topMotm = [...allStats]
     .filter(p => p.motm > 0)
     .sort((a, b) => b.motm - a.motm)
-    .slice(0, 10);
+    .slice(0, 5);
 
-  if (loading) return <p style={{ textAlign: 'center', padding: '32px' }}>Loading stats…</p>;
+  const bestAttack = [...teamStats].sort((a, b) => b.goals_for - a.goals_for).slice(0, 5);
+  const bestDefence = [...teamStats].sort((a, b) => a.goals_against - b.goals_against).slice(0, 5);
+  const mostBookedTeams = [...teamStats].sort((a, b) => (b.yellow_cards + b.red_cards * 2) - (a.yellow_cards + a.red_cards * 2)).slice(0, 5);
 
   return (
     <section className="tab-panel active">
       <div className="section-intro">
-        <h2>Player Stats</h2>
-        <p>Updated automatically after each match.</p>
+        <h2>Tournament Records</h2>
+        <p>Top performers and team rankings — updated after each match.</p>
       </div>
 
-      <div className="stats-tabs">
-        <button className={`stats-tab ${view === 'goals' ? 'active' : ''}`} onClick={() => setView('goals')}>
-          Top Scorers
-        </button>
-        <button className={`stats-tab ${view === 'cards' ? 'active' : ''}`} onClick={() => setView('cards')}>
-          Discipline
-        </button>
-        <button className={`stats-tab ${view === 'motm' ? 'active' : ''}`} onClick={() => setView('motm')}>
-          MOTM
-        </button>
-        <button className={`stats-tab ${view === 'teams' ? 'active' : ''}`} onClick={() => setView('teams')}>
-          Teams
-        </button>
+      <div className="stats-cards-grid">
+        {/* Top Scorers */}
+        {scorers.length > 0 && (
+          <div className="stats-card">
+            <div className="stats-card-header">⚽ Top Scorers</div>
+            <div className="stats-card-list">
+              {scorers.map((s, i) => (
+                <div key={`${s.name}-${s.team}`} className={`stats-card-row ${i === 0 ? 'stats-card-leader' : ''}`}>
+                  <span className="stats-card-rank">{i + 1}</span>
+                  <span className="stats-card-name"><Flag team={s.team} /> {s.name}</span>
+                  <span className="stats-card-value">{s.goals}{s.penalties > 0 ? ` (${s.penalties}p)` : ''}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Best Attack */}
+        {bestAttack.length > 0 && (
+          <div className="stats-card">
+            <div className="stats-card-header">💥 Best Attack</div>
+            <div className="stats-card-list">
+              {bestAttack.map((t, i) => (
+                <div key={t.team} className={`stats-card-row ${i === 0 ? 'stats-card-leader' : ''}`}>
+                  <span className="stats-card-rank">{i + 1}</span>
+                  <span className="stats-card-name"><Flag team={t.team} /> {t.team}</span>
+                  <span className="stats-card-value">{t.goals_for} goals</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Best Defence */}
+        {bestDefence.length > 0 && (
+          <div className="stats-card">
+            <div className="stats-card-header">🧤 Best Defence</div>
+            <div className="stats-card-list">
+              {bestDefence.map((t, i) => (
+                <div key={t.team} className={`stats-card-row ${i === 0 ? 'stats-card-leader' : ''}`}>
+                  <span className="stats-card-rank">{i + 1}</span>
+                  <span className="stats-card-name"><Flag team={t.team} /> {t.team}</span>
+                  <span className="stats-card-value">{t.goals_against} conceded</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* MOTM */}
+        {topMotm.length > 0 && (
+          <div className="stats-card">
+            <div className="stats-card-header">⭐ Man of the Match</div>
+            <div className="stats-card-list">
+              {topMotm.map((s, i) => (
+                <div key={`${s.name}-${s.team}`} className={`stats-card-row ${i === 0 ? 'stats-card-leader' : ''}`}>
+                  <span className="stats-card-rank">{i + 1}</span>
+                  <span className="stats-card-name"><Flag team={s.team} /> {s.name}</span>
+                  <span className="stats-card-value">{s.motm}x</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Most Booked Player */}
+        {topCards.length > 0 && (
+          <div className="stats-card">
+            <div className="stats-card-header">🟨 Most Booked Players</div>
+            <div className="stats-card-list">
+              {topCards.map((s, i) => (
+                <div key={`${s.name}-${s.team}`} className={`stats-card-row ${i === 0 ? 'stats-card-leader' : ''}`}>
+                  <span className="stats-card-rank">{i + 1}</span>
+                  <span className="stats-card-name"><Flag team={s.team} /> {s.name}</span>
+                  <span className="stats-card-value">{s.yellow_cards}🟨{s.red_cards > 0 ? ` ${s.red_cards}🟥` : ''}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Most Booked Team */}
+        {mostBookedTeams.length > 0 && (
+          <div className="stats-card">
+            <div className="stats-card-header">🟥 Most Booked Teams</div>
+            <div className="stats-card-list">
+              {mostBookedTeams.map((t, i) => (
+                <div key={t.team} className={`stats-card-row ${i === 0 ? 'stats-card-leader' : ''}`}>
+                  <span className="stats-card-rank">{i + 1}</span>
+                  <span className="stats-card-name"><Flag team={t.team} /> {t.team}</span>
+                  <span className="stats-card-value">{t.yellow_cards}🟨{t.red_cards > 0 ? ` ${t.red_cards}🟥` : ''}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-
-      {view === 'goals' && (
-        <div className="scorers-table-wrap">
-          {scorers.length === 0 ? (
-            <p className="stats-empty">No goals scored yet.</p>
-          ) : (
-            <table className="scorers-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Player</th>
-                  <th>Goals</th>
-                  <th>Pen</th>
-                </tr>
-              </thead>
-              <tbody>
-                {scorers.map((s, i) => (
-                  <tr key={`${s.name}-${s.team}`} className={i < 3 ? 'scorers-top3' : ''}>
-                    <td className="scorers-rank">{i + 1}</td>
-                    <td className="scorers-name">{s.name}</td>
-                    <td className="scorers-goals">{s.goals}</td>
-                    <td className="scorers-pen">{s.penalties > 0 ? `(${s.penalties})` : ''}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
-
-      {view === 'cards' && (
-        <div className="scorers-table-wrap">
-          {cardPlayers.length === 0 ? (
-            <p className="stats-empty">No cards shown yet.</p>
-          ) : (
-            <table className="scorers-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Player</th>
-                  <th>🟨</th>
-                  <th>🟥</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cardPlayers.map((s, i) => (
-                  <tr key={`${s.name}-${s.team}`}>
-                    <td className="scorers-rank">{i + 1}</td>
-                    <td className="scorers-name">{s.name}</td>
-                    <td>{s.yellow_cards || ''}</td>
-                    <td>{s.red_cards || ''}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
-
-      {view === 'motm' && (
-        <div className="scorers-table-wrap">
-          {motmPlayers.length === 0 ? (
-            <p className="stats-empty">No MOTM awards yet.</p>
-          ) : (
-            <table className="scorers-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Player</th>
-                  <th>Awards</th>
-                </tr>
-              </thead>
-              <tbody>
-                {motmPlayers.map((s, i) => (
-                  <tr key={`${s.name}-${s.team}`} className={i < 3 ? 'scorers-top3' : ''}>
-                    <td className="scorers-rank">{i + 1}</td>
-                    <td className="scorers-name">{s.name}</td>
-                    <td className="scorers-goals">{s.motm}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
-
-      {view === 'teams' && (
-        <div className="scorers-table-wrap">
-          {teamStats.length === 0 ? (
-            <p className="stats-empty">No team data yet.</p>
-          ) : (
-            <table className="scorers-table">
-              <thead>
-                <tr>
-                  <th>Team</th>
-                  <th>GF</th>
-                  <th>GA</th>
-                  <th>Pen</th>
-                  <th>🟨</th>
-                  <th>🟥</th>
-                </tr>
-              </thead>
-              <tbody>
-                {teamStats.map(t => (
-                  <tr key={t.team}>
-                    <td className="scorers-name"><Flag team={t.team} /> {t.team}</td>
-                    <td className="scorers-goals">{t.goals_for}</td>
-                    <td>{t.goals_against}</td>
-                    <td>{t.penalties || ''}</td>
-                    <td>{t.yellow_cards || ''}</td>
-                    <td>{t.red_cards || ''}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
     </section>
   );
 }
