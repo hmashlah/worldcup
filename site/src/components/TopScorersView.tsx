@@ -1,16 +1,14 @@
-import { useState } from 'react';
 import { useTopScorers, usePlayerStats, useTeamStats } from '@/hooks/useTopScorers';
 import { rankByCards, rankByMotm, rankByAttack, rankByDefence, rankTeamsByCards } from '@/lib/stats';
 import { Flag } from '@/components/Flag';
-import { PlayerModal } from '@/components/PlayerModal';
 import { useUI } from '@/lib/ui-store';
 
 export function TopScorersView() {
   const { scorers, loading: goalLoading } = useTopScorers();
   const statsQ = usePlayerStats();
   const teamStatsQ = useTeamStats();
-  const [selectedPlayer, setSelectedPlayer] = useState<{ name: string; team: string } | null>(null);
   const openTeam = useUI(s => s.openTeam);
+  const openPlayer = useUI(s => s.openPlayer);
 
   const loading = goalLoading || statsQ.isLoading || teamStatsQ.isLoading;
   const allStats = statsQ.data ?? [];
@@ -40,7 +38,7 @@ export function TopScorersView() {
               {scorers.map((s, i) => (
                 <div key={`${s.name}-${s.team}`} className={`stats-card-row ${i === 0 ? 'stats-card-leader' : ''}`}>
                   <span className="stats-card-rank">{i + 1}</span>
-                  <span className="stats-card-name stats-card-clickable" onClick={() => setSelectedPlayer({ name: s.name, team: s.team })}><Flag team={s.team} /> {s.name}</span>
+                  <span className="stats-card-name stats-card-clickable" onClick={() => openPlayer(s.name, s.team)}><Flag team={s.team} /> {s.name}</span>
                   <span className="stats-card-value">{s.goals}{s.penalties > 0 ? ` (${s.penalties}p)` : ''}</span>
                 </div>
               ))}
@@ -88,7 +86,7 @@ export function TopScorersView() {
               {topMotm.map((s, i) => (
                 <div key={`${s.name}-${s.team}`} className={`stats-card-row ${i === 0 ? 'stats-card-leader' : ''}`}>
                   <span className="stats-card-rank">{i + 1}</span>
-                  <span className="stats-card-name stats-card-clickable" onClick={() => setSelectedPlayer({ name: s.name, team: s.team })}><Flag team={s.team} /> {s.name}</span>
+                  <span className="stats-card-name stats-card-clickable" onClick={() => openPlayer(s.name, s.team)}><Flag team={s.team} /> {s.name}</span>
                   <span className="stats-card-value">{s.motm}x</span>
                 </div>
               ))}
@@ -104,7 +102,7 @@ export function TopScorersView() {
               {topCards.map((s, i) => (
                 <div key={`${s.name}-${s.team}`} className={`stats-card-row ${i === 0 ? 'stats-card-leader' : ''}`}>
                   <span className="stats-card-rank">{i + 1}</span>
-                  <span className="stats-card-name stats-card-clickable" onClick={() => setSelectedPlayer({ name: s.name, team: s.team })}><Flag team={s.team} /> {s.name}</span>
+                  <span className="stats-card-name stats-card-clickable" onClick={() => openPlayer(s.name, s.team)}><Flag team={s.team} /> {s.name}</span>
                   <span className="stats-card-value">{s.yellow_cards}🟨{s.red_cards > 0 ? ` ${s.red_cards}🟥` : ''}</span>
                 </div>
               ))}
@@ -128,13 +126,6 @@ export function TopScorersView() {
           </div>
         )}
       </div>
-      {selectedPlayer && (
-        <PlayerModal
-          playerName={selectedPlayer.name}
-          playerTeam={selectedPlayer.team}
-          onClose={() => setSelectedPlayer(null)}
-        />
-      )}
     </section>
   );
 }

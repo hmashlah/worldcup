@@ -14,7 +14,8 @@ import { AuthModal } from '@/components/AuthModal';
 import { PendingApproval } from '@/components/PendingApproval';
 import { AdminPendingUsers } from '@/components/AdminPendingUsers';
 import { MatchDetailPage } from '@/pages/MatchDetailPage';
-import { TeamMatchesModal } from '@/components/TeamMatchesModal';
+import { TeamPage } from '@/pages/TeamPage';
+import { PlayerPage } from '@/pages/PlayerPage';
 import { TimeCapsuleModal, useTimeCapsule } from '@/components/TimeCapsule';
 import { FavTeamModal } from '@/components/FavTeamModal';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
@@ -31,7 +32,7 @@ export default function App() {
 }
 
 function Shell() {
-  const { tab, authOpen, setAuthOpen, openMatchId, openTeamName, closeTeam } = useUI();
+  const { tab, authOpen, setAuthOpen, openMatchId, openTeamName, openPlayerName, openPlayerTeam } = useUI();
   const dataQ = useTournamentData();
   const { user, isAdmin, isApproved, approvalLoading } = useAuth();
   const capsule = useTimeCapsule();
@@ -62,6 +63,10 @@ function Shell() {
             {dataQ.data && (
               openMatchId
                 ? <MatchDetailPage matchId={openMatchId} />
+                : openTeamName
+                ? <TeamPage team={openTeamName} />
+                : openPlayerName && openPlayerTeam
+                ? <PlayerPage playerName={openPlayerName} playerTeam={openPlayerTeam} />
                 : <>
                     {tab === 'today' && <TodayTab />}
                     {tab === 'groups' && <GroupsTab />}
@@ -82,7 +87,6 @@ function Shell() {
         </footer>
       )}
       {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
-      {openTeamName && <TeamMatchesModal team={openTeamName} onClose={closeTeam} />}
       {capsule.showPrompt && isApproved && (
         <TimeCapsuleModal onClose={() => capsule.setShowPrompt(false)} />
       )}

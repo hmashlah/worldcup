@@ -40,6 +40,10 @@ interface UIState {
   openTeamName: string | null;
   openTeam: (name: string) => void;
   closeTeam: () => void;
+  openPlayerName: string | null;
+  openPlayerTeam: string | null;
+  openPlayer: (name: string, team: string) => void;
+  closePlayer: () => void;
   authOpen: boolean;
   setAuthOpen: (open: boolean) => void;
   theme: ThemeKey;
@@ -60,8 +64,12 @@ export const useUI = create<UIState>(set => ({
   openGroup: name => set({ openGroupName: name }),
   closeGroup: () => set({ openGroupName: null }),
   openTeamName: null,
-  openTeam: name => set({ openTeamName: name, openGroupName: null }),
+  openTeam: name => set({ openTeamName: name, openGroupName: null, openPlayerName: null }),
   closeTeam: () => set({ openTeamName: null }),
+  openPlayerName: null,
+  openPlayerTeam: null,
+  openPlayer: (name, team) => set({ openPlayerName: name, openPlayerTeam: team, openTeamName: null }),
+  closePlayer: () => set({ openPlayerName: null, openPlayerTeam: null }),
   authOpen: false,
   setAuthOpen: open => set({ authOpen: open }),
   theme: readInitialTheme(),
