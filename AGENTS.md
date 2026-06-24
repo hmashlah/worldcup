@@ -37,6 +37,12 @@ Credentials are in `site/.env.local`. Use these for direct Supabase queries when
 - `npm test` — run unit tests
 - `node site/scripts/scrape-match-details.mjs` — re-scrape Wikipedia for match detail (lineups, cards, etc.)
 
+## Email (Resend)
+
+- Rate limit: **5 requests per second** (Resend free tier)
+- If sending to all 9 users, send in two batches with a 2s delay between them
+- Or use `onlyTo` to target specific recipients on retry
+
 ## Deployment
 
 - Cloudflare Pages project name: `worldcup`
