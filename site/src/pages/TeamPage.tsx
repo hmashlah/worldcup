@@ -23,6 +23,16 @@ interface SquadData {
   players: SquadPlayer[];
 }
 
+interface WcHistory {
+  editions: number;
+  years: number[];
+  best_finish: string;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+}
+
 interface Props {
   team: string;
 }
@@ -35,6 +45,7 @@ export function TeamPage({ team }: Props) {
   const [squadData, setSquadData] = useState<SquadData | null>(null);
   const [playerStats, setPlayerStats] = useState<Record<string, PlayerStat>>({});
   const [teamInfo, setTeamInfo] = useState<TeamStat | null>(null);
+  const [wcHistory, setWcHistory] = useState<WcHistory | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -43,6 +54,12 @@ export function TeamPage({ team }: Props) {
       if (res.ok) {
         const all = await res.json();
         if (all[team]) setSquadData(all[team] as SquadData);
+      }
+      // Load WC history
+      const histRes = await fetch('/data/wc-history.json');
+      if (histRes.ok) {
+        const hist = await histRes.json();
+        if (hist[team]) setWcHistory(hist[team] as WcHistory);
       }
       // Load player stats from DB (for goals/cards/motm)
       const [{ data: stats }, { data: tInfo }] = await Promise.all([
@@ -98,6 +115,19 @@ export function TeamPage({ team }: Props) {
               {teamInfo.red_cards > 0 && <span className="player-stat">🟥 {teamInfo.red_cards}</span>}
             </div>
           )}
+        </div>
+      )}
+
+      {/* WC History */}
+      {wcHistory && (
+        <div className="team-page-section">
+          <h3>World Cup History</h3>
+          <div className="team-page-card-inner">
+            <div className="player-detail-row"><span className="player-detail-label">Appearances</span><span>{wcHistory.editions} editions</span></div>
+            <div className="player-detail-row"><span className="player-detail-label">Best Finish</span><span>{wcHistory.best_finish}</span></div>
+            <div className="player-detail-row"><span className="player-detail-label">Record</span><span>{wcHistory.played} P · {wcHistory.wins}W · {wcHistory.draws}D · {wcHistory.losses}L</span></div>
+            <div className="player-detail-row"><span className="player-detail-label">Years</span><span className="team-wc-years">{wcHistory.years.join(', ')}</span></div>
+          </div>
         </div>
       )}
 

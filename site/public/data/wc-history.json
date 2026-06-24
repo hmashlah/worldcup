@@ -1,0 +1,747 @@
+{
+  "Algeria": {
+    "editions": 4,
+    "years": [
+      1982,
+      1986,
+      2010,
+      2014
+    ],
+    "best_finish": "Round of 16",
+    "played": 9,
+    "wins": 2,
+    "draws": 2,
+    "losses": 5
+  },
+  "Argentina": {
+    "editions": 17,
+    "years": [
+      1930,
+      1934,
+      1958,
+      1962,
+      1966,
+      1974,
+      1978,
+      1982,
+      1986,
+      1990,
+      1998,
+      2002,
+      2006,
+      2010,
+      2014,
+      2018,
+      2022
+    ],
+    "best_finish": "Final",
+    "played": 52,
+    "wins": 21,
+    "draws": 14,
+    "losses": 17
+  },
+  "Australia": {
+    "editions": 6,
+    "years": [
+      1974,
+      2006,
+      2010,
+      2014,
+      2018,
+      2022
+    ],
+    "best_finish": "Round of 16",
+    "played": 13,
+    "wins": 2,
+    "draws": 2,
+    "losses": 9
+  },
+  "Austria": {
+    "editions": 6,
+    "years": [
+      1934,
+      1954,
+      1958,
+      1978,
+      1982,
+      1990
+    ],
+    "best_finish": "Semi-finals",
+    "played": 18,
+    "wins": 8,
+    "draws": 2,
+    "losses": 8
+  },
+  "Belgium": {
+    "editions": 14,
+    "years": [
+      1930,
+      1934,
+      1938,
+      1954,
+      1970,
+      1982,
+      1986,
+      1990,
+      1994,
+      1998,
+      2002,
+      2014,
+      2018,
+      2022
+    ],
+    "best_finish": "Semi-finals",
+    "played": 40,
+    "wins": 15,
+    "draws": 12,
+    "losses": 13
+  },
+  "Brazil": {
+    "editions": 21,
+    "years": [
+      1934,
+      1938,
+      1950,
+      1954,
+      1958,
+      1962,
+      1966,
+      1970,
+      1974,
+      1978,
+      1982,
+      1986,
+      1990,
+      1994,
+      1998,
+      2002,
+      2006,
+      2010,
+      2014,
+      2018,
+      2022
+    ],
+    "best_finish": "Final",
+    "played": 73,
+    "wins": 46,
+    "draws": 15,
+    "losses": 12
+  },
+  "Canada": {
+    "editions": 2,
+    "years": [
+      1986,
+      2022
+    ],
+    "best_finish": "Group stage",
+    "played": 4,
+    "wins": 0,
+    "draws": 0,
+    "losses": 4
+  },
+  "Colombia": {
+    "editions": 6,
+    "years": [
+      1962,
+      1990,
+      1994,
+      1998,
+      2014,
+      2018
+    ],
+    "best_finish": "Quarter-finals",
+    "played": 12,
+    "wins": 5,
+    "draws": 2,
+    "losses": 5
+  },
+  "Croatia": {
+    "editions": 6,
+    "years": [
+      1998,
+      2002,
+      2006,
+      2014,
+      2018,
+      2022
+    ],
+    "best_finish": "Final",
+    "played": 22,
+    "wins": 6,
+    "draws": 7,
+    "losses": 9
+  },
+  "Czech Republic": {
+    "editions": 9,
+    "years": [
+      1934,
+      1938,
+      1954,
+      1958,
+      1962,
+      1970,
+      1982,
+      1990,
+      2006
+    ],
+    "best_finish": "Final",
+    "played": 21,
+    "wins": 6,
+    "draws": 5,
+    "losses": 10
+  },
+  "DR Congo": {
+    "editions": 1,
+    "years": [
+      1974
+    ],
+    "best_finish": "Group stage",
+    "played": 2,
+    "wins": 0,
+    "draws": 0,
+    "losses": 2
+  },
+  "Ecuador": {
+    "editions": 4,
+    "years": [
+      2002,
+      2006,
+      2014,
+      2022
+    ],
+    "best_finish": "Round of 16",
+    "played": 9,
+    "wins": 2,
+    "draws": 2,
+    "losses": 5
+  },
+  "Egypt": {
+    "editions": 2,
+    "years": [
+      1990,
+      2018
+    ],
+    "best_finish": "Group stage",
+    "played": 4,
+    "wins": 0,
+    "draws": 1,
+    "losses": 3
+  },
+  "England": {
+    "editions": 16,
+    "years": [
+      1950,
+      1954,
+      1958,
+      1962,
+      1966,
+      1970,
+      1982,
+      1986,
+      1990,
+      1998,
+      2002,
+      2006,
+      2010,
+      2014,
+      2018,
+      2022
+    ],
+    "best_finish": "Final",
+    "played": 54,
+    "wins": 21,
+    "draws": 21,
+    "losses": 12
+  },
+  "France": {
+    "editions": 16,
+    "years": [
+      1930,
+      1934,
+      1938,
+      1954,
+      1958,
+      1966,
+      1978,
+      1982,
+      1986,
+      1998,
+      2002,
+      2006,
+      2010,
+      2014,
+      2018,
+      2022
+    ],
+    "best_finish": "Final",
+    "played": 49,
+    "wins": 24,
+    "draws": 13,
+    "losses": 12
+  },
+  "Germany": {
+    "editions": 20,
+    "years": [
+      1934,
+      1938,
+      1954,
+      1958,
+      1962,
+      1966,
+      1970,
+      1974,
+      1978,
+      1982,
+      1986,
+      1990,
+      1994,
+      1998,
+      2002,
+      2006,
+      2010,
+      2014,
+      2018,
+      2022
+    ],
+    "best_finish": "Final",
+    "played": 83,
+    "wins": 48,
+    "draws": 20,
+    "losses": 15
+  },
+  "Ghana": {
+    "editions": 4,
+    "years": [
+      2006,
+      2010,
+      2014,
+      2022
+    ],
+    "best_finish": "Quarter-finals",
+    "played": 13,
+    "wins": 3,
+    "draws": 4,
+    "losses": 6
+  },
+  "Haiti": {
+    "editions": 1,
+    "years": [
+      1974
+    ],
+    "best_finish": "Group stage",
+    "played": 1,
+    "wins": 0,
+    "draws": 0,
+    "losses": 1
+  },
+  "Iran": {
+    "editions": 6,
+    "years": [
+      1978,
+      1998,
+      2006,
+      2014,
+      2018,
+      2022
+    ],
+    "best_finish": "Group stage",
+    "played": 12,
+    "wins": 2,
+    "draws": 2,
+    "losses": 8
+  },
+  "Iraq": {
+    "editions": 1,
+    "years": [
+      1986
+    ],
+    "best_finish": "Group stage",
+    "played": 3,
+    "wins": 0,
+    "draws": 0,
+    "losses": 3
+  },
+  "Japan": {
+    "editions": 7,
+    "years": [
+      1998,
+      2002,
+      2006,
+      2010,
+      2014,
+      2018,
+      2022
+    ],
+    "best_finish": "Round of 16",
+    "played": 17,
+    "wins": 4,
+    "draws": 5,
+    "losses": 8
+  },
+  "Mexico": {
+    "editions": 17,
+    "years": [
+      1930,
+      1950,
+      1954,
+      1958,
+      1962,
+      1966,
+      1970,
+      1978,
+      1986,
+      1994,
+      1998,
+      2002,
+      2006,
+      2010,
+      2014,
+      2018,
+      2022
+    ],
+    "best_finish": "Quarter-finals",
+    "played": 44,
+    "wins": 13,
+    "draws": 9,
+    "losses": 22
+  },
+  "Morocco": {
+    "editions": 6,
+    "years": [
+      1970,
+      1986,
+      1994,
+      1998,
+      2018,
+      2022
+    ],
+    "best_finish": "Semi-finals",
+    "played": 20,
+    "wins": 5,
+    "draws": 5,
+    "losses": 10
+  },
+  "Netherlands": {
+    "editions": 11,
+    "years": [
+      1934,
+      1938,
+      1974,
+      1978,
+      1990,
+      1994,
+      1998,
+      2006,
+      2010,
+      2014,
+      2022
+    ],
+    "best_finish": "Final",
+    "played": 42,
+    "wins": 20,
+    "draws": 14,
+    "losses": 8
+  },
+  "New Zealand": {
+    "editions": 2,
+    "years": [
+      1982,
+      2010
+    ],
+    "best_finish": "Group stage",
+    "played": 3,
+    "wins": 0,
+    "draws": 1,
+    "losses": 2
+  },
+  "Norway": {
+    "editions": 2,
+    "years": [
+      1994,
+      1998
+    ],
+    "best_finish": "Group stage",
+    "played": 4,
+    "wins": 2,
+    "draws": 2,
+    "losses": 0
+  },
+  "Panama": {
+    "editions": 1,
+    "years": [
+      2018
+    ],
+    "best_finish": "Group stage",
+    "played": 3,
+    "wins": 0,
+    "draws": 0,
+    "losses": 3
+  },
+  "Paraguay": {
+    "editions": 8,
+    "years": [
+      1930,
+      1950,
+      1958,
+      1986,
+      1998,
+      2002,
+      2006,
+      2010
+    ],
+    "best_finish": "Quarter-finals",
+    "played": 18,
+    "wins": 3,
+    "draws": 8,
+    "losses": 7
+  },
+  "Portugal": {
+    "editions": 8,
+    "years": [
+      1966,
+      1986,
+      2002,
+      2006,
+      2010,
+      2014,
+      2018,
+      2022
+    ],
+    "best_finish": "Semi-finals",
+    "played": 26,
+    "wins": 10,
+    "draws": 5,
+    "losses": 11
+  },
+  "Qatar": {
+    "editions": 1,
+    "years": [
+      2022
+    ],
+    "best_finish": "Group stage",
+    "played": 3,
+    "wins": 0,
+    "draws": 0,
+    "losses": 3
+  },
+  "Saudi Arabia": {
+    "editions": 6,
+    "years": [
+      1994,
+      1998,
+      2002,
+      2006,
+      2018,
+      2022
+    ],
+    "best_finish": "Round of 16",
+    "played": 13,
+    "wins": 4,
+    "draws": 2,
+    "losses": 7
+  },
+  "Scotland": {
+    "editions": 8,
+    "years": [
+      1954,
+      1958,
+      1974,
+      1978,
+      1982,
+      1986,
+      1990,
+      1998
+    ],
+    "best_finish": "Group stage",
+    "played": 17,
+    "wins": 4,
+    "draws": 4,
+    "losses": 9
+  },
+  "Senegal": {
+    "editions": 3,
+    "years": [
+      2002,
+      2018,
+      2022
+    ],
+    "best_finish": "Quarter-finals",
+    "played": 10,
+    "wins": 3,
+    "draws": 4,
+    "losses": 3
+  },
+  "South Africa": {
+    "editions": 3,
+    "years": [
+      1998,
+      2002,
+      2010
+    ],
+    "best_finish": "Group stage",
+    "played": 7,
+    "wins": 1,
+    "draws": 3,
+    "losses": 3
+  },
+  "South Korea": {
+    "editions": 11,
+    "years": [
+      1954,
+      1986,
+      1990,
+      1994,
+      1998,
+      2002,
+      2006,
+      2010,
+      2014,
+      2018,
+      2022
+    ],
+    "best_finish": "Semi-finals",
+    "played": 28,
+    "wins": 3,
+    "draws": 6,
+    "losses": 19
+  },
+  "Spain": {
+    "editions": 16,
+    "years": [
+      1934,
+      1950,
+      1962,
+      1966,
+      1978,
+      1982,
+      1986,
+      1990,
+      1994,
+      1998,
+      2002,
+      2006,
+      2010,
+      2014,
+      2018,
+      2022
+    ],
+    "best_finish": "Final",
+    "played": 45,
+    "wins": 18,
+    "draws": 14,
+    "losses": 13
+  },
+  "Sweden": {
+    "editions": 12,
+    "years": [
+      1934,
+      1938,
+      1950,
+      1958,
+      1970,
+      1974,
+      1978,
+      1990,
+      1994,
+      2002,
+      2006,
+      2018
+    ],
+    "best_finish": "Final",
+    "played": 33,
+    "wins": 11,
+    "draws": 8,
+    "losses": 14
+  },
+  "Switzerland": {
+    "editions": 12,
+    "years": [
+      1934,
+      1938,
+      1950,
+      1954,
+      1962,
+      1966,
+      1994,
+      2006,
+      2010,
+      2014,
+      2018,
+      2022
+    ],
+    "best_finish": "Quarter-finals",
+    "played": 25,
+    "wins": 6,
+    "draws": 6,
+    "losses": 13
+  },
+  "Tunisia": {
+    "editions": 6,
+    "years": [
+      1978,
+      1998,
+      2002,
+      2006,
+      2018,
+      2022
+    ],
+    "best_finish": "Group stage",
+    "played": 13,
+    "wins": 3,
+    "draws": 3,
+    "losses": 7
+  },
+  "Turkey": {
+    "editions": 2,
+    "years": [
+      1954,
+      2002
+    ],
+    "best_finish": "Semi-finals",
+    "played": 8,
+    "wins": 3,
+    "draws": 1,
+    "losses": 4
+  },
+  "USA": {
+    "editions": 7,
+    "years": [
+      1994,
+      1998,
+      2002,
+      2006,
+      2010,
+      2014,
+      2022
+    ],
+    "best_finish": "Quarter-finals",
+    "played": 21,
+    "wins": 6,
+    "draws": 7,
+    "losses": 8
+  },
+  "Uruguay": {
+    "editions": 14,
+    "years": [
+      1930,
+      1950,
+      1954,
+      1962,
+      1966,
+      1970,
+      1974,
+      1986,
+      1990,
+      2002,
+      2010,
+      2014,
+      2018,
+      2022
+    ],
+    "best_finish": "Final",
+    "played": 42,
+    "wins": 17,
+    "draws": 11,
+    "losses": 14
+  }
+}
