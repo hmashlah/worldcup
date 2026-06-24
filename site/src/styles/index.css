@@ -4612,6 +4612,91 @@ footer {
   }
 }
 
+/* ── Trophy Room ──────────────────────────────────────────────────── */
+.trophy-room {
+  margin-top: 24px;
+}
+.trophy-room-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 12px;
+}
+.trophy-room-title {
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.trophy-room-subtitle {
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+.trophy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+.trophy-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  position: relative;
+}
+.trophy-emoji {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.trophy-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.trophy-title {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+}
+.trophy-winner {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.trophy-detail {
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+.trophy-date {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 9px;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+
+[data-theme='dark'] .trophy-card {
+  border-color: var(--line);
+}
+[data-theme='funky'] .trophy-card {
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 0 var(--ink);
+}
+
+@media (max-width: 720px) {
+  .trophy-grid { grid-template-columns: 1fr; gap: 8px; }
+  .trophy-card { padding: 10px 12px; }
+  .trophy-emoji { font-size: 20px; }
+}
+
 /* ── Match Chat ──────────────────────────────────────────────────── */
 .chat-modal {
   max-width: 480px;

@@ -4,6 +4,7 @@ import { Bracket } from '@/components/Bracket';
 import { LeaderboardCard } from '@/components/LeaderboardCard';
 import { PointsTrendChart } from '@/components/PointsTrendChart';
 import { SeasonAwards } from '@/components/SeasonAwards';
+import { TrophyRoom } from '@/components/TrophyRoom';
 import { MyPicksView } from '@/components/MyPicksView';
 import { ChatView } from '@/components/ChatView';
 import { Topbar } from '@/components/Topbar';
@@ -118,8 +119,9 @@ function LeaderboardTab() {
         <p>3 pts for an exact score · 1 pt for the right outcome · +1 in knockouts for the right advancer.</p>
       </div>
       <LeaderboardCard />
-      <PointsTrendChart />
       <SeasonAwards />
+      <TrophyRoom />
+      <PointsTrendChart />
     </section>
   );
 }
