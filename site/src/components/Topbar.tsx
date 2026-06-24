@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useMyPredictions } from '@/hooks/usePredictions';
+import { useUnreadChat } from '@/hooks/useUnreadChat';
 import { matchesByDay, defaultDay, countUnsubmitted } from '@/lib/days';
 import { useUI, type TabKey } from '@/lib/ui-store';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -37,6 +38,8 @@ export function Topbar() {
     return countUnsubmitted(day.matches, predsQ.data);
   }, [user, dataQ.data, predsQ.data]);
 
+  const unreadChat = useUnreadChat();
+
   useEffect(() => {
     if (tab === 'admin' && !isAdmin) setTab('today');
     if (tab === 'leaderboard' && !user) setTab('today');
@@ -65,6 +68,9 @@ export function Topbar() {
             onClick={() => setTab(t.key)}
           >
             {t.label}
+            {t.key === 'chat' && unreadChat > 0 && tab !== 'chat' && (
+              <span className="tab-badge">{unreadChat > 9 ? '9+' : unreadChat}</span>
+            )}
           </button>
         ))}
       </nav>
