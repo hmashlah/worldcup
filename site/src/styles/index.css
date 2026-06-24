@@ -1069,6 +1069,10 @@ footer {
   letter-spacing: -0.01em;
   animation: score-appear .4s ease-out;
 }
+.lb-streak {
+  margin-left: 4px;
+  font-size: 12px;
+}
 .leaderboard-key {
   font-size: 11px;
   color: var(--ink-faint);

@@ -61,7 +61,12 @@ export function LeaderboardCard() {
             style={!isMe && user ? { cursor: 'pointer' } : undefined}
           >
             <span className="lb-rank">{ROSETTES[rank - 1] ?? `#${rank}`}</span>
-            <span className="lb-name">{profilesQ.data?.[e.user_id]?.fav_team && <Flag team={profilesQ.data[e.user_id].fav_team!} />} {e.display_name}</span>
+            <span className="lb-name">
+              {profilesQ.data?.[e.user_id]?.fav_team && <Flag team={profilesQ.data[e.user_id].fav_team!} />}
+              {' '}{e.display_name}
+              {e.streak >= 3 && <span className="lb-streak lb-streak-hot" title={`${e.streak} match scoring streak`}>🔥</span>}
+              {e.streak <= -3 && <span className="lb-streak lb-streak-cold" title={`${-e.streak} matches with 0pts`}>🥶</span>}
+            </span>
             <span>{e.predictions}</span>
             <span>{e.exact}</span>
             <span>{e.outcome}</span>

@@ -6,6 +6,7 @@ import { useProfiles } from '@/hooks/useProfiles';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { scorePrediction } from '@/lib/scoring';
 import { isMatchKO } from '@/lib/utils';
+import { allMatches } from '@/lib/days';
 
 export interface LeaderboardEntry {
   user_id: string;
@@ -15,6 +16,7 @@ export interface LeaderboardEntry {
   outcome: number;     // # of right-outcome (but not exact) predictions
   advancer: number;    // # of right-advancer KO bonuses
   predictions: number; // # of predictions submitted that have an actual
+  streak: number;      // current streak: positive = hot (scoring), negative = cold (0pts)
 }
 
 export function useLeaderboard(): {
@@ -49,6 +51,7 @@ export function useLeaderboard(): {
           outcome: 0,
           advancer: 0,
           predictions: 0,
+          streak: 0,
         };
       }
       return byUser[id];
@@ -85,6 +88,45 @@ export function useLeaderboard(): {
 
     // Include approved profiles even if they have zero points.
     for (const id of approvedIds) ensure(id);
+
+    // Compute current streak per user from most recent matches (walking backwards)
+    const chronoMatches = allMatches(dataQ.data).filter(m => resultsQ.data[m.id] && !liveIds.has(m.id));
+    const predsByUser: Record<string, Record<string, PredictionRow>> = {};
+    for (const p of predsQ.data as PredictionRow[]) {
+      if (!approvedIds.has(p.user_id)) continue;
+      if (!predsByUser[p.user_id]) predsByUser[p.user_id] = {};
+      predsByUser[p.user_id][p.match_id] = p;
+    }
+
+    for (const userId of approvedIds) {
+      const userPreds = predsByUser[userId] ?? {};
+      let streak = 0;
+      // Walk from most recent match backwards
+      for (let i = chronoMatches.length - 1; i >= 0; i--) {
+        const m = chronoMatches[i];
+        const pred = userPreds[m.id];
+        const result = resultsQ.data[m.id];
+        if (!pred || !result) break; // no prediction = streak ends
+        const pts = scorePrediction(
+          { team1: pred.team1_score, team2: pred.team2_score },
+          { team1: result.team1_score, team2: result.team2_score },
+          isMatchKO(dataQ.data, m.id),
+          pred.advancer,
+          result.advancer,
+        );
+        if (streak === 0) {
+          // First match determines direction
+          streak = pts > 0 ? 1 : -1;
+        } else if (streak > 0 && pts > 0) {
+          streak++;
+        } else if (streak < 0 && pts === 0) {
+          streak--;
+        } else {
+          break; // direction changed, streak ends
+        }
+      }
+      if (byUser[userId]) byUser[userId].streak = streak;
+    }
 
     return Object.values(byUser).sort(
       (a, b) =>
