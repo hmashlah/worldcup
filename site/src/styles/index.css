@@ -1028,7 +1028,21 @@ footer {
 .player-page-header {
   display: flex;
   align-items: center;
+  gap: 12px;
+}
+.player-page-photo {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--line);
+  flex-shrink: 0;
+}
+.player-page-header-text {
+  display: flex;
+  align-items: center;
   gap: 10px;
+  flex: 1;
 }
 .player-page-header .fi { font-size: 24px; }
 .player-page-title { flex: 1; }
@@ -1099,6 +1113,18 @@ footer {
   padding: 20px 0;
   font-style: italic;
 }
+.player-page-wiki {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.player-wiki-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent, #2563eb);
+  text-decoration: none;
+}
+.player-wiki-link:hover { text-decoration: underline; }
 .player-page-events {
   display: flex;
   flex-direction: column;

@@ -11,6 +11,7 @@ interface SquadPlayer {
   shirt_number: number | null;
   dob: string | null;
   club: string | null;
+  photo_url: string | null;
 }
 
 interface MatchEvent {
@@ -140,12 +141,17 @@ export function PlayerPage({ playerName, playerTeam }: Props) {
 
       <div className="player-page-card">
         <div className="player-page-header">
-          <Flag team={playerTeam} />
-          <div className="player-page-title">
-            <h2>{playerName}</h2>
-            <button type="button" className="player-page-team" onClick={() => openTeam(playerTeam)}>
-              {playerTeam}
-            </button>
+          {bio?.photo_url && (
+            <img src={bio.photo_url} alt={playerName} className="player-page-photo" />
+          )}
+          <div className="player-page-header-text">
+            <Flag team={playerTeam} />
+            <div className="player-page-title">
+              <h2>{playerName}</h2>
+              <button type="button" className="player-page-team" onClick={() => openTeam(playerTeam)}>
+                {playerTeam}
+              </button>
+            </div>
           </div>
           {bio?.shirt_number && <span className="player-page-number">#{bio.shirt_number}</span>}
         </div>
@@ -170,6 +176,13 @@ export function PlayerPage({ playerName, playerTeam }: Props) {
             {totalMotm > 0 && <div className="player-detail-row"><span className="player-detail-label">Man of the Match</span><span>{totalMotm}</span></div>}
           </div>
         )}
+
+        {/* Wikipedia link */}
+        <div className="player-page-wiki">
+          <a href={`https://en.wikipedia.org/wiki/${encodeURIComponent(playerName.replace(/ /g, '_'))}`} target="_blank" rel="noopener noreferrer" className="player-wiki-link">
+            View on Wikipedia →
+          </a>
+        </div>
       </div>
 
       {/* Match events */}
