@@ -549,15 +549,14 @@ export function ChatView() {
                   if (entries.length === 0) return null;
                   return (
                     <div className="chat-reactions">
-                      {entries.map(([emoji, { count, mine, names }]) => (
+                      {entries.map(([emoji, { mine, names }]) => (
                         <button
                           key={emoji}
                           type="button"
                           className={`chat-reaction-pill ${mine ? 'chat-reaction-mine' : ''}`}
                           onClick={() => toggleReaction(msg.id, emoji)}
-                          title={names.join(', ')}
                         >
-                          {emoji} {count}
+                          {emoji} {names.join(', ')}
                         </button>
                       ))}
                     </div>
