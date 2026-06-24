@@ -105,14 +105,14 @@ export function Topbar() {
           aria-label="Toggle theme"
         >
           {theme === 'minimal' ? (
-            /* Sparkle icon — previews dark */
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M8 1.5v3M8 11.5v3M1.5 8h3M11.5 8h3M3.4 3.4l2.1 2.1M10.5 10.5l2.1 2.1M3.4 12.6l2.1-2.1M10.5 5.5l2.1-2.1" />
-            </svg>
-          ) : theme === 'dark' ? (
-            /* Moon icon — previews funky */
+            /* Moon icon — previews dark */
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
               <path d="M10.6 12.5a5.5 5.5 0 0 1-5.1-7.7 5.5 5.5 0 1 0 7.4 7.4 5.5 5.5 0 0 1-2.3.3z" />
+            </svg>
+          ) : theme === 'dark' ? (
+            /* Sparkle icon — previews funky */
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M8 1.5v3M8 11.5v3M1.5 8h3M11.5 8h3M3.4 3.4l2.1 2.1M10.5 10.5l2.1 2.1M3.4 12.6l2.1-2.1M10.5 5.5l2.1-2.1" />
             </svg>
           ) : (
             /* Sun icon — previews minimal */
