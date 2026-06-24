@@ -4,7 +4,6 @@ Fun features for the World Cup 2026 prediction league (friends app).
 
 ## Medium Priority
 
-- [ ] **Prediction reveals** — hide picks until kickoff, reveal all at once with animation
 - [ ] **Weekly MVP/Flop awards** — auto-generated superlatives (Most Delusional, Lucky Guess of the Week)
 - [ ] **Head-to-head challenges** — challenge a friend on a specific match, loser gets a custom badge
 - [ ] **Pick confidence slider** — mark confidence 1-5, bonus points for low-confidence hits
@@ -23,6 +22,7 @@ Fun features for the World Cup 2026 prediction league (friends app).
 
 ## Completed
 
+- [x] **Prediction reveals** — "picks" button after kickoff, card-deal animation reveals everyone's predictions
 - [x] **Time Capsule** — seal tournament predictions before knockouts, revealed after the final
 - [x] **Best Third-Place table** — ranked table on Groups tab showing which 3rds qualify
 - [x] **Chat** — global chat with @mentions, reactions, images, emoji picker, edit/delete
