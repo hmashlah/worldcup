@@ -1564,11 +1564,13 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   // Only runs for finished group-stage matches missing match_detail.
   const enrichRes = await enrichFinishedMatches(ctx.env, host, matchMap);
 
-  // ── Rebuild player stats from all match_detail ─────────────────────
-  const playerStatsRes = await rebuildPlayerStats(ctx.env, matchMap);
-
-  // ── Rebuild team stats ─────────────────────────────────────────────
-  const teamStatsRes = await rebuildTeamStats(ctx.env, matchMap);
+  // ── Rebuild player/team stats only when new data was enriched or wiki updated ──
+  let playerStatsRes: { upserted: number; error?: string } = { upserted: 0 };
+  let teamStatsRes: { upserted: number; error?: string } = { upserted: 0 };
+  if (enrichRes.updated > 0 || wikiRes.updated > 0 || upsertRes.ok > 0) {
+    playerStatsRes = await rebuildPlayerStats(ctx.env, matchMap);
+    teamStatsRes = await rebuildTeamStats(ctx.env, matchMap);
+  }
 
   return Response.json({
     upserted: upsertRes.ok,
