@@ -14,11 +14,17 @@ Do NOT use the Cloudflare MCP for this — always use the script.
 
 ## Service Worker Cache
 
-The pre-push hook auto-bumps the SW cache version. No manual intervention needed.
+SW cache version is injected at build time by Vite plugin. No manual bumps needed.
 
 ## Git Rules
 
 - NEVER use `--no-verify` on git push or git commit. Always let the pre-push hook run.
+
+## Features Backlog
+
+After completing any feature, always update `FEATURES.md`:
+- Move the item from pending to Completed
+- If it was from "Low Priority" or "Medium Priority", remove it from that section
 
 ## Database Access
 
