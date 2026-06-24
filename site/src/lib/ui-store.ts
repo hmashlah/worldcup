@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 
-export type TabKey = 'today' | 'groups' | 'bracket' | 'leaderboard' | 'picks' | 'chat' | 'admin';
+export type TabKey = 'today' | 'groups' | 'bracket' | 'leaderboard' | 'stats' | 'picks' | 'chat' | 'admin';
 export type ThemeKey = 'minimal' | 'dark' | 'funky';
 
 const THEME_STORAGE_KEY = 'wc26-theme';
 const TAB_STORAGE_KEY = 'wc26-tab';
 
-const VALID_TABS: TabKey[] = ['today', 'groups', 'bracket', 'leaderboard', 'picks', 'chat', 'admin'];
+const VALID_TABS: TabKey[] = ['today', 'groups', 'bracket', 'leaderboard', 'stats', 'picks', 'chat', 'admin'];
 
 function readInitialTab(): TabKey {
   if (typeof window === 'undefined') return 'today';

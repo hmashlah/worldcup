@@ -1213,6 +1213,103 @@ async function enrichFinishedMatches(
   return { needed: batch.length, updated, errors };
 }
 
+// ── Rebuild player stats from all match_detail ─────────────────────────
+
+interface PlayerStat {
+  name: string;
+  team: string;
+  goals: number;
+  penalties: number;
+  own_goals: number;
+  yellow_cards: number;
+  red_cards: number;
+  motm: number;
+  appearances: number;
+}
+
+async function rebuildPlayerStats(env: Env): Promise<{ upserted: number; error?: string }> {
+  const url = env.SUPABASE_URL;
+  const key = env.SUPABASE_SERVICE_ROLE_KEY;
+  const headers = {
+    apikey: key,
+    authorization: `Bearer ${key}`,
+    'content-type': 'application/json',
+  };
+
+  // Fetch all match_detail + match teams from data.json team mapping
+  const res = await fetch(`${url}/rest/v1/wc26_match_results?select=match_id,match_detail&match_detail=not.is.null`, { headers });
+  if (!res.ok) return { upserted: 0, error: `fetch failed: ${res.status}` };
+
+  const rows = await res.json() as Array<{ match_id: string; match_detail: Record<string, unknown> }>;
+  const stats: Record<string, PlayerStat> = {};
+
+  const ensure = (name: string, team: string): PlayerStat => {
+    const key = `${name}|||${team}`;
+    if (!stats[key]) stats[key] = { name, team, goals: 0, penalties: 0, own_goals: 0, yellow_cards: 0, red_cards: 0, motm: 0, appearances: 0 };
+    return stats[key];
+  };
+
+  for (const row of rows) {
+    const d = row.match_detail as {
+      goals?: Array<{ team: string; name: string; kind: string }>;
+      cards?: Array<{ team: string; name: string; type: string }>;
+      motm?: { name: string; team: string };
+      lineups?: { home?: { starting?: Array<{ name: string }>; subs?: Array<{ name: string }> }; away?: { starting?: Array<{ name: string }>; subs?: Array<{ name: string }> } };
+    };
+
+    // Goals
+    if (d.goals) {
+      for (const g of d.goals) {
+        const name = g.name?.trim();
+        if (!name) continue;
+        const team = g.team === 'home' ? 'home' : 'away';
+        const p = ensure(name, team);
+        if (g.kind === 'own-goal') p.own_goals++;
+        else {
+          p.goals++;
+          if (g.kind === 'penalty') p.penalties++;
+        }
+      }
+    }
+
+    // Cards
+    if (d.cards) {
+      for (const c of d.cards) {
+        const name = c.name?.trim();
+        if (!name) continue;
+        const team = c.team === 'home' ? 'home' : 'away';
+        const p = ensure(name, team);
+        if (c.type === 'yellow') p.yellow_cards++;
+        else if (c.type === 'red' || c.type === 'second-yellow') p.red_cards++;
+      }
+    }
+
+    // MOTM
+    if (d.motm?.name) {
+      const team = d.motm.team === 'home' ? 'home' : 'away';
+      ensure(d.motm.name.trim(), team).motm++;
+    }
+  }
+
+  const upsertRows = Object.values(stats);
+  if (upsertRows.length === 0) return { upserted: 0 };
+
+  // Delete all existing and re-insert (full rebuild is fine for <200 rows)
+  await fetch(`${url}/rest/v1/wc26_player_stats?name=not.is.null`, {
+    method: 'DELETE',
+    headers,
+  });
+
+  const insertRes = await fetch(`${url}/rest/v1/wc26_player_stats`, {
+    method: 'POST',
+    headers: { ...headers, Prefer: 'return=minimal' },
+    body: JSON.stringify(upsertRows),
+  });
+
+  if (!insertRes.ok) return { upserted: 0, error: `insert failed: ${insertRes.status}` };
+  return { upserted: upsertRows.length };
+}
+
 export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   // Auth.
   const secret = ctx.request.headers.get('x-wc26-secret') ?? '';
@@ -1356,6 +1453,9 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   // Only runs for finished group-stage matches missing match_detail.
   const enrichRes = await enrichFinishedMatches(ctx.env, host, matchMap);
 
+  // ── Rebuild player stats from all match_detail ─────────────────────
+  const playerStatsRes = await rebuildPlayerStats(ctx.env);
+
   return Response.json({
     upserted: upsertRes.ok,
     admin_payload_enriched: patchRes.ok,
@@ -1371,6 +1471,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
       updated: wikiRes.updated,
     },
     enrich: { needed: enrichRes.needed, updated: enrichRes.updated },
+    player_stats: playerStatsRes,
     errors: [
       ...upsertRes.errors,
       ...patchRes.errors,

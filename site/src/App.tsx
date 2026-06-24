@@ -6,6 +6,7 @@ import { LeaderboardCard } from '@/components/LeaderboardCard';
 import { PointsTrendChart } from '@/components/PointsTrendChart';
 import { SeasonAwards } from '@/components/SeasonAwards';
 import { TrophyRoom } from '@/components/TrophyRoom';
+import { TopScorersView } from '@/components/TopScorersView';
 import { MyPicksView } from '@/components/MyPicksView';
 import { ChatView } from '@/components/ChatView';
 import { Topbar } from '@/components/Topbar';
@@ -66,6 +67,7 @@ function Shell() {
                     {tab === 'groups' && <GroupsTab />}
                     {tab === 'bracket' && <BracketTab />}
                     {tab === 'leaderboard' && user && <LeaderboardTab />}
+                    {tab === 'stats' && <TopScorersView />}
                     {tab === 'picks' && user && <MyPicksTab />}
                     {tab === 'chat' && user && <ChatView />}
                     {tab === 'admin' && isAdmin && <AdminTab />}
