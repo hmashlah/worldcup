@@ -19,7 +19,7 @@ const SQUADS_PATH = path.resolve(__dirname, '../public/data/squads.json');
 function getThumbUrl(filename) {
   const normalized = filename.replace(/ /g, '_');
   const md5 = crypto.createHash('md5').update(normalized).digest('hex');
-  return `https://upload.wikimedia.org/wikipedia/commons/thumb/${md5[0]}/${md5.slice(0, 2)}/${encodeURIComponent(normalized)}/200px-${encodeURIComponent(normalized)}`;
+  return `https://upload.wikimedia.org/wikipedia/commons/thumb/${md5[0]}/${md5.slice(0, 2)}/${encodeURIComponent(normalized)}/250px-${encodeURIComponent(normalized)}`;
 }
 
 function sleep(ms) {
