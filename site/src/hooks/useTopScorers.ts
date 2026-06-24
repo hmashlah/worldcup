@@ -22,7 +22,7 @@ export function useTopScorers() {
         .select('*')
         .gt('goals', 0)
         .order('goals', { ascending: false })
-        .limit(25);
+        .limit(10);
       if (error) throw error;
       return (data ?? []) as PlayerStat[];
     },

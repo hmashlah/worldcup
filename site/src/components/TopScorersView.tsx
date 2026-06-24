@@ -14,12 +14,12 @@ export function TopScorersView() {
   const cardPlayers = [...allStats]
     .filter(p => p.yellow_cards > 0 || p.red_cards > 0)
     .sort((a, b) => (b.yellow_cards + b.red_cards * 2) - (a.yellow_cards + a.red_cards * 2))
-    .slice(0, 20);
+    .slice(0, 10);
 
   const motmPlayers = [...allStats]
     .filter(p => p.motm > 0)
     .sort((a, b) => b.motm - a.motm)
-    .slice(0, 15);
+    .slice(0, 10);
 
   if (loading) return <p style={{ textAlign: 'center', padding: '32px' }}>Loading stats…</p>;
 
