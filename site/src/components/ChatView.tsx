@@ -64,6 +64,7 @@ export function ChatView() {
   const [loading, setLoading] = useState(true);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
@@ -484,7 +485,7 @@ export function ChatView() {
                     alt="shared image"
                     className="chat-msg-image"
                     loading="lazy"
-                    onClick={() => window.open(msg.image_url!, '_blank')}
+                    onClick={() => setLightboxUrl(msg.image_url)}
                   />
                 )}
                 {editingId === msg.id ? (
@@ -650,6 +651,12 @@ export function ChatView() {
           </div>
         )}
       </div>
+      {lightboxUrl && (
+        <div className="chat-lightbox" onClick={() => setLightboxUrl(null)}>
+          <img src={lightboxUrl} alt="Full size" onClick={e => e.stopPropagation()} />
+          <button type="button" className="chat-lightbox-close" onClick={() => setLightboxUrl(null)}>×</button>
+        </div>
+      )}
     </section>
   );
 }
