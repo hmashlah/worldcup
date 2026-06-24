@@ -114,7 +114,7 @@ export function TimeCapsuleModal({ onClose }: Props) {
               className="capsule-input"
               value={winner}
               onChange={e => setWinner(e.target.value)}
-              placeholder="e.g. Argentina"
+              placeholder="Your pick"
             />
           </label>
 
@@ -124,7 +124,7 @@ export function TimeCapsuleModal({ onClose }: Props) {
               className="capsule-input"
               value={topScorer}
               onChange={e => setTopScorer(e.target.value)}
-              placeholder="e.g. Mbappé"
+              placeholder="Player name"
             />
           </label>
 
@@ -134,7 +134,7 @@ export function TimeCapsuleModal({ onClose }: Props) {
               className="capsule-input"
               value={darkHorse}
               onChange={e => setDarkHorse(e.target.value)}
-              placeholder="e.g. Nigeria"
+              placeholder="The underdog"
             />
           </label>
 
@@ -144,7 +144,7 @@ export function TimeCapsuleModal({ onClose }: Props) {
               className="capsule-input"
               value={boldTake}
               onChange={e => setBoldTake(e.target.value)}
-              placeholder="e.g. Germany won't make it past groups"
+              placeholder="Something wild"
             />
           </label>
 
