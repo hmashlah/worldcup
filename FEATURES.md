@@ -15,12 +15,12 @@ Fun features for the World Cup 2026 prediction league (friends app).
 - [ ] **"Told you so" button** — one-click message when a bold prediction hits
 - [ ] **Streak flames** — fire icon next to names on a hot streak, ice when cold
 - [ ] **Watch-along status** — "watching" indicator so friends know who's tuned in
-- [ ] **Avatar/team badge** — pick a team to support, shown next to name
 - [ ] **Prediction heatmap** — visual grid showing where everyone picked differently
 - [ ] **Highlight reel** — auto-generated summary of best/worst moments per person
 
 ## Completed
 
+- [x] **Avatar/team badge** — pick a team to support, flag shows next to name in chat/leaderboard/picks
 - [x] **Trophy Room** — per-matchday King, Psychic, Contrarian, Cursed, Comeback Kid, The Wall
 - [x] **Prediction reveals** — "picks" button after kickoff, card-deal animation reveals everyone's predictions
 - [x] **Time Capsule** — seal tournament predictions before knockouts, revealed after the final
