@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Flag } from '@/components/Flag';
 import { useAllPredictions, type PredictionRow } from '@/hooks/usePredictions';
 import { useProfiles } from '@/hooks/useProfiles';
@@ -33,6 +33,12 @@ export function PicksRevealModal({ matchId, team1, team2, onClose }: Props) {
 
   // Mark as seen on mount
   useState(() => { markSeen(matchId); });
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, [onClose]);
 
   const picks = useMemo(() => {
     if (!predsQ.data || !profilesQ.data) return [];

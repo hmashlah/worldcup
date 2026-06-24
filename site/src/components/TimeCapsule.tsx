@@ -67,6 +67,12 @@ export function TimeCapsuleModal({ onClose }: Props) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, [onClose]);
+
   const handleSeal = async () => {
     if (!user || !winner.trim()) return;
     setSaving(true);

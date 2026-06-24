@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAllPredictions, type PredictionRow } from '@/hooks/usePredictions';
 import { useResults } from '@/hooks/useResults';
@@ -43,6 +43,12 @@ export function PlayerComparison({ opponentId, onClose }: Props) {
   const resultsQ = useResults();
   const dataQ = useTournamentData();
   const profilesQ = useProfiles();
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, [onClose]);
 
   const comparison = useMemo(() => {
     if (!user || !predsQ.data || !resultsQ.data || !dataQ.data || !profilesQ.data) return null;

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Flag } from '@/components/Flag';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSetFavTeam } from '@/hooks/useProfiles';
@@ -14,6 +14,12 @@ export function FavTeamModal({ onClose }: Props) {
   const setFavTeam = useSetFavTeam();
   const [selected, setSelected] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, [onClose]);
 
   const teams = useMemo(() => {
     if (!dataQ.data) return [];
