@@ -138,44 +138,46 @@ export function PlayerPage({ playerName, playerTeam }: Props) {
     <section className="tab-panel active">
       <button type="button" className="page-back" onClick={closePlayer}>← Back</button>
 
-      <div className="player-page-header">
-        <Flag team={playerTeam} />
-        <div className="player-page-title">
-          <h2>{playerName}</h2>
-          <button type="button" className="player-page-team" onClick={() => openTeam(playerTeam)}>
-            {playerTeam}
-          </button>
+      <div className="player-page-card">
+        <div className="player-page-header">
+          <Flag team={playerTeam} />
+          <div className="player-page-title">
+            <h2>{playerName}</h2>
+            <button type="button" className="player-page-team" onClick={() => openTeam(playerTeam)}>
+              {playerTeam}
+            </button>
+          </div>
+          {bio?.shirt_number && <span className="player-page-number">#{bio.shirt_number}</span>}
         </div>
-        {bio?.shirt_number && <span className="player-page-number">#{bio.shirt_number}</span>}
+
+        {/* Bio as inline text */}
+        {bio && (
+          <div className="player-page-details">
+            {bio.position && <div className="player-detail-row"><span className="player-detail-label">Position</span><span>{bio.position === 'GK' ? 'Goalkeeper' : bio.position === 'DF' ? 'Defender' : bio.position === 'MF' ? 'Midfielder' : 'Forward'}</span></div>}
+            {bio.club && <div className="player-detail-row"><span className="player-detail-label">Club</span><span>{bio.club}</span></div>}
+            {bio.dob && <div className="player-detail-row"><span className="player-detail-label">Age</span><span>{calculateAge(bio.dob)} years ({new Date(bio.dob).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })})</span></div>}
+          </div>
+        )}
+
+        {/* Tournament stats */}
+        {!loading && events.length > 0 && (
+          <div className="player-page-tournament">
+            <div className="player-detail-row"><span className="player-detail-label">Appearances</span><span>{events.length}</span></div>
+            {totalGoals > 0 && <div className="player-detail-row"><span className="player-detail-label">Goals</span><span>{totalGoals}{totalPens > 0 ? ` (${totalPens} pen)` : ''}</span></div>}
+            {totalOG > 0 && <div className="player-detail-row"><span className="player-detail-label">Own Goals</span><span>{totalOG}</span></div>}
+            {totalYellow > 0 && <div className="player-detail-row"><span className="player-detail-label">Yellow Cards</span><span>{totalYellow}</span></div>}
+            {totalRed > 0 && <div className="player-detail-row"><span className="player-detail-label">Red Cards</span><span>{totalRed}</span></div>}
+            {totalMotm > 0 && <div className="player-detail-row"><span className="player-detail-label">Man of the Match</span><span>{totalMotm}</span></div>}
+          </div>
+        )}
       </div>
-
-      {/* Bio */}
-      {bio && (bio.position || bio.club || bio.dob) && (
-        <div className="player-page-bio">
-          {bio.position && <span className="player-bio-item">{bio.position}</span>}
-          {bio.club && <span className="player-bio-item">{bio.club}</span>}
-          {bio.dob && <span className="player-bio-item">{calculateAge(bio.dob)} years old</span>}
-        </div>
-      )}
-
-      {/* Tournament stats */}
-      {!loading && (
-        <div className="player-page-stats">
-          {totalGoals > 0 && <span className="player-stat">⚽ {totalGoals}{totalPens > 0 ? ` (${totalPens}p)` : ''}</span>}
-          {totalOG > 0 && <span className="player-stat">🫣 {totalOG} OG</span>}
-          {totalYellow > 0 && <span className="player-stat">🟨 {totalYellow}</span>}
-          {totalRed > 0 && <span className="player-stat">🟥 {totalRed}</span>}
-          {totalMotm > 0 && <span className="player-stat">⭐ {totalMotm} MOTM</span>}
-          {events.length > 0 && <span className="player-stat">{events.length} match{events.length !== 1 ? 'es' : ''}</span>}
-        </div>
-      )}
 
       {/* Match events */}
       {loading ? (
         <p style={{ textAlign: 'center', padding: '24px', color: 'var(--ink-faint)' }}>Loading…</p>
       ) : events.length > 0 ? (
         <div className="player-page-section">
-          <h3>Tournament Appearances</h3>
+          <h3>Match Events</h3>
           <div className="player-page-events">
             {events.map(e => (
               <div key={e.matchId} className="player-event-row">
@@ -193,7 +195,9 @@ export function PlayerPage({ playerName, playerTeam }: Props) {
           </div>
         </div>
       ) : (
-        <p style={{ textAlign: 'center', padding: '24px', color: 'var(--ink-faint)' }}>No recorded events in this tournament yet.</p>
+        <div className="player-page-section">
+          <p className="player-page-empty">No recorded match events in this tournament yet.</p>
+        </div>
       )}
     </section>
   );

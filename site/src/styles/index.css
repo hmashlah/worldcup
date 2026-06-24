@@ -1029,7 +1029,6 @@ footer {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 12px;
 }
 .player-page-header .fi { font-size: 24px; }
 .player-page-title { flex: 1; }
@@ -1048,6 +1047,29 @@ footer {
   font-size: 28px;
   font-weight: 800;
   color: var(--ink-faint);
+}
+.player-page-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.player-page-details,
+.player-page-tournament {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.player-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 13px;
+}
+.player-detail-label {
+  color: var(--ink-faint);
+  font-weight: 600;
 }
 .player-page-bio {
   display: flex;
@@ -1069,6 +1091,13 @@ footer {
   letter-spacing: 0.04em;
   color: var(--ink-soft);
   margin: 0 0 10px;
+}
+.player-page-empty {
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: 13px;
+  padding: 20px 0;
+  font-style: italic;
 }
 .player-page-events {
   display: flex;
