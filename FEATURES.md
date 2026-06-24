@@ -8,7 +8,6 @@ Fun features for the World Cup 2026 prediction league (friends app).
 - [ ] **Head-to-head challenges** — challenge a friend on a specific match, loser gets a custom badge
 - [ ] **Pick confidence slider** — mark confidence 1-5, bonus points for low-confidence hits
 - [ ] **Match day bingo** — randomly generated bingo card (red card, penalty, 90th min goal, etc.)
-- [ ] **Trophy room** — permanent awards page with fun trophies for the whole tournament
 
 ## Low Priority
 
@@ -22,6 +21,7 @@ Fun features for the World Cup 2026 prediction league (friends app).
 
 ## Completed
 
+- [x] **Trophy Room** — per-matchday King, Psychic, Contrarian, Cursed, Comeback Kid, The Wall
 - [x] **Prediction reveals** — "picks" button after kickoff, card-deal animation reveals everyone's predictions
 - [x] **Time Capsule** — seal tournament predictions before knockouts, revealed after the final
 - [x] **Best Third-Place table** — ranked table on Groups tab showing which 3rds qualify
