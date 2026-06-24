@@ -5598,6 +5598,70 @@ footer {
   font-size: 12px;
   white-space: nowrap;
 }
+.stats-card-clickable {
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.stats-card-clickable:hover {
+  color: var(--accent, #2563eb);
+  text-decoration: underline;
+}
+
+/* ── Player Modal ─────────────────────────────────────────────────── */
+.player-modal {
+  max-width: 440px;
+}
+.player-modal-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.player-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.player-stat {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.player-matches {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.player-match-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+}
+.player-match-teams {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+.player-match-events {
+  font-size: 13px;
+  white-space: nowrap;
+}
+.player-loading {
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: 13px;
+  padding: 24px 0;
+}
 
 [data-theme='dark'] .stats-card-leader {
   background: rgba(250, 204, 21, 0.04);
