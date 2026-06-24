@@ -380,11 +380,13 @@ export function ChatView() {
   /** Get grouped reaction counts for a message */
   const getReactions = (msgId: string) => {
     const msgReactions = reactions.filter(r => r.message_id === msgId);
-    const grouped: Record<string, { count: number; mine: boolean }> = {};
+    const grouped: Record<string, { count: number; mine: boolean; names: string[] }> = {};
     for (const r of msgReactions) {
-      if (!grouped[r.emoji]) grouped[r.emoji] = { count: 0, mine: false };
+      if (!grouped[r.emoji]) grouped[r.emoji] = { count: 0, mine: false, names: [] };
       grouped[r.emoji].count++;
       if (r.user_id === user?.id) grouped[r.emoji].mine = true;
+      const name = profiles[r.user_id]?.display_name ?? 'Unknown';
+      grouped[r.emoji].names.push(name);
     }
     return grouped;
   };
@@ -546,12 +548,13 @@ export function ChatView() {
                   if (entries.length === 0) return null;
                   return (
                     <div className="chat-reactions">
-                      {entries.map(([emoji, { count, mine }]) => (
+                      {entries.map(([emoji, { count, mine, names }]) => (
                         <button
                           key={emoji}
                           type="button"
                           className={`chat-reaction-pill ${mine ? 'chat-reaction-mine' : ''}`}
                           onClick={() => toggleReaction(msg.id, emoji)}
+                          title={names.join(', ')}
                         >
                           {emoji} {count}
                         </button>
