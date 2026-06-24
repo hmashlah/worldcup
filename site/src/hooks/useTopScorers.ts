@@ -1,26 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import type { PlayerStat, TeamStat } from '@/lib/stats';
 
-export interface PlayerStat {
-  name: string;
-  team: string;
-  goals: number;
-  penalties: number;
-  own_goals: number;
-  yellow_cards: number;
-  red_cards: number;
-  motm: number;
-  appearances: number;
-}
-
-export interface TeamStat {
-  team: string;
-  goals_for: number;
-  goals_against: number;
-  penalties: number;
-  yellow_cards: number;
-  red_cards: number;
-}
+export type { PlayerStat, TeamStat } from '@/lib/stats';
 
 export function useTopScorers() {
   const query = useQuery({

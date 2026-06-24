@@ -1215,6 +1215,18 @@ async function enrichFinishedMatches(
 
 // ── Rebuild player stats from all match_detail ─────────────────────────
 
+/** Normalize FD team names to our canonical names (matching data.json flag_map). */
+const FD_TEAM_ALIASES: Record<string, string> = {
+  'Cape Verde Islands': 'Cape Verde',
+  'Bosnia-Herzegovina': 'Bosnia & Herzegovina',
+  'Congo DR': 'DR Congo',
+  'Czechia': 'Czech Republic',
+  'United States': 'USA',
+};
+function normTeam(name: string): string {
+  return FD_TEAM_ALIASES[name] ?? name;
+}
+
 interface PlayerStat {
   name: string;
   team: string;
@@ -1251,8 +1263,8 @@ async function rebuildPlayerStats(env: Env, matchMap: MatchMap): Promise<{ upser
 
   for (const row of rows) {
     const mapEntry = matchMap[row.match_id];
-    const homeTeam = mapEntry?.home ?? 'home';
-    const awayTeam = mapEntry?.away ?? 'away';
+    const homeTeam = normTeam(mapEntry?.home ?? 'home');
+    const awayTeam = normTeam(mapEntry?.away ?? 'away');
     const resolveTeam = (t: string) => t === 'home' ? homeTeam : awayTeam;
 
     const d = row.match_detail as {
@@ -1353,8 +1365,8 @@ async function rebuildTeamStats(env: Env, matchMap: MatchMap): Promise<{ upserte
     const mapEntry = matchMap[row.match_id];
     if (!mapEntry) continue;
 
-    const homeTeam = mapEntry.home;
-    const awayTeam = mapEntry.away;
+    const homeTeam = normTeam(mapEntry.home);
+    const awayTeam = normTeam(mapEntry.away);
     const home = ensure(homeTeam);
     const away = ensure(awayTeam);
 

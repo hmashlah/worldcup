@@ -1,4 +1,5 @@
 import { useTopScorers, usePlayerStats, useTeamStats } from '@/hooks/useTopScorers';
+import { rankByCards, rankByMotm, rankByAttack, rankByDefence, rankTeamsByCards } from '@/lib/stats';
 import { Flag } from '@/components/Flag';
 
 export function TopScorersView() {
@@ -12,20 +13,11 @@ export function TopScorersView() {
 
   if (loading) return <p style={{ textAlign: 'center', padding: '32px' }}>Loading stats…</p>;
 
-  // Derived stats
-  const topCards = [...allStats]
-    .filter(p => p.yellow_cards > 0 || p.red_cards > 0)
-    .sort((a, b) => (b.yellow_cards + b.red_cards * 2) - (a.yellow_cards + a.red_cards * 2))
-    .slice(0, 5);
-
-  const topMotm = [...allStats]
-    .filter(p => p.motm > 0)
-    .sort((a, b) => b.motm - a.motm)
-    .slice(0, 5);
-
-  const bestAttack = [...teamStats].sort((a, b) => b.goals_for - a.goals_for).slice(0, 5);
-  const bestDefence = [...teamStats].sort((a, b) => a.goals_against - b.goals_against).slice(0, 5);
-  const mostBookedTeams = [...teamStats].sort((a, b) => (b.yellow_cards + b.red_cards * 2) - (a.yellow_cards + a.red_cards * 2)).slice(0, 5);
+  const topCards = rankByCards(allStats, 5);
+  const topMotm = rankByMotm(allStats, 5);
+  const bestAttack = rankByAttack(teamStats, 5);
+  const bestDefence = rankByDefence(teamStats, 5);
+  const mostBookedTeams = rankTeamsByCards(teamStats, 5);
 
   return (
     <section className="tab-panel active">

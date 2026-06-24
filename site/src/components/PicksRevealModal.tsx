@@ -3,6 +3,7 @@ import { Flag } from '@/components/Flag';
 import { useAllPredictions, type PredictionRow } from '@/hooks/usePredictions';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useAuth } from '@/contexts/AuthContext';
+import { computeConsensus } from '@/lib/stats';
 
 const SEEN_KEY = 'wc26-picks-seen';
 
@@ -56,26 +57,7 @@ export function PicksRevealModal({ matchId, team1, team2, onClose }: Props) {
       .sort((a, b) => a.display_name.localeCompare(b.display_name));
   }, [predsQ.data, profilesQ.data, matchId, user]);
 
-  const consensus = useMemo(() => {
-    if (picks.length < 2) return null;
-    let t1Wins = 0, draws = 0, t2Wins = 0, sumT1 = 0, sumT2 = 0;
-    for (const p of picks) {
-      sumT1 += p.team1_score;
-      sumT2 += p.team2_score;
-      if (p.team1_score > p.team2_score) t1Wins++;
-      else if (p.team1_score < p.team2_score) t2Wins++;
-      else draws++;
-    }
-    const total = picks.length;
-    return {
-      t1Pct: Math.round((t1Wins / total) * 100),
-      drawPct: Math.round((draws / total) * 100),
-      t2Pct: Math.round((t2Wins / total) * 100),
-      avgT1: (sumT1 / total).toFixed(1),
-      avgT2: (sumT2 / total).toFixed(1),
-      total,
-    };
-  }, [picks]);
+  const consensus = useMemo(() => computeConsensus(picks), [picks]);
 
   return (
     <div className="gc-modal-overlay" onClick={onClose}>
