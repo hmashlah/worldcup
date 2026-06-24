@@ -1153,6 +1153,7 @@ async function enrichFinishedMatches(
 
   const errors: string[] = [];
   let updated = 0;
+  const enrichedIds: string[] = [];
 
   // 3. For each group, fetch the Wikipedia page and parse
   for (const [group, matches] of byGroup) {
@@ -1206,11 +1207,12 @@ async function enrichFinishedMatches(
         errors.push(`enrich ${row.match_id}: ${patchRes.status} ${await patchRes.text()}`);
       } else {
         updated++;
+        enrichedIds.push(row.match_id);
       }
     }
   }
 
-  return { needed: batch.length, updated, errors };
+  return { needed: batch.length, updated, enrichedIds, errors };
 }
 
 // ── Rebuild player stats from all match_detail ─────────────────────────
@@ -1239,7 +1241,7 @@ interface PlayerStat {
   appearances: number;
 }
 
-async function rebuildPlayerStats(env: Env, matchMap: MatchMap): Promise<{ upserted: number; error?: string }> {
+async function rebuildPlayerStats(env: Env, matchMap: MatchMap, changedMatchIds?: string[]): Promise<{ upserted: number; error?: string }> {
   const url = env.SUPABASE_URL;
   const key = env.SUPABASE_SERVICE_ROLE_KEY;
   const headers = {
@@ -1248,17 +1250,40 @@ async function rebuildPlayerStats(env: Env, matchMap: MatchMap): Promise<{ upser
     'content-type': 'application/json',
   };
 
-  // Fetch all match_detail + match teams from data.json team mapping
-  const res = await fetch(`${url}/rest/v1/wc26_match_results?select=match_id,match_detail&match_detail=not.is.null`, { headers });
+  // Determine which teams were affected
+  const affectedTeams = new Set<string>();
+  if (changedMatchIds && changedMatchIds.length > 0) {
+    for (const mid of changedMatchIds) {
+      const entry = matchMap[mid];
+      if (entry) {
+        affectedTeams.add(normTeam(entry.home));
+        affectedTeams.add(normTeam(entry.away));
+      }
+    }
+  }
+
+  // Fetch match_detail: if incremental, only for affected teams' matches
+  // We need ALL matches for affected teams to re-aggregate correctly
+  const fetchUrl = `${url}/rest/v1/wc26_match_results?select=match_id,match_detail&match_detail=not.is.null`;
+  const res = await fetch(fetchUrl, { headers });
   if (!res.ok) return { upserted: 0, error: `fetch failed: ${res.status}` };
 
-  const rows = await res.json() as Array<{ match_id: string; match_detail: Record<string, unknown> }>;
-  const stats: Record<string, PlayerStat> = {};
+  const allRows = await res.json() as Array<{ match_id: string; match_detail: Record<string, unknown> }>;
 
+  // Filter to only rows involving affected teams (or all if full rebuild)
+  const rows = affectedTeams.size > 0
+    ? allRows.filter(r => {
+        const entry = matchMap[r.match_id];
+        if (!entry) return false;
+        return affectedTeams.has(normTeam(entry.home)) || affectedTeams.has(normTeam(entry.away));
+      })
+    : allRows;
+
+  const stats: Record<string, PlayerStat> = {};
   const ensure = (name: string, team: string): PlayerStat => {
-    const key = `${name}|||${team}`;
-    if (!stats[key]) stats[key] = { name, team, goals: 0, penalties: 0, own_goals: 0, yellow_cards: 0, red_cards: 0, motm: 0, appearances: 0 };
-    return stats[key];
+    const k = `${name}|||${team}`;
+    if (!stats[k]) stats[k] = { name, team, goals: 0, penalties: 0, own_goals: 0, yellow_cards: 0, red_cards: 0, motm: 0, appearances: 0 };
+    return stats[k];
   };
 
   for (const row of rows) {
@@ -1271,10 +1296,8 @@ async function rebuildPlayerStats(env: Env, matchMap: MatchMap): Promise<{ upser
       goals?: Array<{ team: string; name: string; kind: string }>;
       cards?: Array<{ team: string; name: string; type: string }>;
       motm?: { name: string; team: string };
-      lineups?: { home?: { starting?: Array<{ name: string }>; subs?: Array<{ name: string }> }; away?: { starting?: Array<{ name: string }>; subs?: Array<{ name: string }> } };
     };
 
-    // Goals
     if (d.goals) {
       for (const g of d.goals) {
         const name = g.name?.trim();
@@ -1288,7 +1311,6 @@ async function rebuildPlayerStats(env: Env, matchMap: MatchMap): Promise<{ upser
       }
     }
 
-    // Cards
     if (d.cards) {
       for (const c of d.cards) {
         const name = c.name?.trim();
@@ -1299,7 +1321,6 @@ async function rebuildPlayerStats(env: Env, matchMap: MatchMap): Promise<{ upser
       }
     }
 
-    // MOTM
     if (d.motm?.name) {
       ensure(d.motm.name.trim(), resolveTeam(d.motm.team)).motm++;
     }
@@ -1308,11 +1329,13 @@ async function rebuildPlayerStats(env: Env, matchMap: MatchMap): Promise<{ upser
   const upsertRows = Object.values(stats);
   if (upsertRows.length === 0) return { upserted: 0 };
 
-  // Delete all existing and re-insert (full rebuild is fine for <200 rows)
-  await fetch(`${url}/rest/v1/wc26_player_stats?name=not.is.null`, {
-    method: 'DELETE',
-    headers,
-  });
+  // Delete only affected teams' players (or all if full rebuild)
+  if (affectedTeams.size > 0) {
+    const teamFilter = [...affectedTeams].map(t => encodeURIComponent(t)).join(',');
+    await fetch(`${url}/rest/v1/wc26_player_stats?team=in.(${teamFilter})`, { method: 'DELETE', headers });
+  } else {
+    await fetch(`${url}/rest/v1/wc26_player_stats?name=not.is.null`, { method: 'DELETE', headers });
+  }
 
   const insertRes = await fetch(`${url}/rest/v1/wc26_player_stats`, {
     method: 'POST',
@@ -1335,7 +1358,7 @@ interface TeamStat {
   red_cards: number;
 }
 
-async function rebuildTeamStats(env: Env, matchMap: MatchMap): Promise<{ upserted: number; error?: string }> {
+async function rebuildTeamStats(env: Env, matchMap: MatchMap, changedMatchIds?: string[]): Promise<{ upserted: number; error?: string }> {
   const url = env.SUPABASE_URL;
   const key = env.SUPABASE_SERVICE_ROLE_KEY;
   const headers = {
@@ -1344,16 +1367,37 @@ async function rebuildTeamStats(env: Env, matchMap: MatchMap): Promise<{ upserte
     'content-type': 'application/json',
   };
 
-  // Fetch all results with match_detail
+  // Determine affected teams
+  const affectedTeams = new Set<string>();
+  if (changedMatchIds && changedMatchIds.length > 0) {
+    for (const mid of changedMatchIds) {
+      const entry = matchMap[mid];
+      if (entry) {
+        affectedTeams.add(normTeam(entry.home));
+        affectedTeams.add(normTeam(entry.away));
+      }
+    }
+  }
+
+  // Fetch all results (need scores for GF/GA)
   const res = await fetch(`${url}/rest/v1/wc26_match_results?select=match_id,team1_score,team2_score,match_detail`, { headers });
   if (!res.ok) return { upserted: 0, error: `fetch failed: ${res.status}` };
 
-  const rows = await res.json() as Array<{
+  const allRows = await res.json() as Array<{
     match_id: string;
     team1_score: number;
     team2_score: number;
     match_detail: Record<string, unknown> | null;
   }>;
+
+  // Filter to only affected teams' matches (or all if full rebuild)
+  const rows = affectedTeams.size > 0
+    ? allRows.filter(r => {
+        const entry = matchMap[r.match_id];
+        if (!entry) return false;
+        return affectedTeams.has(normTeam(entry.home)) || affectedTeams.has(normTeam(entry.away));
+      })
+    : allRows;
 
   const stats: Record<string, TeamStat> = {};
   const ensure = (team: string): TeamStat => {
@@ -1370,13 +1414,11 @@ async function rebuildTeamStats(env: Env, matchMap: MatchMap): Promise<{ upserte
     const home = ensure(homeTeam);
     const away = ensure(awayTeam);
 
-    // Goals for/against from scores
     home.goals_for += row.team1_score;
     home.goals_against += row.team2_score;
     away.goals_for += row.team2_score;
     away.goals_against += row.team1_score;
 
-    // Cards and penalties from match_detail
     if (row.match_detail) {
       const d = row.match_detail as {
         goals?: Array<{ team: string; kind: string }>;
@@ -1405,11 +1447,13 @@ async function rebuildTeamStats(env: Env, matchMap: MatchMap): Promise<{ upserte
   const upsertRows = Object.values(stats);
   if (upsertRows.length === 0) return { upserted: 0 };
 
-  // Full rebuild
-  await fetch(`${url}/rest/v1/wc26_team_stats?team=not.is.null`, {
-    method: 'DELETE',
-    headers,
-  });
+  // Delete only affected teams (or all if full rebuild)
+  if (affectedTeams.size > 0) {
+    const teamFilter = [...affectedTeams].map(t => encodeURIComponent(t)).join(',');
+    await fetch(`${url}/rest/v1/wc26_team_stats?team=in.(${teamFilter})`, { method: 'DELETE', headers });
+  } else {
+    await fetch(`${url}/rest/v1/wc26_team_stats?team=not.is.null`, { method: 'DELETE', headers });
+  }
 
   const insertRes = await fetch(`${url}/rest/v1/wc26_team_stats`, {
     method: 'POST',
@@ -1565,11 +1609,16 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   const enrichRes = await enrichFinishedMatches(ctx.env, host, matchMap);
 
   // ── Rebuild player/team stats only when new data was enriched or wiki updated ──
+  // Pass changed match IDs so only involved teams/players are rewritten
   let playerStatsRes: { upserted: number; error?: string } = { upserted: 0 };
   let teamStatsRes: { upserted: number; error?: string } = { upserted: 0 };
+  const changedMatchIds = [
+    ...enrichRes.enrichedIds,
+    ...toUpsert.map(r => r.match_id),
+  ];
   if (enrichRes.updated > 0 || wikiRes.updated > 0 || upsertRes.ok > 0) {
-    playerStatsRes = await rebuildPlayerStats(ctx.env, matchMap);
-    teamStatsRes = await rebuildTeamStats(ctx.env, matchMap);
+    playerStatsRes = await rebuildPlayerStats(ctx.env, matchMap, changedMatchIds.length > 0 ? changedMatchIds : undefined);
+    teamStatsRes = await rebuildTeamStats(ctx.env, matchMap, changedMatchIds.length > 0 ? changedMatchIds : undefined);
   }
 
   return Response.json({

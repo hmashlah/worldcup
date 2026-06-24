@@ -4656,6 +4656,7 @@ footer {
   position: relative;
   flex: 1 1 200px;
   min-width: 180px;
+  padding-right: 50px;
 }
 .trophy-emoji {
   font-size: 24px;
@@ -4703,9 +4704,9 @@ footer {
 @media (max-width: 720px) {
   .trophy-grid { gap: 8px; }
   .trophy-card {
-    padding: 10px 12px;
-    flex: 1 1 160px;
-    min-width: 150px;
+    padding: 10px 44px 10px 12px;
+    flex: 1 1 100%;
+    min-width: 0;
   }
   .trophy-emoji { font-size: 20px; }
 }
