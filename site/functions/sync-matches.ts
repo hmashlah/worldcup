@@ -1610,24 +1610,15 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
 
   // ── Rebuild player/team stats only when new data was enriched or wiki updated ──
   // Pass changed match IDs so only involved teams/players are rewritten
-  // Also force full rebuild if tables are empty (recovery scenario)
   let playerStatsRes: { upserted: number; error?: string } = { upserted: 0 };
   let teamStatsRes: { upserted: number; error?: string } = { upserted: 0 };
   const changedMatchIds = [
     ...enrichRes.enrichedIds,
     ...toUpsert.map(r => r.match_id),
   ];
-
-  // Check if stats tables are empty (force full rebuild if so)
-  const statsCheck = await fetch(
-    `${ctx.env.SUPABASE_URL}/rest/v1/wc26_player_stats?select=name&limit=1`,
-    { headers: { apikey: ctx.env.SUPABASE_SERVICE_ROLE_KEY, authorization: `Bearer ${ctx.env.SUPABASE_SERVICE_ROLE_KEY}` } },
-  );
-  const statsEmpty = statsCheck.ok && ((await statsCheck.json()) as unknown[]).length === 0;
-
-  if (enrichRes.updated > 0 || wikiRes.updated > 0 || upsertRes.ok > 0 || statsEmpty) {
-    playerStatsRes = await rebuildPlayerStats(ctx.env, matchMap, statsEmpty ? undefined : (changedMatchIds.length > 0 ? changedMatchIds : undefined));
-    teamStatsRes = await rebuildTeamStats(ctx.env, matchMap, statsEmpty ? undefined : (changedMatchIds.length > 0 ? changedMatchIds : undefined));
+  if (enrichRes.updated > 0 || wikiRes.updated > 0 || upsertRes.ok > 0) {
+    playerStatsRes = await rebuildPlayerStats(ctx.env, matchMap, changedMatchIds.length > 0 ? changedMatchIds : undefined);
+    teamStatsRes = await rebuildTeamStats(ctx.env, matchMap, changedMatchIds.length > 0 ? changedMatchIds : undefined);
   }
 
   return Response.json({
