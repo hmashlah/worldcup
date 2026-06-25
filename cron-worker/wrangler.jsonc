@@ -1,0 +1,13 @@
+{
+  "name": "wc26-cron-sync",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-06-25",
+  "triggers": {
+    "crons": ["* * * * *"]
+  },
+  "vars": {
+    "SYNC_URL": "https://worldcup-1jo.pages.dev/sync-matches",
+    "DATA_URL": "https://worldcup-1jo.pages.dev/data.json"
+  }
+  // WC26_WEBHOOK_SECRET: set via `wrangler secret put WC26_WEBHOOK_SECRET`
+}
