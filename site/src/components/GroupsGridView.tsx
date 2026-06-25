@@ -53,8 +53,8 @@ function GroupCardCompact({ group, isThirdQualified, isThirdSafe, onExpand }: Ca
             return (
               <tr className={cls} key={t.team}>
                 <td className="team-col">
-                  {showCheck && <span className="gc-status gc-status-q">✓</span>}
-                  {showElim && <span className="gc-status gc-status-x">✗</span>}
+                  {showCheck && <span className="gc-status gc-status-q">▲</span>}
+                  {showElim && <span className="gc-status gc-status-x">▼</span>}
                   {!showCheck && !showElim && <span className="gc-status"></span>}
                   <Flag team={t.team} /><span className="team-link" onClick={() => openTeam(t.team)}>{t.team}</span>
                 </td>
