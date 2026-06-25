@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface Notification {
   id: string;
   user_id: string;
-  from_user_id: string;
+  from_user_id: string | null;
   match_id: string;
   type: string;
   text: string;

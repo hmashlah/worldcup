@@ -1,7 +1,24 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { useNotifications, useNotificationRealtime, useMarkAllRead } from '@/hooks/useNotifications';
+import { useNotifications, useNotificationRealtime, useMarkAllRead, type Notification } from '@/hooks/useNotifications';
 import { useUI } from '@/lib/ui-store';
 import { relativeTime } from '@/lib/utils';
+
+function NotifIcon({ type }: { type: string }) {
+  switch (type) {
+    case 'result':
+      return <span className="notif-icon notif-icon--result">⚽</span>;
+    case 'kickoff':
+      return <span className="notif-icon notif-icon--kickoff">🟢</span>;
+    case 'mention':
+      return <span className="notif-icon notif-icon--mention">@</span>;
+    case 'reaction':
+      return <span className="notif-icon notif-icon--reaction">❤️</span>;
+    case 'reminder':
+      return <span className="notif-icon notif-icon--reminder">📋</span>;
+    default:
+      return <span className="notif-icon">🔔</span>;
+  }
+}
 
 export function NotificationBell() {
   const notificationsQ = useNotifications();
@@ -33,9 +50,28 @@ export function NotificationBell() {
     }
   };
 
-  const handleNotificationClick = () => {
-    setTab('chat');
+  const handleNotificationClick = (n: Notification) => {
     setOpen(false);
+    switch (n.type) {
+      case 'result':
+      case 'kickoff':
+        // Navigate to the match detail page
+        if (n.match_id && n.match_id !== 'global') {
+          window.location.hash = `#/match/${n.match_id}`;
+        } else {
+          setTab('today');
+        }
+        break;
+      case 'mention':
+      case 'reaction':
+        setTab('chat');
+        break;
+      case 'reminder':
+        setTab('today');
+        break;
+      default:
+        setTab('today');
+    }
   };
 
   return (
@@ -67,15 +103,18 @@ export function NotificationBell() {
             {notifications.length === 0 && (
               <p className="notif-empty">No notifications yet</p>
             )}
-            {notifications.slice(0, 20).map(n => (
+            {notifications.slice(0, 30).map(n => (
               <button
                 key={n.id}
                 type="button"
                 className={`notif-item ${n.read ? '' : 'notif-item-unread'}`}
-                onClick={() => handleNotificationClick()}
+                onClick={() => handleNotificationClick(n)}
               >
-                <span className="notif-item-text">{n.text}</span>
-                <span className="notif-item-time">{relativeTime(n.created_at)}</span>
+                <NotifIcon type={n.type} />
+                <span className="notif-item-body">
+                  <span className="notif-item-text">{n.text}</span>
+                  <span className="notif-item-time">{relativeTime(n.created_at)}</span>
+                </span>
               </button>
             ))}
           </div>

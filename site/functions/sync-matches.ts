@@ -320,9 +320,14 @@ async function deleteLiveRows(
   return { ok: matchIds.length, errors: [] };
 }
 
-async function fetchExistingLiveIds(env: Env): Promise<string[]> {
+interface ExistingLiveRow {
+  match_id: string;
+  payload: { score?: FdScore } | null;
+}
+
+async function fetchExistingLive(env: Env): Promise<ExistingLiveRow[]> {
   const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/wc26_match_live?select=match_id`,
+    `${env.SUPABASE_URL}/rest/v1/wc26_match_live?select=match_id,payload`,
     {
       headers: {
         apikey: env.SUPABASE_SERVICE_ROLE_KEY,
@@ -331,8 +336,7 @@ async function fetchExistingLiveIds(env: Env): Promise<string[]> {
     },
   );
   if (!res.ok) throw new Error(`supabase live select ${res.status}: ${await res.text()}`);
-  const rows: Array<{ match_id: string }> = await res.json();
-  return rows.map(r => r.match_id);
+  return res.json();
 }
 
 /** Fetch the wiki_scorers state for all matches that have results. */
@@ -1513,12 +1517,14 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     return Response.json({ error: `supabase: ${(e as Error).message}` }, { status: 502 });
   }
 
-  let existingLiveIds: string[];
+  let existingLiveRows: ExistingLiveRow[];
   try {
-    existingLiveIds = await fetchExistingLiveIds(ctx.env);
+    existingLiveRows = await fetchExistingLive(ctx.env);
   } catch (e) {
     return Response.json({ error: `supabase live: ${(e as Error).message}` }, { status: 502 });
   }
+  const existingLiveIds = existingLiveRows.map(r => r.match_id);
+  const existingLiveByMatch = new Map(existingLiveRows.map(r => [r.match_id, r]));
 
   const toUpsert: UpsertRow[] = [];
   const toPatch: Array<{ match_id: string; patch: PayloadOnlyPatch }> = [];
@@ -1597,6 +1603,45 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   // postponed, etc.) gets deleted so we don't show stale "live" state.
   const toLiveDelete = existingLiveIds.filter(id => !stillLiveIds.has(id));
 
+  // ── Detect live score changes (goals scored/reverted) ─────────────
+  const pushUrl = `${url.protocol}//${url.host}/send-push`;
+  for (const liveRow of toLiveUpsert) {
+    const oldRow = existingLiveByMatch.get(liveRow.match_id);
+    if (!oldRow || !oldRow.payload?.score) continue; // new live match, no old score to compare
+
+    const oldHome = oldRow.payload.score.fullTime?.home ?? 0;
+    const oldAway = oldRow.payload.score.fullTime?.away ?? 0;
+    const newHome = liveRow.payload.score.fullTime?.home ?? 0;
+    const newAway = liveRow.payload.score.fullTime?.away ?? 0;
+
+    if (oldHome === newHome && oldAway === newAway) continue; // no change
+
+    const entry = matchMap[liveRow.match_id];
+    if (!entry) continue;
+    const home = normTeam(entry.home);
+    const away = normTeam(entry.away);
+    const sameOrder = entry.same_order_as_fd;
+    const t1Score = sameOrder ? newHome : newAway;
+    const t2Score = sameOrder ? newAway : newHome;
+    const t1Name = sameOrder ? home : away;
+    const t2Name = sameOrder ? away : home;
+
+    const totalOld = oldHome + oldAway;
+    const totalNew = newHome + newAway;
+    const isGoal = totalNew > totalOld;
+    const title = isGoal ? 'GOAL!' : 'Score updated';
+
+    fetch(pushUrl, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-wc26-secret': ctx.env.WC26_WEBHOOK_SECRET },
+      body: JSON.stringify({
+        title,
+        body: `${t1Name} ${t1Score}-${t2Score} ${t2Name}`,
+        url: `/match/${liveRow.match_id}`,
+      }),
+    }).catch(() => {});
+  }
+
   const upsertRes = await upsertResults(ctx.env, toUpsert);
   const patchRes = await patchPayloads(ctx.env, toPatch);
   const liveUpsertRes = await upsertLive(ctx.env, toLiveUpsert);
@@ -1627,23 +1672,51 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   // ── Push notifications for newly finished matches ──────────────────
   if (toUpsert.length > 0) {
     const pushUrl = `${url.protocol}//${url.host}/send-push`;
+    // Also insert in-app notifications for all users
+    const allUsersRes = await fetch(
+      `${ctx.env.SUPABASE_URL}/rest/v1/wc26_profiles?select=user_id&approved=eq.true`,
+      { headers: { apikey: ctx.env.SUPABASE_SERVICE_ROLE_KEY, authorization: `Bearer ${ctx.env.SUPABASE_SERVICE_ROLE_KEY}` } }
+    );
+    const allUsers: Array<{ user_id: string }> = allUsersRes.ok ? await allUsersRes.json() : [];
+
     for (const row of toUpsert) {
       const entry = matchMap[row.match_id];
       if (!entry) continue;
       const home = normTeam(entry.home);
       const away = normTeam(entry.away);
+      const title = `${home} ${row.team1_score}-${row.team2_score} ${away}`;
+
+      // Push notification (all users)
       fetch(pushUrl, {
         method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'x-wc26-secret': ctx.env.WC26_WEBHOOK_SECRET,
-        },
+        headers: { 'content-type': 'application/json', 'x-wc26-secret': ctx.env.WC26_WEBHOOK_SECRET },
         body: JSON.stringify({
-          title: `Result: ${home} ${row.team1_score}-${row.team2_score} ${away}`,
+          title: `Result: ${title}`,
           body: 'Check your points!',
           url: `/match/${row.match_id}`,
         }),
       }).catch(() => {});
+
+      // In-app notifications for all users
+      if (allUsers.length > 0) {
+        const notifRows = allUsers.map(u => ({
+          user_id: u.user_id,
+          from_user_id: null,
+          match_id: row.match_id,
+          type: 'result',
+          text: `Final: ${title}`,
+        }));
+        fetch(`${ctx.env.SUPABASE_URL}/rest/v1/wc26_notifications`, {
+          method: 'POST',
+          headers: {
+            apikey: ctx.env.SUPABASE_SERVICE_ROLE_KEY,
+            authorization: `Bearer ${ctx.env.SUPABASE_SERVICE_ROLE_KEY}`,
+            'content-type': 'application/json',
+            prefer: 'return=minimal',
+          },
+          body: JSON.stringify(notifRows),
+        }).catch(() => {});
+      }
     }
   }
 
@@ -1664,10 +1737,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
       const pushUrl = `${url.protocol}//${url.host}/send-push`;
       fetch(pushUrl, {
         method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'x-wc26-secret': ctx.env.WC26_WEBHOOK_SECRET,
-        },
+        headers: { 'content-type': 'application/json', 'x-wc26-secret': ctx.env.WC26_WEBHOOK_SECRET },
         body: JSON.stringify({
           title: 'Starting soon!',
           body: `${home} vs ${away} kicks off in 5 min`,
