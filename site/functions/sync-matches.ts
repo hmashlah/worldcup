@@ -29,6 +29,9 @@ interface Env {
   SUPABASE_URL: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
   WC26_WEBHOOK_SECRET: string;
+  VAPID_PRIVATE_KEY: string;
+  VAPID_PUBLIC_KEY: string;
+  VAPID_SUBJECT: string;
 }
 
 interface FdScore {
@@ -1619,6 +1622,59 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   if (enrichRes.updated > 0 || wikiRes.updated > 0 || upsertRes.ok > 0) {
     playerStatsRes = await rebuildPlayerStats(ctx.env, matchMap, changedMatchIds.length > 0 ? changedMatchIds : undefined);
     teamStatsRes = await rebuildTeamStats(ctx.env, matchMap, changedMatchIds.length > 0 ? changedMatchIds : undefined);
+  }
+
+  // ── Push notifications for newly finished matches ──────────────────
+  if (toUpsert.length > 0) {
+    const pushUrl = `${url.protocol}//${url.host}/send-push`;
+    for (const row of toUpsert) {
+      const entry = matchMap[row.match_id];
+      if (!entry) continue;
+      const home = normTeam(entry.home);
+      const away = normTeam(entry.away);
+      fetch(pushUrl, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-wc26-secret': ctx.env.WC26_WEBHOOK_SECRET,
+        },
+        body: JSON.stringify({
+          title: `Result: ${home} ${row.team1_score}-${row.team2_score} ${away}`,
+          body: 'Check your points!',
+          url: `/match/${row.match_id}`,
+        }),
+      }).catch(() => {});
+    }
+  }
+
+  // ── Push notifications for matches kicking off in ~5 minutes ──────
+  const now = Date.now();
+  for (const m of fdMatches) {
+    const ourId = fdToOurs[m.id];
+    if (!ourId) continue;
+    // Check if match is TIMED/SCHEDULED and starts within 3-7 minutes
+    if (m.status !== 'TIMED' && m.status !== 'SCHEDULED') continue;
+    const kickoff = new Date(m.utcDate).getTime();
+    const diff = kickoff - now;
+    if (diff > 0 && diff <= 7 * 60 * 1000 && diff > 3 * 60 * 1000) {
+      const entry = matchMap[ourId];
+      if (!entry) continue;
+      const home = normTeam(entry.home);
+      const away = normTeam(entry.away);
+      const pushUrl = `${url.protocol}//${url.host}/send-push`;
+      fetch(pushUrl, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-wc26-secret': ctx.env.WC26_WEBHOOK_SECRET,
+        },
+        body: JSON.stringify({
+          title: 'Starting soon!',
+          body: `${home} vs ${away} kicks off in 5 min`,
+          url: `/match/${ourId}`,
+        }),
+      }).catch(() => {});
+    }
   }
 
   return Response.json({

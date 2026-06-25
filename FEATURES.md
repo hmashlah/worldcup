@@ -19,6 +19,7 @@ Fun features for the World Cup 2026 prediction league (friends app).
 
 ## Completed
 
+- [x] **Push notifications** — Web Push API for real-time alerts (match starts, mentions); opt-in toggle in topbar
 - [x] **Bracket improvements** — paired matches, hidden IDs, "possible teams" for TBD slots, auto-advancer on non-draw scores
 - [x] **Qualification indicators** — ▲/▼ on groups: mathematically guaranteed top 2 + safe 3rds (brute-force all scenarios)
 - [x] **Team & Player pages** — full pages with squad list, bio (position/age/club), tournament stats, match events, WC history, player photos

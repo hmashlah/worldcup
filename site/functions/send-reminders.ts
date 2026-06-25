@@ -33,6 +33,8 @@ interface Env {
   RESEND_FROM: string;
   APP_URL: string;
   WC26_WEBHOOK_SECRET: string;
+  SUPABASE_URL: string;
+  SUPABASE_SERVICE_ROLE_KEY: string;
 }
 
 interface ReminderRow {
@@ -223,6 +225,41 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
         }
       }),
     );
+  }
+
+  // 5. Send push notifications to users with subscriptions
+  //    (fire-and-forget — don't block the response on push delivery)
+  const pushUrl = `${url.protocol}//${url.host}/send-push`;
+  for (const row of reminders) {
+    const n = row.missing.length;
+    // Look up user_id by email from profiles
+    const profileRes = await fetch(
+      `${ctx.env.SUPABASE_URL}/rest/v1/wc26_profiles?select=user_id&email=eq.${encodeURIComponent(row.email)}&limit=1`,
+      {
+        headers: {
+          apikey: ctx.env.SUPABASE_SERVICE_ROLE_KEY,
+          authorization: `Bearer ${ctx.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      }
+    );
+    if (profileRes.ok) {
+      const profiles: Array<{ user_id: string }> = await profileRes.json();
+      if (profiles.length > 0) {
+        fetch(pushUrl, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            'x-wc26-secret': ctx.env.WC26_WEBHOOK_SECRET,
+          },
+          body: JSON.stringify({
+            userIds: [profiles[0].user_id],
+            title: `${n} pick${n === 1 ? '' : 's'} needed!`,
+            body: `You have ${n} match${n === 1 ? '' : 'es'} to predict today`,
+            url: '/',
+          }),
+        }).catch(() => {}); // fire-and-forget
+      }
+    }
   }
 
   return Response.json(results);

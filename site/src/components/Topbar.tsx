@@ -6,6 +6,7 @@ import { useUnreadChat } from '@/hooks/useUnreadChat';
 import { matchesByDay, defaultDay, countUnsubmitted } from '@/lib/days';
 import { useUI, type TabKey } from '@/lib/ui-store';
 import { NotificationBell } from '@/components/NotificationBell';
+import { PushToggle } from '@/components/PushToggle';
 
 const TABS: Array<{ key: TabKey; label: string }> = [
   { key: 'today',       label: 'Matches' },
@@ -89,6 +90,7 @@ export function Topbar() {
                 {pendingToday} to pick
               </button>
             )}
+            <PushToggle />
             <NotificationBell />
             <span className="topbar-hello">{user.displayName ?? user.email.split('@')[0]}</span>
             <button className="btn btn-ghost" onClick={handleSignOut} disabled={signingOut}>

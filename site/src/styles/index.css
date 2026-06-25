@@ -5449,6 +5449,21 @@ footer {
 }
 
 /* ── Notification bell ────────────────────────────────────────────── */
+/* ─── Push toggle ─────────────────────────────────────── */
+.push-toggle {
+  background: transparent;
+  border: 0;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--r-sm);
+  transition: color 0.15s;
+  opacity: 0.6;
+}
+.push-toggle:hover { color: var(--ink); opacity: 1; }
+.push-toggle--on { color: var(--accent, #4f8cff); opacity: 1; }
+.push-toggle--denied { opacity: 0.3; cursor: not-allowed; }
+
 .notif-bell-wrapper {
   position: relative;
 }
