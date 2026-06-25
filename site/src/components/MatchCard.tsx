@@ -78,16 +78,19 @@ export function MatchCard(p: Props) {
 
   const savePred = useCallback((overrides?: { advancer?: string }) => {
     if (!user) return;
-    // Re-check the lock against the live clock — `locked` from render could
-    // be up to ~30s stale, and a determined user could trigger save (blur,
-    // Enter) within that window.
     if (isLocked(date, time)) return;
     const x = parseInt(a, 10), y = parseInt(b, 10);
     if (Number.isNaN(x) || Number.isNaN(y)) return;
-    const finalAdv = overrides?.advancer ?? adv;
+    // Auto-determine advancer for KO matches when score isn't a draw
+    let finalAdv = overrides?.advancer ?? adv;
+    if (isKO && team1IsResolved && team2IsResolved) {
+      if (x > y) finalAdv = team1;
+      else if (y > x) finalAdv = team2;
+      // If draw, keep whatever was manually selected
+    }
     if (myPred && myPred.team1_score === x && myPred.team2_score === y && (myPred.advancer ?? '') === finalAdv) return;
     upsertPred.mutate({ match_id: matchId, team1_score: x, team2_score: y, advancer: finalAdv || null });
-  }, [user, date, time, a, b, adv, myPred, matchId, upsertPred]);
+  }, [user, date, time, a, b, adv, myPred, matchId, upsertPred, isKO, team1, team2, team1IsResolved, team2IsResolved]);
 
   const earned = scorePrediction(
     myPred ? { team1: myPred.team1_score, team2: myPred.team2_score } : null,
@@ -212,8 +215,8 @@ export function MatchCard(p: Props) {
         </div>
       )}
 
-      {/* Knockout advancer — only in prediction mode. */}
-      {showPredictions && isKO && team1IsResolved && team2IsResolved && (
+      {/* Knockout advancer — only show when predicted score is a draw */}
+      {showPredictions && isKO && team1IsResolved && team2IsResolved && a !== '' && b !== '' && parseInt(a) === parseInt(b) && (
         <div className="mc-advancer">
           <span className="mc-advancer-label">your pick advances</span>
           {[team1, team2].map(t => (
