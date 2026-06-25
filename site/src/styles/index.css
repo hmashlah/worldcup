@@ -3202,6 +3202,15 @@ footer {
   font-weight: 800;
   line-height: 1;
 }
+.tab-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: var(--accent, #2563eb);
+  vertical-align: middle;
+}
 [data-theme='funky'] .tab-badge {
   background: linear-gradient(120deg, #ec4899 0%, #f59e0b 100%);
   border: 1.5px solid var(--ink);

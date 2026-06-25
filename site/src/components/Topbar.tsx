@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useMyPredictions } from '@/hooks/usePredictions';
 import { useUnreadChat } from '@/hooks/useUnreadChat';
+import { useNotifications } from '@/hooks/useNotifications';
 import { matchesByDay, defaultDay, countUnsubmitted } from '@/lib/days';
 import { useUI, type TabKey } from '@/lib/ui-store';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -41,6 +42,11 @@ export function Topbar() {
   }, [user, dataQ.data, predsQ.data]);
 
   const unreadChat = useUnreadChat();
+  const notificationsQ = useNotifications();
+  const unreadResults = useMemo(() => {
+    const notifs = notificationsQ.data ?? [];
+    return notifs.filter(n => !n.read && n.type === 'result').length;
+  }, [notificationsQ.data]);
 
   useEffect(() => {
     if (authLoading) return; // Don't reset tabs while auth is still resolving
@@ -71,6 +77,9 @@ export function Topbar() {
             onClick={() => setTab(t.key)}
           >
             {t.label}
+            {t.key === 'today' && unreadResults > 0 && tab !== 'today' && (
+              <span className="tab-dot" />
+            )}
             {t.key === 'chat' && unreadChat > 0 && tab !== 'chat' && (
               <span className="tab-badge">{unreadChat > 9 ? '9+' : unreadChat}</span>
             )}
