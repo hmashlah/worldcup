@@ -92,20 +92,39 @@ export function Bracket() {
         <ChampionBanner data={dataQ.data} scores={scores} advancers={advancers} />
       )}
 
-      {/* Match grid */}
+      {/* Match grid — paired matches that feed into the same next-round match */}
       <div className={`kb-grid ${activeRound === 'final' ? 'kb-grid-final' : ''}`}>
-        {matches
-          .filter(m => m.round !== 'Match for third place')
-          .map(m => (
-            <KoCardWrapper
-              key={m.id}
-              match={m}
-              data={dataQ.data!}
-              scores={scores}
-              advancers={advancers}
-              isFinal={m.round === 'Final'}
-            />
-          ))}
+        {(() => {
+          const filtered = matches.filter(m => m.round !== 'Match for third place');
+          // Pair consecutive matches (they feed into the same next-round match)
+          const pairs: Array<KoMatch[]> = [];
+          for (let i = 0; i < filtered.length; i += 2) {
+            pairs.push(filtered.slice(i, i + 2));
+          }
+          return pairs.map((pair, pairIdx) => (
+            <div key={pairIdx} className="kb-pair">
+              {pair.map(m => (
+                <KoCardWrapper
+                  key={m.id}
+                  match={m}
+                  data={dataQ.data!}
+                  scores={scores}
+                  advancers={advancers}
+                  isFinal={m.round === 'Final'}
+                />
+              ))}
+              {pair.length === 2 && activeRound !== 'final' && (
+                <div className="kb-pair-connector">
+                  <span className="kb-pair-label">winners meet in {
+                    activeRound === 'r32' ? 'R16' :
+                    activeRound === 'r16' ? 'QF' :
+                    activeRound === 'qf' ? 'SF' : 'Final'
+                  }</span>
+                </div>
+              )}
+            </div>
+          ));
+        })()}
       </div>
 
       {/* 3rd-place playoff appears below the Final card on the Final tab */}
@@ -151,7 +170,6 @@ function KoCardWrapper({
     : 'r32';
   return (
     <div className={`kb-card ${isFinal ? 'kb-card-final' : ''}`} data-round={roundKey}>
-      {match.num !== null && <div className="kb-card-num">M{match.num}</div>}
       <MatchCard
         matchId={match.id}
         team1={t1 ?? match.team1}

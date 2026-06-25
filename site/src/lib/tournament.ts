@@ -288,6 +288,86 @@ export function resolveSlot(
   return null;
 }
 
+/**
+ * Return the list of teams that could possibly fill a slot token.
+ * Used to show candidates on KO match detail pages when teams aren't resolved yet.
+ */
+export function possibleTeamsForSlot(
+  data: TournamentData,
+  scores: ScoreMap,
+  advancers: AdvancerMap,
+  token: string,
+): string[] {
+  if (!token) return [];
+
+  // Already resolved
+  if (data.flag_map[token]) return [token];
+
+  // "1E" or "2A" — position in group
+  const direct = /^([12])([A-L])$/.exec(token);
+  if (direct) {
+    const pos = parseInt(direct[1], 10) - 1;
+    const gname = 'Group ' + direct[2];
+    const group = data.groups.find(g => g.name === gname);
+    if (!group) return [];
+    const standings = computeStandings(data, group, scores);
+    // If group complete, it's definitive
+    if (standings.every(t => t.P === 3)) return [standings[pos]?.team].filter(Boolean) as string[];
+    // Otherwise, any team in the group could still finish in that position
+    // Return current top candidates (sorted by current standings)
+    if (pos === 0) return standings.slice(0, 2).map(t => t.team); // Top 2 could win
+    return standings.slice(1, 4).map(t => t.team); // Positions 2-4 could be runner-up
+  }
+
+  // "3A/B/C/D/F" — best 3rd from listed groups
+  const thirdMatch = /^3([A-L/]+)$/.exec(token);
+  if (thirdMatch) {
+    const allowed = new Set(thirdMatch[1].split('/'));
+    // Get current 3rd-place teams from those groups
+    const candidates: string[] = [];
+    for (const g of data.groups) {
+      const letter = g.name.split(' ')[1];
+      if (!allowed.has(letter)) continue;
+      const standings = computeStandings(data, g, scores);
+      if (standings[2]) candidates.push(standings[2].team);
+    }
+    return candidates;
+  }
+
+  // "W73" — winner of match 73
+  const wm = /^W(\d+)$/.exec(token);
+  if (wm) {
+    const num = parseInt(wm[1], 10);
+    const winner = koWinner(data, scores, advancers, num);
+    if (winner) return [winner];
+    // Not yet resolved — get the two teams in that match
+    const feeder = koMatchByNum(data, num);
+    if (feeder) {
+      const t1 = resolveSlot(data, scores, advancers, feeder.team1);
+      const t2 = resolveSlot(data, scores, advancers, feeder.team2);
+      return [t1, t2].filter(Boolean) as string[];
+    }
+    return [];
+  }
+
+  // "L73" — loser of match 73
+  const lm = /^L(\d+)$/.exec(token);
+  if (lm) {
+    const num = parseInt(lm[1], 10);
+    const loser = koLoser(data, scores, advancers, num);
+    if (loser) return [loser];
+    const feeder = koMatchByNum(data, num);
+    if (feeder) {
+      const t1 = resolveSlot(data, scores, advancers, feeder.team1);
+      const t2 = resolveSlot(data, scores, advancers, feeder.team2);
+      return [t1, t2].filter(Boolean) as string[];
+    }
+    return [];
+  }
+
+  return [];
+}
+
 function koMatchByNum(data: TournamentData, n: number): KoMatch | undefined {
   return data.ko_matches.find(m => m.num === n);
 }

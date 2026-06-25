@@ -104,10 +104,9 @@ export function MatchCard(p: Props) {
   const labelRight = team2IsResolved ? team2 : (team2Placeholder ?? team2);
   const kickoffDate = parseKickoff(date, time);
   const kickoffStr = kickoffDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  // Hide the Details link on KO matches with a TBD slot — without both
-  // teams confirmed, the head-to-head section has nothing meaningful to
-  // show. Group-stage cards always have both teams resolved.
-  const showDetails = team1IsResolved && team2IsResolved;
+  // Show details for all matches where at least one team is resolved,
+  // or for KO matches (even with TBD teams — show possible candidates)
+  const showDetails = team1IsResolved && team2IsResolved || isKO;
   const openMatch = useUI(s => s.openMatch);
   const openTeam = useUI(s => s.openTeam);
 

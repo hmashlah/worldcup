@@ -9,6 +9,8 @@ import {
   prettySlot,
   isKnockoutRound,
   computeSafeThirds,
+  computeGuaranteedTop2,
+  possibleTeamsForSlot,
 } from './tournament';
 import type { TournamentData, Group, GroupMatch, KoMatch } from './types';
 
@@ -444,5 +446,190 @@ describe('computeSafeThirds', () => {
     const result = computeSafeThirds(data, scores);
     expect(result.has('Group A')).toBe(true);
     expect(result.has('Group K')).toBe(true); // 11th group also safe
+  });
+});
+
+// ── computeGuaranteedTop2 ─────────────────────────────────────────────
+
+describe('computeGuaranteedTop2', () => {
+  function makeData(numGroups: number) {
+    const groups = [];
+    const group_matches: Record<string, Array<{ id: string; team1: string; team2: string; date: string; time: string; ground: string; matchday: string }>> = {};
+    for (let g = 0; g < numGroups; g++) {
+      const name = `Group ${String.fromCharCode(65 + g)}`;
+      const teams = [`${name}-T1`, `${name}-T2`, `${name}-T3`, `${name}-T4`];
+      groups.push({ name, teams });
+      group_matches[name] = [
+        { id: `${name}-M1`, team1: teams[0], team2: teams[1], date: '2026-06-11', time: '21:00', ground: '', matchday: 'Matchday 1' },
+        { id: `${name}-M2`, team1: teams[2], team2: teams[3], date: '2026-06-12', time: '21:00', ground: '', matchday: 'Matchday 1' },
+        { id: `${name}-M3`, team1: teams[0], team2: teams[2], date: '2026-06-15', time: '21:00', ground: '', matchday: 'Matchday 2' },
+        { id: `${name}-M4`, team1: teams[1], team2: teams[3], date: '2026-06-15', time: '21:00', ground: '', matchday: 'Matchday 2' },
+        { id: `${name}-M5`, team1: teams[0], team2: teams[3], date: '2026-06-19', time: '21:00', ground: '', matchday: 'Matchday 3' },
+        { id: `${name}-M6`, team1: teams[1], team2: teams[2], date: '2026-06-19', time: '21:00', ground: '', matchday: 'Matchday 3' },
+      ];
+    }
+    return { groups, group_matches, ko_matches: [], flag_map: {} };
+  }
+
+  it('returns all top-2 teams for a completed group', () => {
+    const data = makeData(1);
+    const scores: Record<string, { team1: number; team2: number }> = {
+      'Group A-M1': { team1: 2, team2: 0 },
+      'Group A-M2': { team1: 1, team2: 0 },
+      'Group A-M3': { team1: 1, team2: 0 },
+      'Group A-M4': { team1: 1, team2: 0 },
+      'Group A-M5': { team1: 1, team2: 0 },
+      'Group A-M6': { team1: 0, team2: 1 },
+    };
+    const result = computeGuaranteedTop2(data, scores);
+    expect(result.size).toBe(2);
+    // T1 wins M1, M3, M5 = 9pts. T3 wins M2, loses M3, wins M6's opponent? Let me trace:
+    // M1: T1 2-0 T2 → T1=3, T2=0
+    // M2: T3 1-0 T4 → T3=3, T4=0
+    // M3: T1 1-0 T3 → T1=6, T3=3
+    // M4: T2 1-0 T4 → T2=3, T4=0
+    // M5: T1 1-0 T4 → T1=9, T4=0
+    // M6: T2 0-1 T3 → T3=6, T2=3
+    // Final: T1=9, T3=6, T2=3, T4=0
+    expect(result.has('Group A-T1')).toBe(true);
+    expect(result.has('Group A-T3')).toBe(true);
+  });
+
+  it('detects guaranteed top 2 before group finishes (6pts from 2 games)', () => {
+    const data = makeData(1);
+    // T1 wins first two matches → 6pts. Remaining: M5 (T1 vs T4), M6 (T2 vs T3)
+    const scores: Record<string, { team1: number; team2: number }> = {
+      'Group A-M1': { team1: 3, team2: 0 }, // T1 beats T2
+      'Group A-M2': { team1: 0, team2: 1 }, // T4 loses to T3 → T3=3
+      'Group A-M3': { team1: 2, team2: 0 }, // T1 beats T3
+      'Group A-M4': { team1: 1, team2: 0 }, // T2 beats T4
+    };
+    // T1=6pts, T2=3pts, T3=3pts, T4=0pts. Remaining: M5 (T1 vs T4), M6 (T2 vs T3)
+    // Even if T1 loses M5, T1 still has 6pts.
+    // Max T2 or T3 can get: 3+3=6pts. But T1 has GD advantage.
+    // Actually T2 could reach 6pts (beats T3 in M6) and tie T1.
+    // With GD: T1 GD = (3-0)+(2-0) = +5. Even losing M5 0-3, GD=+2.
+    // T2 winning M6 3-0: T2 GD = (0-3)+(1-0)+(3-0) = +1. T1 still ahead.
+    // T1 is guaranteed top 2.
+    const result = computeGuaranteedTop2(data, scores);
+    expect(result.has('Group A-T1')).toBe(true);
+  });
+
+  it('does not guarantee a team that could still drop to 3rd', () => {
+    const data = makeData(1);
+    // After matchday 1 only: T1=3, T3=3, T2=0, T4=0
+    const scores: Record<string, { team1: number; team2: number }> = {
+      'Group A-M1': { team1: 1, team2: 0 }, // T1 beats T2
+      'Group A-M2': { team1: 1, team2: 0 }, // T3 beats T4
+    };
+    // T1=3, T3=3, T2=0, T4=0. 4 matches remaining.
+    // T2 could win next 2 → 6pts and overtake T1.
+    const result = computeGuaranteedTop2(data, scores);
+    expect(result.has('Group A-T1')).toBe(false);
+    expect(result.has('Group A-T3')).toBe(false);
+  });
+});
+
+// ── possibleTeamsForSlot ──────────────────────────────────────────────
+
+describe('possibleTeamsForSlot', () => {
+  const baseData = {
+    groups: [
+      { name: 'Group A', teams: ['Mexico', 'South Korea', 'Czech Republic', 'South Africa'] },
+      { name: 'Group B', teams: ['Canada', 'Switzerland', 'Bosnia & Herzegovina', 'Qatar'] },
+    ],
+    group_matches: {
+      'Group A': [
+        { id: 'G-A-1', team1: 'Mexico', team2: 'South Korea', date: '2026-06-11', time: '21:00', ground: '', matchday: 'Matchday 1' },
+        { id: 'G-A-2', team1: 'Czech Republic', team2: 'South Africa', date: '2026-06-12', time: '21:00', ground: '', matchday: 'Matchday 1' },
+        { id: 'G-A-3', team1: 'Mexico', team2: 'Czech Republic', date: '2026-06-15', time: '21:00', ground: '', matchday: 'Matchday 2' },
+        { id: 'G-A-4', team1: 'South Korea', team2: 'South Africa', date: '2026-06-15', time: '21:00', ground: '', matchday: 'Matchday 2' },
+        { id: 'G-A-5', team1: 'Mexico', team2: 'South Africa', date: '2026-06-19', time: '21:00', ground: '', matchday: 'Matchday 3' },
+        { id: 'G-A-6', team1: 'South Korea', team2: 'Czech Republic', date: '2026-06-19', time: '21:00', ground: '', matchday: 'Matchday 3' },
+      ],
+      'Group B': [
+        { id: 'G-B-1', team1: 'Canada', team2: 'Switzerland', date: '2026-06-11', time: '21:00', ground: '', matchday: 'Matchday 1' },
+        { id: 'G-B-2', team1: 'Bosnia & Herzegovina', team2: 'Qatar', date: '2026-06-12', time: '21:00', ground: '', matchday: 'Matchday 1' },
+        { id: 'G-B-3', team1: 'Canada', team2: 'Bosnia & Herzegovina', date: '2026-06-15', time: '21:00', ground: '', matchday: 'Matchday 2' },
+        { id: 'G-B-4', team1: 'Switzerland', team2: 'Qatar', date: '2026-06-15', time: '21:00', ground: '', matchday: 'Matchday 2' },
+        { id: 'G-B-5', team1: 'Canada', team2: 'Qatar', date: '2026-06-19', time: '21:00', ground: '', matchday: 'Matchday 3' },
+        { id: 'G-B-6', team1: 'Switzerland', team2: 'Bosnia & Herzegovina', date: '2026-06-19', time: '21:00', ground: '', matchday: 'Matchday 3' },
+      ],
+    },
+    ko_matches: [
+      { id: 'M73', num: 73, round: 'Round of 32' as const, team1: '1A', team2: '2B', date: '2026-06-28', time: '21:00', ground: '' },
+      { id: 'M89', num: 89, round: 'Round of 16' as const, team1: 'W73', team2: 'W74', date: '2026-07-01', time: '21:00', ground: '' },
+    ],
+    flag_map: { 'Mexico': 'mx', 'South Korea': 'kr', 'Czech Republic': 'cz', 'South Africa': 'za', 'Canada': 'ca', 'Switzerland': 'ch', 'Bosnia & Herzegovina': 'ba', 'Qatar': 'qa' } as Record<string, string>,
+  };
+
+  it('returns group winner candidates for "1A" with completed group', () => {
+    const scores: Record<string, { team1: number; team2: number }> = {
+      'G-A-1': { team1: 2, team2: 0 },
+      'G-A-2': { team1: 0, team2: 1 },
+      'G-A-3': { team1: 1, team2: 0 },
+      'G-A-4': { team1: 1, team2: 0 },
+      'G-A-5': { team1: 1, team2: 0 },
+      'G-A-6': { team1: 1, team2: 0 },
+    };
+    // Mexico wins all = 9pts, definitive winner
+    const result = possibleTeamsForSlot(baseData, scores, {}, '1A');
+    expect(result).toEqual(['Mexico']);
+  });
+
+  it('returns top candidates for "1A" with incomplete group', () => {
+    const scores: Record<string, { team1: number; team2: number }> = {
+      'G-A-1': { team1: 2, team2: 0 }, // Mexico beats S.Korea
+      'G-A-2': { team1: 0, team2: 1 }, // S.Africa beats Czech Rep
+    };
+    // Mexico=3, S.Africa=3, others=0. Top 2 could win the group.
+    const result = possibleTeamsForSlot(baseData, scores, {}, '1A');
+    expect(result.length).toBe(2);
+    expect(result).toContain('Mexico');
+    expect(result).toContain('South Africa');
+  });
+
+  it('returns candidates for "3A/B" slot from listed groups', () => {
+    const scores: Record<string, { team1: number; team2: number }> = {
+      'G-A-1': { team1: 2, team2: 0 },
+      'G-A-2': { team1: 0, team2: 0 },
+      'G-A-3': { team1: 1, team2: 0 },
+      'G-A-4': { team1: 1, team2: 0 },
+      'G-A-5': { team1: 1, team2: 0 },
+      'G-A-6': { team1: 1, team2: 0 },
+    };
+    const result = possibleTeamsForSlot(baseData, scores, {}, '3A/B');
+    // Should include 3rd-place teams from Group A and Group B
+    expect(result.length).toBeGreaterThan(0);
+    // Group A complete: 3rd is deterministic
+    expect(result.some(t => baseData.groups[0].teams.includes(t))).toBe(true);
+  });
+
+  it('returns resolved team for already-known slot', () => {
+    const result = possibleTeamsForSlot(baseData, {}, {}, 'Mexico');
+    expect(result).toEqual(['Mexico']);
+  });
+
+  it('returns feeder match teams for "W73" when match not played', () => {
+    // M73 is 1A vs 2B — neither resolved yet (no scores)
+    const result = possibleTeamsForSlot(baseData, {}, {}, 'W73');
+    // Can't determine winner, but can't determine feeder teams either (1A/2B unresolved)
+    expect(result).toEqual([]);
+  });
+
+  it('returns feeder match teams for "W73" when feeder match teams are resolved', () => {
+    // Complete both groups so 1A and 2B resolve
+    const scores: Record<string, { team1: number; team2: number }> = {
+      'G-A-1': { team1: 2, team2: 0 }, 'G-A-2': { team1: 0, team2: 1 },
+      'G-A-3': { team1: 1, team2: 0 }, 'G-A-4': { team1: 1, team2: 0 },
+      'G-A-5': { team1: 1, team2: 0 }, 'G-A-6': { team1: 1, team2: 0 },
+      'G-B-1': { team1: 2, team2: 0 }, 'G-B-2': { team1: 0, team2: 1 },
+      'G-B-3': { team1: 1, team2: 0 }, 'G-B-4': { team1: 1, team2: 0 },
+      'G-B-5': { team1: 1, team2: 0 }, 'G-B-6': { team1: 1, team2: 0 },
+    };
+    // M73 teams are resolved (1A=Mexico, 2B=Switzerland) but match not played
+    const result = possibleTeamsForSlot(baseData, scores, {}, 'W73');
+    expect(result).toContain('Mexico');
+    expect(result).toContain('Switzerland');
   });
 });

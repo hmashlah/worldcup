@@ -16,6 +16,7 @@ import {
   resolveSlot,
   isKnockoutRound,
   prettySlot,
+  possibleTeamsForSlot,
 } from '@/lib/tournament';
 import type {
   TournamentData,
@@ -166,6 +167,35 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
         </div>
         <div className="mdp-venue">{match.ground}</div>
       </header>
+
+      {/* ─── Possible teams (when slots are unresolved) ────────────── */}
+      {isKO && (!team1Resolved || !team2Resolved) && (
+        <section className="mdp-section">
+          <h3 className="mdp-h3">Possible Teams</h3>
+          <div className="mdp-possible">
+            {!team1Resolved && (
+              <div className="mdp-possible-slot">
+                <span className="mdp-possible-label">{prettySlot(koMatch!.team1)}</span>
+                <div className="mdp-possible-teams">
+                  {possibleTeamsForSlot(data, scores, advancers, koMatch!.team1).map(t => (
+                    <span key={t} className="mdp-possible-team"><Flag team={t} /> {t}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {!team2Resolved && (
+              <div className="mdp-possible-slot">
+                <span className="mdp-possible-label">{prettySlot(koMatch!.team2)}</span>
+                <div className="mdp-possible-teams">
+                  {possibleTeamsForSlot(data, scores, advancers, koMatch!.team2).map(t => (
+                    <span key={t} className="mdp-possible-team"><Flag team={t} /> {t}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* ─── Live in-progress ─────────────────────────────────────── */}
       {live && (
