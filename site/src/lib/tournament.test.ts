@@ -8,6 +8,7 @@ import {
   koLoser,
   prettySlot,
   isKnockoutRound,
+  computeSafeThirds,
 } from './tournament';
 import type { TournamentData, Group, GroupMatch, KoMatch } from './types';
 
@@ -335,5 +336,113 @@ describe('isKnockoutRound', () => {
     expect(isKnockoutRound('Group A')).toBe(false);
     expect(isKnockoutRound('Matchday 1')).toBe(false);
     expect(isKnockoutRound('')).toBe(false);
+  });
+});
+
+// ── computeSafeThirds ─────────────────────────────────────────────────
+
+describe('computeSafeThirds', () => {
+  // Helper: build a minimal tournament with N groups of 4 teams each
+  function makeData(numGroups: number) {
+    const groups = [];
+    const group_matches: Record<string, Array<{ id: string; team1: string; team2: string; date: string; time: string; ground: string; matchday: string }>> = {};
+    for (let g = 0; g < numGroups; g++) {
+      const name = `Group ${String.fromCharCode(65 + g)}`;
+      const teams = [`${name}-T1`, `${name}-T2`, `${name}-T3`, `${name}-T4`];
+      groups.push({ name, teams });
+      group_matches[name] = [
+        { id: `${name}-M1`, team1: teams[0], team2: teams[1], date: '2026-06-11', time: '21:00', ground: '', matchday: 'Matchday 1' },
+        { id: `${name}-M2`, team1: teams[2], team2: teams[3], date: '2026-06-12', time: '21:00', ground: '', matchday: 'Matchday 1' },
+        { id: `${name}-M3`, team1: teams[0], team2: teams[2], date: '2026-06-15', time: '21:00', ground: '', matchday: 'Matchday 2' },
+        { id: `${name}-M4`, team1: teams[1], team2: teams[3], date: '2026-06-15', time: '21:00', ground: '', matchday: 'Matchday 2' },
+        { id: `${name}-M5`, team1: teams[0], team2: teams[3], date: '2026-06-19', time: '21:00', ground: '', matchday: 'Matchday 3' },
+        { id: `${name}-M6`, team1: teams[1], team2: teams[2], date: '2026-06-19', time: '21:00', ground: '', matchday: 'Matchday 3' },
+      ];
+    }
+    return { groups, group_matches, ko_matches: [], flag_map: {} };
+  }
+
+  it('returns empty when no groups are complete', () => {
+    const data = makeData(12);
+    const scores = {}; // No results
+    expect(computeSafeThirds(data, scores).size).toBe(0);
+  });
+
+  it('marks a 3rd with 6 pts as safe when incomplete groups cannot beat them', () => {
+    const data = makeData(12);
+    const scores: Record<string, { team1: number; team2: number }> = {};
+
+    // Complete Group A: T1 wins all (9pts), T2 wins 2 (6pts), T3 wins 1 (3pts), T4 loses all (0pts)
+    // T3 is 3rd with 3 pts? No — let's make T3 have 6 pts by winning 2 and losing 1
+    // Actually let's just set results explicitly:
+    // M1: T1 1-0 T2 (T1=3pts, T2=0)
+    // M2: T3 1-0 T4 (T3=3pts, T4=0)
+    // M3: T1 1-0 T3 (T1=6pts, T3=3pts)
+    // M4: T2 1-0 T4 (T2=3pts, T4=0)
+    // M5: T1 1-0 T4 (T1=9pts, T4=0)
+    // M6: T3 1-0 T2 (T3=6pts, T2=3pts)
+    // Final: T1=9, T3=6, T2=3, T4=0. 3rd = T2 with 3pts
+    // Hmm, let me make 3rd have more pts:
+    // M1: T1 1-0 T2, M2: T3 1-0 T4, M3: T3 1-0 T1, M4: T2 1-0 T4, M5: T1 1-0 T4, M6: T2 1-0 T3
+    // T1: W,L,W = 6pts. T2: L,W,W = 6pts. T3: W,W,L = 6pts. T4: L,L,L = 0pts
+    // Sorted by GD: all tied at 6pts... Let's use simpler scores.
+
+    // Group A complete: 3rd has 4 pts
+    scores['Group A-M1'] = { team1: 2, team2: 0 }; // T1 beats T2
+    scores['Group A-M2'] = { team1: 1, team2: 0 }; // T3 beats T4
+    scores['Group A-M3'] = { team1: 1, team2: 0 }; // T1 beats T3
+    scores['Group A-M4'] = { team1: 1, team2: 1 }; // T2 draws T4
+    scores['Group A-M5'] = { team1: 3, team2: 0 }; // T1 beats T4
+    scores['Group A-M6'] = { team1: 1, team2: 1 }; // T2 draws T3
+    // T1: 9pts, T3: 4pts (W,L,D), T2: 2pts (L,D,D), T4: 1pt (L,D,L)
+    // 3rd = T2 with 2pts? Let me recalculate:
+    // T1: beat T2(3), beat T3(3), beat T4(3) = 9pts
+    // T2: lost T1(0), drew T4(1), drew T3(1) = 2pts  
+    // T3: beat T4(3), lost T1(0), drew T2(1) = 4pts
+    // T4: lost T3(0), drew T2(1), lost T1(0) = 1pt
+    // Order: T1(9), T3(4), T2(2), T4(1). 3rd = T2 with 2pts
+
+    // All other 11 groups have 0 games played.
+    // Max 3rd from each incomplete group: brute-force gives max 5pts for 3rd
+    // (one team wins 1 and draws 1 = 5? No, max in 3 games = 6 for 2nd, 3rd can't have more than the 2nd)
+    // Actually with 4 teams in round robin, max for 3rd is 6pts (all three-way tie possible)
+    // So 11 groups could each produce a 3rd with up to 6pts > 2pts of our 3rd
+    // couldBeatUs = 11 >= 8, so Group A's 3rd is NOT safe
+    const result = computeSafeThirds(data, scores);
+    expect(result.has('Group A')).toBe(false); // 2pts 3rd can't be safe with 11 threats
+  });
+
+  it('marks a 3rd as safe when most groups are complete and cannot beat them', () => {
+    const data = makeData(12);
+    const scores: Record<string, { team1: number; team2: number }> = {};
+
+    // Complete 11 groups with 3rd having low points (1pt each)
+    for (let g = 0; g < 11; g++) {
+      const name = `Group ${String.fromCharCode(65 + g)}`;
+      // T1 wins all, T2 wins 2, T3 draws 1, T4 loses all
+      scores[`${name}-M1`] = { team1: 2, team2: 0 }; // T1 beats T2
+      scores[`${name}-M2`] = { team1: 0, team2: 0 }; // T3 draws T4
+      scores[`${name}-M3`] = { team1: 2, team2: 0 }; // T1 beats T3
+      scores[`${name}-M4`] = { team1: 2, team2: 0 }; // T2 beats T4
+      scores[`${name}-M5`] = { team1: 2, team2: 0 }; // T1 beats T4
+      scores[`${name}-M6`] = { team1: 2, team2: 0 }; // T2 beats T3
+      // T1=9, T2=6, T3=1, T4=1 → 3rd = T3 or T4 with 1pt
+    }
+
+    // Group L (12th) is incomplete — 0 games played
+    // Max 3rd from Group L could be up to 6pts (brute force)
+    // Our 11 completed groups each have 3rd with 1pt
+    // Only Group L threatens. couldBeatUs for each completed group = 
+    //   10 other completed groups with 1pt (equal, both complete, same GD check)
+    //   + 1 incomplete group (could beat)
+    // Actually all 11 thirds have 1pt and same scenario. Let's check one:
+    // Group A 3rd has 1pt. Threats: Group L (incomplete, max ~6pts = beats us).
+    //   Other 10 completed groups: their 3rds have 1pt too — equal, both complete.
+    //   Need to check GD. T3 in each group: drew T4 (0-0), lost T1, lost T2.
+    //   GD = 0 + (-2) + (-2) = -4. All same. So no completed group beats us.
+    //   couldBeatUs = 1 (just Group L). 1 < 8 → SAFE!
+    const result = computeSafeThirds(data, scores);
+    expect(result.has('Group A')).toBe(true);
+    expect(result.has('Group K')).toBe(true); // 11th group also safe
   });
 });

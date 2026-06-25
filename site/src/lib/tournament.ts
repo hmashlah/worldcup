@@ -80,6 +80,112 @@ export function getThirdPlacedRanking(
   return thirds;
 }
 
+/**
+ * Compute which completed groups' 3rd-place teams are mathematically
+ * guaranteed to qualify (top 8 best thirds).
+ *
+ * For each incomplete group, brute-forces all possible remaining match
+ * outcomes to find the maximum points the eventual 3rd-place finisher
+ * could achieve. Then checks if our team could be pushed out of top 8.
+ */
+export function computeSafeThirds(data: TournamentData, scores: ScoreMap): Set<string> {
+  const safe = new Set<string>();
+  const groupInfos = data.groups.map(g => {
+    const standings = computeStandings(data, g, scores);
+    const matches = data.group_matches[g.name] ?? [];
+    const remaining = matches.filter(m => !scores[m.id]);
+    return { group: g, standings, remaining };
+  });
+
+  // For each incomplete group, compute the max points a 3rd-place finisher could get
+  const maxThirdPtsPerGroup: Record<string, number> = {};
+  for (const { group, standings, remaining } of groupInfos) {
+    if (remaining.length === 0) {
+      // Complete: 3rd is fixed
+      maxThirdPtsPerGroup[group.name] = standings[2]?.Pts ?? 0;
+    } else {
+      // Brute-force all outcomes
+      maxThirdPtsPerGroup[group.name] = computeMaxThirdPoints(data, group, scores, remaining);
+    }
+  }
+
+  // For each completed group's 3rd, check if they're safe
+  for (const { group, standings, remaining } of groupInfos) {
+    if (remaining.length > 0) continue; // Group not complete
+    const third = standings[2];
+    if (!third) continue;
+
+    // Count groups that could produce a 3rd better than ours
+    let couldBeatUs = 0;
+    for (const otherInfo of groupInfos) {
+      if (otherInfo.group.name === group.name) continue;
+      const otherMaxThird = maxThirdPtsPerGroup[otherInfo.group.name];
+      if (otherMaxThird > third.Pts) {
+        couldBeatUs++;
+      } else if (otherMaxThird === third.Pts) {
+        // Equal points: could beat on GD in worst case
+        // Be conservative — count as potential threat
+        if (otherInfo.remaining.length > 0) couldBeatUs++;
+        else {
+          // Both complete: compare actual GD
+          const otherThird = otherInfo.standings[2];
+          if (otherThird && (otherThird.GD > third.GD || (otherThird.GD === third.GD && otherThird.GF > third.GF))) {
+            couldBeatUs++;
+          }
+        }
+      }
+    }
+
+    if (couldBeatUs < 8) {
+      safe.add(group.name);
+    }
+  }
+
+  return safe;
+}
+
+/**
+ * Brute-force all possible outcomes for remaining matches in a group
+ * and return the maximum points a 3rd-place finisher could achieve.
+ */
+function computeMaxThirdPoints(
+  data: TournamentData,
+  group: Group,
+  existingScores: ScoreMap,
+  remaining: Array<{ id: string; team1: string; team2: string }>,
+): number {
+  let maxThirdPts = 0;
+
+  // Generate all possible outcomes: each match can be W(home), D, W(away)
+  const outcomes = [
+    [1, 0], // home win
+    [0, 0], // draw
+    [0, 1], // away win
+  ];
+
+  const numMatches = remaining.length;
+  const totalCombinations = Math.pow(3, numMatches);
+
+  for (let combo = 0; combo < totalCombinations; combo++) {
+    // Build hypothetical scores
+    const hypothetical: ScoreMap = { ...existingScores };
+    let c = combo;
+    for (let i = 0; i < numMatches; i++) {
+      const outcomeIdx = c % 3;
+      c = Math.floor(c / 3);
+      const [h, a] = outcomes[outcomeIdx];
+      hypothetical[remaining[i].id] = { team1: h, team2: a };
+    }
+
+    // Compute standings with this scenario
+    const standings = computeStandings(data, group, hypothetical);
+    const thirdPts = standings[2]?.Pts ?? 0;
+    if (thirdPts > maxThirdPts) maxThirdPts = thirdPts;
+  }
+
+  return maxThirdPts;
+}
+
 /** Has every group played all 6 matches? Used to gate KO slot resolution. */
 export function allGroupsCompleted(data: TournamentData, scores: ScoreMap): boolean {
   return data.groups.every(g => computeStandings(data, g, scores).every(t => t.P === 3));
