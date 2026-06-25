@@ -49,9 +49,15 @@ function GroupCardCompact({ group, isThirdQualified, isThirdSafe, onExpand }: Ca
               : (i === 2 && isThirdQualified ? 'qualified'
               : i === 2 ? 'third-tied' : '');
             const showCheck = groupComplete && (i < 2 || (i === 2 && isThirdSafe));
+            const showElim = groupComplete && i === 3;
             return (
               <tr className={cls} key={t.team}>
-                <td className="team-col"><Flag team={t.team} /><span className="team-link" onClick={() => openTeam(t.team)}>{t.team}</span>{showCheck && <span className="gc-qualified-badge">✓</span>}</td>
+                <td className="team-col">
+                  {showCheck && <span className="gc-status gc-status-q">✓</span>}
+                  {showElim && <span className="gc-status gc-status-x">✗</span>}
+                  {!showCheck && !showElim && <span className="gc-status"></span>}
+                  <Flag team={t.team} /><span className="team-link" onClick={() => openTeam(t.team)}>{t.team}</span>
+                </td>
                 <td>{t.P}</td><td>{t.W}</td><td>{t.D}</td><td>{t.L}</td>
                 <td>{t.GD > 0 ? `+${t.GD}` : t.GD}</td>
                 <td className="pts">{t.Pts}</td>
