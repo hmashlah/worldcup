@@ -28,7 +28,7 @@ BEGIN
     url := 'https://worldcup-1jo.pages.dev/send-reminders',
     headers := jsonb_build_object(
       'content-type', 'application/json',
-      'x-wc26-secret', 'REDACTED_SECRET'
+      'x-wc26-secret', '<WC26_WEBHOOK_SECRET>'
     ),
     body := '{}'::jsonb
   );
@@ -48,7 +48,7 @@ BEGIN
     url := 'https://worldcup-1jo.pages.dev/sync-matches',
     headers := jsonb_build_object(
       'content-type', 'application/json',
-      'x-wc26-secret', 'REDACTED_SECRET'
+      'x-wc26-secret', '<WC26_WEBHOOK_SECRET>'
     ),
     body := '{}'::jsonb
   );

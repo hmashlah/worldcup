@@ -19,7 +19,7 @@ BEGIN
       url := 'https://worldcup-1jo.pages.dev/send-push',
       headers := jsonb_build_object(
         'content-type', 'application/json',
-        'x-wc26-secret', 'REDACTED_SECRET'
+        'x-wc26-secret', '<WC26_WEBHOOK_SECRET>'
       ),
       body := jsonb_build_object(
         'userIds', jsonb_build_array(NEW.user_id::text),

@@ -316,7 +316,7 @@ SET search_path = public, extensions, pg_temp
 AS $$
 DECLARE
   hook_url TEXT := 'https://worldcup-1jo.pages.dev/notify-signup';
-  hook_sec TEXT := 'REDACTED_SECRET';
+  hook_sec TEXT := '<WC26_WEBHOOK_SECRET>';
   user_email TEXT;
 BEGIN
   -- No URL configured → do nothing (safe default).
