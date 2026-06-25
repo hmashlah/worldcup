@@ -683,6 +683,12 @@ footer {
   border-radius: 50%;
   margin-left: 4px;
 }
+.gc-qualified-badge {
+  color: #16a34a;
+  font-size: 10px;
+  font-weight: 800;
+  margin-left: 4px;
+}
 .gc-table tr.third-tied td.team-col::after {
   content: "";
   display: inline-block;

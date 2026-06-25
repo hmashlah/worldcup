@@ -18,6 +18,7 @@ function GroupCardCompact({ group, isThirdQualified, onExpand }: CardProps) {
     scores[id] = { team1: r.team1_score, team2: r.team2_score };
   }
   const standings = dataQ.data ? computeStandings(dataQ.data, group, scores) : [];
+  const groupComplete = standings.length > 0 && standings.every(t => t.P === 3);
 
   return (
     <div
@@ -47,9 +48,10 @@ function GroupCardCompact({ group, isThirdQualified, onExpand }: CardProps) {
               i < 2 ? 'qualified'
               : (i === 2 && isThirdQualified ? 'qualified'
               : i === 2 ? 'third-tied' : '');
+            const showCheck = groupComplete && (i < 2 || (i === 2 && isThirdQualified));
             return (
               <tr className={cls} key={t.team}>
-                <td className="team-col"><Flag team={t.team} /><span className="team-link" onClick={() => openTeam(t.team)}>{t.team}</span></td>
+                <td className="team-col"><Flag team={t.team} /><span className="team-link" onClick={() => openTeam(t.team)}>{t.team}</span>{showCheck && <span className="gc-qualified-badge">✓</span>}</td>
                 <td>{t.P}</td><td>{t.W}</td><td>{t.D}</td><td>{t.L}</td>
                 <td>{t.GD > 0 ? `+${t.GD}` : t.GD}</td>
                 <td className="pts">{t.Pts}</td>
