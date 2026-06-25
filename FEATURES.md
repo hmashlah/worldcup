@@ -19,7 +19,9 @@ Fun features for the World Cup 2026 prediction league (friends app).
 
 ## Completed
 
-- [x] **Team & Player pages** — full pages with squad list, bio (position/age/club), tournament stats, match events. Scraped 48 squads from Wikipedia, served from CDN
+- [x] **Bracket improvements** — paired matches, hidden IDs, "possible teams" for TBD slots, auto-advancer on non-draw scores
+- [x] **Qualification indicators** — ▲/▼ on groups: mathematically guaranteed top 2 + safe 3rds (brute-force all scenarios)
+- [x] **Team & Player pages** — full pages with squad list, bio (position/age/club), tournament stats, match events, WC history, player photos
 - [x] **Streak flames** — 🔥 on 3+ match scoring streak, 🥶 on 3+ matches with 0pts
 - [x] **Avatar/team badge** — pick a team to support, flag shows next to name in chat/leaderboard/picks
 - [x] **Trophy Room** — per-matchday King, Psychic, Contrarian, Cursed, Comeback Kid, The Wall
