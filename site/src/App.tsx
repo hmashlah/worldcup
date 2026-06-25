@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DayView } from '@/components/DayView';
 import { GroupsGridView } from '@/components/GroupsGridView';
 import { Bracket } from '@/components/Bracket';
@@ -22,6 +22,7 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useUI } from '@/lib/ui-store';
+import { isPushSupported, isSubscribed, subscribeToPush } from '@/lib/push';
 
 export default function App() {
   return (
@@ -42,6 +43,14 @@ function Shell() {
 
   // Show fav team modal if: user is approved, no fav_team set, capsule not showing
   const showFavTeamModal = !!user && isApproved && myFavTeam === null && !capsule.showPrompt && !favTeamDismissed;
+
+  // Auto-subscribe to push notifications on login (prompts once, then remembers)
+  useEffect(() => {
+    if (!user || !isApproved || !isPushSupported()) return;
+    isSubscribed().then(already => {
+      if (!already) subscribeToPush();
+    });
+  }, [user, isApproved]);
 
   // Signed-in but not yet approved by admin → show holding screen.
   // Anonymous visitors get the full read-only browse — they just see

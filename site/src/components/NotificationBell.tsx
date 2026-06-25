@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNotifications, useNotificationRealtime, useMarkAllRead, type Notification } from '@/hooks/useNotifications';
 import { useUI } from '@/lib/ui-store';
 import { relativeTime } from '@/lib/utils';
+import { isPushSupported, isSubscribed, subscribeToPush, unsubscribeFromPush, getPermissionState } from '@/lib/push';
 
 function NotifIcon({ type }: { type: string }) {
   switch (type) {
@@ -27,6 +28,31 @@ export function NotificationBell() {
   const setTab = useUI(s => s.setTab);
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [pushOn, setPushOn] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+  const pushSupported = isPushSupported();
+
+  // Check push subscription state when dropdown opens
+  useEffect(() => {
+    if (open && pushSupported) {
+      isSubscribed().then(setPushOn);
+    }
+  }, [open, pushSupported]);
+
+  const handlePushToggle = useCallback(async () => {
+    setPushLoading(true);
+    try {
+      if (pushOn) {
+        const ok = await unsubscribeFromPush();
+        if (ok) setPushOn(false);
+      } else {
+        const ok = await subscribeToPush();
+        if (ok) setPushOn(true);
+      }
+    } finally {
+      setPushLoading(false);
+    }
+  }, [pushOn]);
 
   const notifications = notificationsQ.data ?? [];
   const unreadCount = useMemo(() => notifications.filter(n => !n.read).length, [notifications]);
@@ -118,6 +144,23 @@ export function NotificationBell() {
               </button>
             ))}
           </div>
+          {pushSupported && (
+            <div className="notif-push-row">
+              <span className="notif-push-label">Push notifications</span>
+              {getPermissionState() === 'denied' ? (
+                <span className="notif-push-denied">Blocked</span>
+              ) : (
+                <button
+                  type="button"
+                  className={`notif-push-toggle ${pushOn ? 'notif-push-toggle--on' : ''}`}
+                  onClick={handlePushToggle}
+                  disabled={pushLoading}
+                >
+                  <span className="notif-push-toggle-knob" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

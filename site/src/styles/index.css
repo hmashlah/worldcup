@@ -5458,20 +5458,6 @@ footer {
 }
 
 /* ── Notification bell ────────────────────────────────────────────── */
-/* ─── Push toggle ─────────────────────────────────────── */
-.push-toggle {
-  background: transparent;
-  border: 0;
-  color: var(--ink-soft);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: var(--r-sm);
-  transition: color 0.15s;
-  opacity: 0.6;
-}
-.push-toggle:hover { color: var(--ink); opacity: 1; }
-.push-toggle--on { color: var(--accent, #4f8cff); opacity: 1; }
-.push-toggle--denied { opacity: 0.3; cursor: not-allowed; }
 
 .notif-bell-wrapper {
   position: relative;
@@ -5617,6 +5603,42 @@ footer {
   font-size: 10px;
   color: var(--ink-faint);
 }
+
+/* Push toggle row inside dropdown */
+.notif-push-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+}
+.notif-push-label { color: var(--ink-soft); }
+.notif-push-denied { color: var(--ink-faint); font-style: italic; font-size: 11px; }
+.notif-push-toggle {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  border-radius: 9px;
+  border: 0;
+  background: var(--line);
+  cursor: pointer;
+  transition: background 0.2s;
+  padding: 0;
+}
+.notif-push-toggle--on { background: var(--accent, #2563eb); }
+.notif-push-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+.notif-push-toggle--on .notif-push-toggle-knob { transform: translateX(14px); }
 
 /* Dark theme notifications */
 [data-theme='dark'] .notif-dropdown {
