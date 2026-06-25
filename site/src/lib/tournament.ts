@@ -81,6 +81,52 @@ export function getThirdPlacedRanking(
 }
 
 /**
+ * Compute which teams are mathematically guaranteed to finish in the
+ * top 2 of their group (qualified regardless of remaining results).
+ * Brute-forces all possible outcomes for remaining matches.
+ */
+export function computeGuaranteedTop2(data: TournamentData, scores: ScoreMap): Set<string> {
+  const guaranteed = new Set<string>();
+
+  for (const g of data.groups) {
+    const matches = data.group_matches[g.name] ?? [];
+    const remaining = matches.filter(m => !scores[m.id]);
+    if (remaining.length === 0) {
+      // Group complete: top 2 are guaranteed
+      const standings = computeStandings(data, g, scores);
+      guaranteed.add(standings[0].team);
+      guaranteed.add(standings[1].team);
+      continue;
+    }
+
+    // Brute-force: check each team — are they top 2 in ALL scenarios?
+    const outcomes: Array<[number, number]> = [[1, 0], [0, 0], [0, 1]];
+    const totalCombinations = Math.pow(3, remaining.length);
+
+    for (const team of g.teams) {
+      let alwaysTop2 = true;
+      for (let combo = 0; combo < totalCombinations; combo++) {
+        const hypothetical: ScoreMap = { ...scores };
+        let c = combo;
+        for (let i = 0; i < remaining.length; i++) {
+          const idx = c % 3;
+          c = Math.floor(c / 3);
+          hypothetical[remaining[i].id] = { team1: outcomes[idx][0], team2: outcomes[idx][1] };
+        }
+        const standings = computeStandings(data, g, hypothetical);
+        if (standings[0].team !== team && standings[1].team !== team) {
+          alwaysTop2 = false;
+          break;
+        }
+      }
+      if (alwaysTop2) guaranteed.add(team);
+    }
+  }
+
+  return guaranteed;
+}
+
+/**
  * Compute which completed groups' 3rd-place teams are mathematically
  * guaranteed to qualify (top 8 best thirds).
  *

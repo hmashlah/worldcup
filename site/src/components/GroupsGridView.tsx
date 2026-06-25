@@ -3,12 +3,12 @@ import { Flag } from '@/components/Flag';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useResults } from '@/hooks/useResults';
 import { useUI } from '@/lib/ui-store';
-import { computeStandings, getThirdPlacedRanking, computeSafeThirds, type Standing } from '@/lib/tournament';
+import { computeStandings, getThirdPlacedRanking, computeSafeThirds, computeGuaranteedTop2, type Standing } from '@/lib/tournament';
 import type { Group, GroupMatch, ScoreMap } from '@/lib/types';
 
-interface CardProps { group: Group; isThirdQualified: boolean; isThirdSafe: boolean; onExpand: () => void }
+interface CardProps { group: Group; isThirdQualified: boolean; isThirdSafe: boolean; guaranteedTop2: Set<string>; onExpand: () => void }
 
-function GroupCardCompact({ group, isThirdQualified, isThirdSafe, onExpand }: CardProps) {
+function GroupCardCompact({ group, isThirdQualified, isThirdSafe, guaranteedTop2, onExpand }: CardProps) {
   const dataQ = useTournamentData();
   const resultsQ = useResults();
   const openTeam = useUI(s => s.openTeam);
@@ -48,7 +48,7 @@ function GroupCardCompact({ group, isThirdQualified, isThirdSafe, onExpand }: Ca
               i < 2 ? 'qualified'
               : (i === 2 && isThirdQualified ? 'qualified'
               : i === 2 ? 'third-tied' : '');
-            const showCheck = groupComplete && (i < 2 || (i === 2 && isThirdSafe));
+            const showCheck = guaranteedTop2.has(t.team) || (groupComplete && i === 2 && isThirdSafe);
             const showElim = groupComplete && i === 3;
             return (
               <tr className={cls} key={t.team}>
@@ -310,6 +310,7 @@ export function GroupsGridView() {
   const ranking = getThirdPlacedRanking(dataQ.data, scores);
   const top8Thirds = new Set(ranking.slice(0, 8).map(t => t.group));
   const safeThirds = computeSafeThirds(dataQ.data, scores);
+  const guaranteedTop2 = computeGuaranteedTop2(dataQ.data, scores);
 
   const expandedGroup = openGroupName
     ? dataQ.data.groups.find(g => g.name === openGroupName) ?? null
@@ -324,6 +325,7 @@ export function GroupsGridView() {
             group={g}
             isThirdQualified={top8Thirds.has(g.name)}
             isThirdSafe={safeThirds.has(g.name)}
+            guaranteedTop2={guaranteedTop2}
             onExpand={() => openGroup(g.name)}
           />
         ))}
