@@ -4,7 +4,7 @@ import { DayLeaderboard } from '@/components/DayLeaderboard';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useResults } from '@/hooks/useResults';
 import { useAuth } from '@/contexts/AuthContext';
-import { resolveSlot, prettySlot, isKnockoutRound } from '@/lib/tournament';
+import { resolveSlot, prettySlot, isKnockoutRound, possibleTeamsForSlot } from '@/lib/tournament';
 import { matchesByDay, defaultDay, relativeDayLabel, shortDayLabel } from '@/lib/days';
 import type { AdvancerMap, ScoreMap } from '@/lib/types';
 
@@ -217,6 +217,8 @@ export function DayView() {
               team2IsResolved={!m.isKO || !!t2}
               team1Placeholder={m.isKO ? prettySlot(m.team1) : undefined}
               team2Placeholder={m.isKO ? prettySlot(m.team2) : undefined}
+              team1Possible={m.isKO && !t1 ? possibleTeamsForSlot(dataQ.data!, scores, advancers, m.team1) : undefined}
+              team2Possible={m.isKO && !t2 ? possibleTeamsForSlot(dataQ.data!, scores, advancers, m.team2) : undefined}
               date={m.date}
               time={m.time}
               ground={m.ground}

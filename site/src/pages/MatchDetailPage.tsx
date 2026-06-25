@@ -149,14 +149,28 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
         <div className="mdp-teams">
           <div className="mdp-team">
             {team1Resolved
-              ? <><Flag team={team1Resolved} /><span className="mdp-team-name">{team1Display}</span></>
-              : <span className="mdp-team-placeholder">{team1Display}</span>}
+              ? <span className="mdp-team-row"><Flag team={team1Resolved} /><span className="mdp-team-name">{team1Display}</span></span>
+              : <><span className="mdp-team-placeholder">{team1Display}</span>
+                {isKO && (
+                  <span className="mdp-possible-inline">
+                    {possibleTeamsForSlot(data, scores, advancers, koMatch!.team1).map(t => (
+                      <span key={t} className="mdp-possible-inline-team"><Flag team={t} /> {t}</span>
+                    ))}
+                  </span>
+                )}</>}
           </div>
           <span className="mdp-vs">vs</span>
           <div className="mdp-team">
             {team2Resolved
-              ? <><Flag team={team2Resolved} /><span className="mdp-team-name">{team2Display}</span></>
-              : <span className="mdp-team-placeholder">{team2Display}</span>}
+              ? <span className="mdp-team-row"><Flag team={team2Resolved} /><span className="mdp-team-name">{team2Display}</span></span>
+              : <><span className="mdp-team-placeholder">{team2Display}</span>
+                {isKO && (
+                  <span className="mdp-possible-inline">
+                    {possibleTeamsForSlot(data, scores, advancers, koMatch!.team2).map(t => (
+                      <span key={t} className="mdp-possible-inline-team"><Flag team={t} /> {t}</span>
+                    ))}
+                  </span>
+                )}</>}
           </div>
         </div>
         <div className="mdp-meta">
@@ -167,35 +181,6 @@ export function MatchDetailPage({ matchId }: { matchId: string }) {
         </div>
         <div className="mdp-venue">{match.ground}</div>
       </header>
-
-      {/* ─── Possible teams (when slots are unresolved) ────────────── */}
-      {isKO && (!team1Resolved || !team2Resolved) && (
-        <section className="mdp-section">
-          <h3 className="mdp-h3">Possible Teams</h3>
-          <div className="mdp-possible">
-            {!team1Resolved && (
-              <div className="mdp-possible-slot">
-                <span className="mdp-possible-label">{prettySlot(koMatch!.team1)}</span>
-                <div className="mdp-possible-teams">
-                  {possibleTeamsForSlot(data, scores, advancers, koMatch!.team1).map(t => (
-                    <span key={t} className="mdp-possible-team"><Flag team={t} /> {t}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {!team2Resolved && (
-              <div className="mdp-possible-slot">
-                <span className="mdp-possible-label">{prettySlot(koMatch!.team2)}</span>
-                <div className="mdp-possible-teams">
-                  {possibleTeamsForSlot(data, scores, advancers, koMatch!.team2).map(t => (
-                    <span key={t} className="mdp-possible-team"><Flag team={t} /> {t}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
 
       {/* ─── Live in-progress ─────────────────────────────────────── */}
       {live && (

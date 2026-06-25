@@ -19,6 +19,10 @@ interface Props {
   team2IsResolved: boolean;
   team1Placeholder?: string;
   team2Placeholder?: string;
+  /** Possible teams that could fill team1's slot (unresolved KO only) */
+  team1Possible?: string[];
+  /** Possible teams that could fill team2's slot (unresolved KO only) */
+  team2Possible?: string[];
   date: string;
   time: string;
   ground: string;
@@ -45,7 +49,8 @@ interface Props {
 export function MatchCard(p: Props) {
   const {
     matchId, team1, team2, team1IsResolved, team2IsResolved,
-    team1Placeholder, team2Placeholder, date, time, ground,
+    team1Placeholder, team2Placeholder, team1Possible, team2Possible,
+    date, time, ground,
     isKO = false, roundLabel, showDate = false,
   } = p;
   const { user } = useAuth();
@@ -169,7 +174,10 @@ export function MatchCard(p: Props) {
           <div className="mc-team mc-left">
             {team1IsResolved
               ? <><Flag team={team1} /><span className="mc-name team-link" onClick={() => openTeam(team1)}>{labelLeft}</span></>
-              : <span className="mc-placeholder">{labelLeft}</span>}
+              : <><span className="mc-placeholder">{labelLeft}</span>
+                {team1Possible && team1Possible.length > 0 && (
+                  <span className="mc-possible">{team1Possible.map(t => <Flag key={t} team={t} />)}</span>
+                )}</>}
           </div>
           <div className="mc-scores">
             <input
@@ -193,7 +201,10 @@ export function MatchCard(p: Props) {
           <div className="mc-team mc-right">
             {team2IsResolved
               ? <><span className="mc-name team-link" onClick={() => openTeam(team2)}>{labelRight}</span><Flag team={team2} /></>
-              : <span className="mc-placeholder">{labelRight}</span>}
+              : <><span className="mc-placeholder">{labelRight}</span>
+                {team2Possible && team2Possible.length > 0 && (
+                  <span className="mc-possible">{team2Possible.map(t => <Flag key={t} team={t} />)}</span>
+                )}</>}
           </div>
         </div>
       ) : (
@@ -203,13 +214,19 @@ export function MatchCard(p: Props) {
           <div className="mc-team mc-left">
             {team1IsResolved
               ? <><Flag team={team1} /><span className="mc-name team-link" onClick={() => openTeam(team1)}>{labelLeft}</span></>
-              : <span className="mc-placeholder">{labelLeft}</span>}
+              : <><span className="mc-placeholder">{labelLeft}</span>
+                {team1Possible && team1Possible.length > 0 && (
+                  <span className="mc-possible">{team1Possible.map(t => <Flag key={t} team={t} />)}</span>
+                )}</>}
           </div>
           <div className="mc-scores mc-scores-guest">vs</div>
           <div className="mc-team mc-right">
             {team2IsResolved
               ? <><span className="mc-name team-link" onClick={() => openTeam(team2)}>{labelRight}</span><Flag team={team2} /></>
-              : <span className="mc-placeholder">{labelRight}</span>}
+              : <><span className="mc-placeholder">{labelRight}</span>
+                {team2Possible && team2Possible.length > 0 && (
+                  <span className="mc-possible">{team2Possible.map(t => <Flag key={t} team={t} />)}</span>
+                )}</>}
           </div>
         </div>
       )}

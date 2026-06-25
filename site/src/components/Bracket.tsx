@@ -4,7 +4,7 @@ import { Flag } from '@/components/Flag';
 import { useTournamentData } from '@/hooks/useTournamentData';
 import { useResults } from '@/hooks/useResults';
 import {
-  resolveSlot, prettySlot, isKnockoutRound, koWinner, koLoser,
+  resolveSlot, prettySlot, isKnockoutRound, koWinner, koLoser, possibleTeamsForSlot,
 } from '@/lib/tournament';
 import { parseKickoff } from '@/lib/time';
 import type { AdvancerMap, KoMatch, RoundName, ScoreMap, TournamentData } from '@/lib/types';
@@ -178,6 +178,8 @@ function KoCardWrapper({
         team2IsResolved={!!t2}
         team1Placeholder={prettySlot(match.team1)}
         team2Placeholder={prettySlot(match.team2)}
+        team1Possible={!t1 ? possibleTeamsForSlot(data, scores, advancers, match.team1) : undefined}
+        team2Possible={!t2 ? possibleTeamsForSlot(data, scores, advancers, match.team2) : undefined}
         date={match.date}
         time={match.time}
         ground={match.ground}
