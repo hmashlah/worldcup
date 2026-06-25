@@ -60,6 +60,7 @@ export default defineConfig({
         'src/lib/ui-store.ts',      // Zustand store — tested via integration
         'src/lib/types.ts',         // type-only file
         'src/lib/match-detail.ts',  // type-only file
+        'src/lib/push.ts',          // browser Push API — can't unit test
       ],
       reporter: ['text', 'text-summary'],
       thresholds: {
