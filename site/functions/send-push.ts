@@ -230,9 +230,7 @@ async function encryptPayload(
   // Build info for HKDF
   const encoder = new TextEncoder();
   
-  // PRK = HKDF-Extract(auth_secret, ecdh_secret)
-  const prkKey = await crypto.subtle.importKey('raw', authSecret, { name: 'HKDF' }, false, ['deriveBits']);
-  // Actually we need ikm=sharedSecret, salt=authSecret
+  // IKM key: ikm=sharedSecret, salt=authSecret
   const ikmKey = await crypto.subtle.importKey('raw', sharedSecret, { name: 'HKDF' }, false, ['deriveBits']);
   
   // IKM key info for auth: "WebPush: info\0" + client_public + server_public
