@@ -33,6 +33,8 @@ export function useMyPredictions() {
       for (const r of (data ?? []) as PredictionRow[]) map[r.match_id] = r;
       return map;
     },
+    // Own predictions only change on explicit upsert (which invalidates).
+    staleTime: Infinity,
   });
 }
 
@@ -45,7 +47,11 @@ export function useAllPredictions() {
       if (error) throw error;
       return (data ?? []) as PredictionRow[];
     },
-    refetchInterval: 60_000, // 1 min — keeps leaderboard fresh during active play
+    // Predictions are immutable once kickoff passes. New predictions for
+    // upcoming matches trickle in, but 5min staleness is fine for the
+    // leaderboard — it only moves when a new result lands anyway.
+    staleTime: 5 * 60_000,
+    refetchInterval: 5 * 60_000,
     refetchOnWindowFocus: true,
   });
 }

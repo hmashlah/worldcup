@@ -87,11 +87,15 @@ export function useResults() {
       for (const r of (data ?? []) as ResultRow[]) map[r.match_id] = r;
       return map;
     },
+    // Results are immutable once written; new ones arrive via live table
+    // first, so 5min polling is plenty to catch newly finished matches.
+    // Admin mutations invalidate instantly via queryClient.
+    staleTime: 5 * 60_000,
     refetchInterval: () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-        return 5 * 60_000;
+        return 10 * 60_000;
       }
-      return 60_000;
+      return 5 * 60_000;
     },
     refetchOnWindowFocus: true,
   });
@@ -118,11 +122,15 @@ export function useMatchResult(matchId: string | null) {
       if (error) throw error;
       return (data as FullResultRow | null) ?? null;
     },
+    // Result detail is immutable once the match is finished; the only
+    // enrichment that arrives later is match_detail (scraped post-match),
+    // which is infrequent enough that staleTime of 5min is fine.
+    staleTime: 5 * 60_000,
     refetchInterval: () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-        return 60_000;
+        return 5 * 60_000;
       }
-      return 15_000;
+      return 60_000;
     },
     refetchOnWindowFocus: true,
   });

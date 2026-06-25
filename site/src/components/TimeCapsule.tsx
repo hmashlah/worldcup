@@ -26,11 +26,15 @@ export function useTimeCapsule() {
     if (!user) return;
     (async () => {
       // Check if user already sealed a capsule
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('wc26_time_capsule')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
+      if (error) {
+        console.error('[TimeCapsule] query failed:', error.message);
+        return; // don't show prompt if we can't verify
+      }
       setMyCapsule((data as Capsule | null) ?? null);
       // Only prompt if no capsule AND before deadline
       if (!data && Date.now() < DEADLINE.getTime()) setShowPrompt(true);
@@ -73,10 +77,13 @@ export function TimeCapsuleModal({ onClose }: Props) {
     return () => document.removeEventListener('keydown', h);
   }, [onClose]);
 
+  const [error, setError] = useState('');
+
   const handleSeal = async () => {
     if (!user || !winner.trim()) return;
     setSaving(true);
-    await supabase.from('wc26_time_capsule').insert({
+    setError('');
+    const { error: err } = await supabase.from('wc26_time_capsule').insert({
       user_id: user.id,
       winner: winner.trim(),
       top_scorer: topScorer.trim() || null,
@@ -84,6 +91,10 @@ export function TimeCapsuleModal({ onClose }: Props) {
       bold_take: boldTake.trim() || null,
     });
     setSaving(false);
+    if (err) {
+      setError(err.message);
+      return;
+    }
     setSaved(true);
   };
 
@@ -154,6 +165,7 @@ export function TimeCapsuleModal({ onClose }: Props) {
             />
           </label>
 
+          {error && <p className="capsule-error">{error}</p>}
           <button
             type="button"
             className="capsule-seal-btn"

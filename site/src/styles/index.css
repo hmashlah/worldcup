@@ -5779,6 +5779,7 @@ footer {
 }
 .capsule-seal-btn:disabled { opacity: 0.5; cursor: default; }
 .capsule-seal-btn:hover:not(:disabled) { opacity: 0.85; }
+.capsule-error { color: #e74c3c; font-size: 0.85rem; margin: 0 0 8px; }
 .capsule-sealed {
   padding: 32px 20px;
   text-align: center;
